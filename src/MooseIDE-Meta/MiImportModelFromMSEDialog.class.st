@@ -2,8 +2,8 @@
 Dialog used to import MSE models
 "
 Class {
-	#name : #MooseImportFromMSEForm,
-	#superclass : #MooseImportForm,
+	#name : #MiImportModelFromMSEDialog,
+	#superclass : #MiImportModelDialog,
 	#instVars : [
 		'mooseModelDroplist'
 	],
@@ -11,7 +11,7 @@ Class {
 }
 
 { #category : #specs }
-MooseImportFromMSEForm class >> defaultSpec [
+MiImportModelFromMSEDialog class >> defaultSpec [
 
 	^ SpBoxLayout newVertical
 		  add: #mooseModelDroplist
@@ -20,38 +20,40 @@ MooseImportFromMSEForm class >> defaultSpec [
 		  yourself
 ]
 
-{ #category : #specs }
-MooseImportFromMSEForm class >> open [
+{ #category : #opening }
+MiImportModelFromMSEDialog class >> open [
 
 	<script>
 	^ self new openDialogWithSpec
 ]
 
 { #category : #specs }
-MooseImportFromMSEForm class >> title [
+MiImportModelFromMSEDialog class >> title [
+
 	^ 'Import model from MSE file'
 ]
 
 { #category : #initialization }
-MooseImportFromMSEForm class >> windowExtent [
+MiImportModelFromMSEDialog class >> windowExtent [
 
 	^ 300 @ (self toolbarHeight + self buttonHeight * 2)
 ]
 
 { #category : #initialization }
-MooseImportFromMSEForm >> initializePresenters [
+MiImportModelFromMSEDialog >> initializePresenters [
 
 	super initializePresenters.
 	mooseModelDroplist := self newDropList
-		items:
-			(MooseModel withAllSubclasses reject: [ :model | 
-				model isDeprecated or: [ model isTestModel ] ]);
-		selectItem: MooseModel;
-		yourself
+		                      items:
+			                      (MooseModel withAllSubclasses reject: [ 
+					                       :model | 
+					                       model isDeprecated or: [ 
+							                       model canBeImportedFromFile not ] ]);
+		                      yourself
 ]
 
 { #category : #action }
-MooseImportFromMSEForm >> privateImportModel [
+MiImportModelFromMSEDialog >> privateImportModel [
 
 	^ mooseModelDroplist selectedItem new importFromMSE
 ]
