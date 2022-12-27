@@ -1,6 +1,6 @@
 Class {
 	#name : #MiQueryListItemPresenterTest,
-	#superclass : #TestCase,
+	#superclass : #MiAbstractApplicationTest,
 	#instVars : [
 		'presenter',
 		'browser',
@@ -12,7 +12,7 @@ Class {
 { #category : #running }
 MiQueryListItemPresenterTest >> bus [
 
-	^ MiTestApplication current defaultBus
+	^ self application defaultBus
 ]
 
 { #category : #running }

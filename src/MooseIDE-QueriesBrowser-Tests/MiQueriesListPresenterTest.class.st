@@ -3,19 +3,13 @@ A MiQueryBuilderPresenterTest is a test class for testing the behavior of MiQuer
 "
 Class {
 	#name : #MiQueriesListPresenterTest,
-	#superclass : #TestCase,
+	#superclass : #MiAbstractApplicationTest,
 	#instVars : [
 		'presenter',
 		'browser'
 	],
 	#category : #'MooseIDE-QueriesBrowser-Tests-Queries Browser'
 }
-
-{ #category : #running }
-MiQueriesListPresenterTest >> application [
-
-	^ MiTestApplication current
-]
 
 { #category : #running }
 MiQueriesListPresenterTest >> bus [
@@ -39,6 +33,7 @@ MiQueriesListPresenterTest >> tearDown [
 
 	browser window ifNotNil: [ :window | window close ].
 	self application deleteBus: self bus.
+
 	super tearDown
 ]
 

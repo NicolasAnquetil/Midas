@@ -1,3 +1,7 @@
+"
+The spec application for Moose IDE.
+This is a singleton
+"
 Class {
 	#name : #MiApplication,
 	#superclass : #SpApplication,
@@ -5,9 +9,10 @@ Class {
 		'buses',
 		'defaultBus',
 		'producers',
-		'consumers'
+		'consumers',
+		'dropFileHandlers'
 	],
-	#classInstVars : [
+	#classVars : [
 		'Current'
 	],
 	#category : #'MooseIDE-Core-Application'
@@ -15,17 +20,20 @@ Class {
 
 { #category : #'instance creation' }
 MiApplication class >> current [
-	^ Current ifNil: [ Current := self new ]
+
+	  ^ Current ifNil: [ Current := self new ]
 ]
 
 { #category : #accessing }
 MiApplication class >> defaultBusName [
+
 	^ 'Default'
 ]
 
 { #category : #'instance creation' }
 MiApplication class >> reset [
 	<script>
+	Current ifNotNil: [ Current unregisterForDropFilesEvent ].
 	Current := nil
 ]
 
@@ -41,19 +49,41 @@ MiApplication >> add: anObject toDictionary: aDictionary for: aKey [
 ]
 
 { #category : #accessing }
+MiApplication >> allBrowsers: aMiClass [
+	^self browsers select: [ :aBrowser | aBrowser isKindOf: aMiClass ]
+]
+
+{ #category : #'drag and drop support' }
+MiApplication >> beDropFilesHandler [
+	dropFileHandlers := {
+		(ExternalDropHandler
+			type: nil
+			extension: #mse
+			action: [ :fileReference | self importModelFromFile: fileReference ])
+		.
+		(ExternalDropHandler
+			type: nil
+			extension: #json
+			action: [ :fileReference | self importModelFromFile: fileReference ])
+	}.
+	dropFileHandlers do: [ :handler | ExternalDropHandler registerHandler: handler ]
+]
+
+{ #category : #accessing }
 MiApplication >> browsers [
 	^ self windows collect: #presenter thenSelect: #isMiBrowser
 ]
 
 { #category : #buses }
 MiApplication >> busNamed: aName [
-	^ buses
-		detect: [ :b | b name = aName ]
-		ifNone: [ | bus |
-			bus := MiBus named: aName.
-			buses add: bus.
-			self updateOverviewBrowsers.
-			bus ]
+
+	  ^ buses detect: [ :b | b name = aName ] ifNone: [ 
+		    | bus |
+		    bus := MiBus named: aName.
+		    buses add: bus.
+		    self defaultBus: bus.
+		    self updateOverviewBrowsers.
+		    bus ]
 ]
 
 { #category : #accessing }
@@ -106,6 +136,12 @@ MiApplication >> defaultBus [
 	^ defaultBus
 ]
 
+{ #category : #buses }
+MiApplication >> defaultBus: aMiBus [
+
+	  defaultBus := aMiBus
+]
+
 { #category : #showing }
 MiApplication >> defaultWindowPresenterClass [
 
@@ -127,6 +163,12 @@ MiApplication >> deleteBusNamed: aName [
 		ifFound: [ :bus | self deleteBus: bus ]
 ]
 
+{ #category : #'drag and drop support' }
+MiApplication >> importModelFromFile: aFileReference [
+
+	self modelImporter handleDropFile: aFileReference
+]
+
 { #category : #initialization }
 MiApplication >> initialize [
 
@@ -134,9 +176,20 @@ MiApplication >> initialize [
 
 	buses := OrderedCollection new.
 	defaultBus := self busNamed: self class defaultBusName.
-	
+
 	consumers := Dictionary new.
 	producers  := Dictionary new.
+
+	
+	dropFileHandlers := #().
+	self beDropFilesHandler
+
+]
+
+{ #category : #'drag and drop support' }
+MiApplication >> instantiateModelImporter [
+	^(MiAbstractBrowser withAllSubclasses detect: [ :aMiClass | aMiClass isModelImporter ])
+		open
 ]
 
 { #category : #brokerage }
@@ -146,10 +199,23 @@ MiApplication >> itemsFor: aClass [
 		  producer itemsFor: aClass ]
 ]
 
+{ #category : #'drag and drop support' }
+MiApplication >> modelImporter [
+	^self openedBrowsers
+		detect: [ :browser | browser isModelImporter ]
+		ifNone: [ self instantiateModelImporter ].
+
+]
+
 { #category : #'private - factory' }
 MiApplication >> newIconProvider [
 
 	^ MiIconProvider new
+]
+
+{ #category : #presenters }
+MiApplication >> openedBrowsers [
+	^self browsers
 ]
 
 { #category : #brokerage }
@@ -165,6 +231,7 @@ MiApplication >> produced: producedClass matchConsumed: consumedClass [
 MiApplication >> producersOf: aClass [
 
 	| foundProducers |
+	
 	foundProducers := Set new.
 	producers keysDo: [ :producedClass | 
 		(self produced: producedClass matchConsumed: aClass) ifTrue: [ 
@@ -220,6 +287,12 @@ MiApplication >> unregisterConsumer: aConsumer [
 
 	consumers do: [ :consumerList | 
 		consumerList remove: aConsumer ifAbsent: [  ] ]
+]
+
+{ #category : #'drag and drop support' }
+MiApplication >> unregisterForDropFilesEvent [
+	ExternalDropHandler registeredHandlers removeAll: dropFileHandlers.
+	dropFileHandlers := #()
 ]
 
 { #category : #brokerage }

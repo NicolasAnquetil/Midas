@@ -10,10 +10,13 @@ BaselineOfMooseIDE >> baseline: spec [
 	<baseline>
 	spec for: #common do: [ "Dependencies"
 		self tylerDurden: spec.
-		self famixQueries: spec.
-		self telescope: spec.
 		self labelContractor: spec.
 		self hierarchicalVisualizations: spec.
+		self roassal3: spec.
+		self famixQueries: spec.
+		self pharoAIHierachicalClustering: spec.
+		self stonCustomizer: spec.
+		self microdown: spec.
 
 		"Packages"
 		self definePackages: spec.
@@ -22,17 +25,28 @@ BaselineOfMooseIDE >> baseline: spec [
 		spec for: #NeedsMoose do: [ 
 			self famix: spec.
 			self famixTagging: spec.
+			self famixReplication: spec.
 			spec
 				package: 'MooseIDE-Core' with: [ spec requires: #( 'Famix' ) ];
 				package: 'MooseIDE-Meta'
 				with: [ spec requires: #( 'MooseIDE-Core' ) ];
 				package: 'MooseIDE-Tagging'
-				with: [ spec requires: #( 'FamixTagging' ) ] ].
+				with: [ spec requires: #( 'FamixTagging' ) ];
+				package: 'MooseIDE-CoUsageMap'
+				with: [ spec requires: #( 'FamixTagging' ) ];
+				package: 'MooseIDE-Dependency'
+				with: [ spec requires: #( 'FamixTagging' ) ];
+				package: 'MooseIDE-NewTools'
+				with: [ spec requires: #( 'FamixQueries' ) ];
+				package: 'MooseIDE-Duplication'
+				with: [ spec requires: #( 'FamixReplication' ) ];
+				package: 'Famix-CriticBrowser-Entities'
+				with: [ spec requires: 'Famix' ];
+				package: 'Famix-CriticBrowser-Generator'
+				with: [ spec requires: 'Famix' ] ].
 
 		"Register custom tools"
-		spec
-			postLoadDoIt: #registerCustomTools;
-			postLoadDoIt: #resetMiApplications ]
+		spec postLoadDoIt: #registerCustomTools ]
 ]
 
 { #category : #accessing }
@@ -42,6 +56,22 @@ BaselineOfMooseIDE >> customProjectAttributes [
 		  detect: [ :package | package name = 'BaselineOfFamix' ]
 		  ifFound: [ #(  ) ]
 		  ifNone: [ #( #NeedsMoose ) ]
+]
+
+{ #category : #baselines }
+BaselineOfMooseIDE >> defineMooseCriticsPackages: spec [
+
+	spec
+		package: 'MooseIDE-CriticBrowser' with: [ 
+			spec requires: #( 'MooseIDE-Core' 'Famix-CriticBrowser-Entities'
+					   'STONCustomizer' ) ];
+		package: 'MooseIDE-CriticBrowser-Tests'
+		with: [ 
+			spec requires: #( 'MooseIDE-Tests' 'MooseIDE-CriticBrowser' ) ];
+		package: 'Famix-CriticBrowser-Entities';
+		package: 'Famix-CriticBrowser-Generator';
+		package: 'Famix-CriticBrowser-Tests'
+		with: [ spec requires: 'Famix-CriticBrowser-Entities' ]
 ]
 
 { #category : #baselines }
@@ -106,6 +136,15 @@ BaselineOfMooseIDE >> famixQueries: spec [
 ]
 
 { #category : #dependencies }
+BaselineOfMooseIDE >> famixReplication: spec [
+
+	spec
+		baseline: 'FamixReplication'
+		with: [ 
+		spec repository: 'github://moosetechnology/FamixReplication' ]
+]
+
+{ #category : #dependencies }
 BaselineOfMooseIDE >> famixTagging: spec [
 
 	spec
@@ -132,24 +171,46 @@ BaselineOfMooseIDE >> labelContractor: spec [
 		spec repository: 'github://moosetechnology/LabelContractor/src' ]
 ]
 
+{ #category : #dependencies }
+BaselineOfMooseIDE >> microdown: spec [
+
+	spec
+		baseline: 'Microdown'
+		with: [ 
+		spec repository: 'github://pillar-markup/Microdown:master/src' ]
+]
+
+{ #category : #dependencies }
+BaselineOfMooseIDE >> pharoAIHierachicalClustering: spec [
+
+	spec
+		baseline: 'AIHierarchicalClustering'
+		with: [ 
+		spec repository: 'github://pharo-ai/hierarchical-clustering/src' ]
+]
+
 { #category : #actions }
 BaselineOfMooseIDE >> registerCustomTools [
 
 	(Smalltalk classNamed: #MiPlayground) register
 ]
 
-{ #category : #actions }
-BaselineOfMooseIDE >> resetMiApplications [
+{ #category : #dependencies }
+BaselineOfMooseIDE >> roassal3: spec [
 
-	(Smalltalk classNamed: #MiApplication) reset.
-	(Smalltalk classNamed: #MiTestApplication) reset
+	spec
+		baseline: 'Roassal3'
+		with: [ 
+		spec repository: 'github://ObjectProfile/Roassal3:master/src' ]
 ]
 
 { #category : #dependencies }
-BaselineOfMooseIDE >> telescope: spec [
+BaselineOfMooseIDE >> stonCustomizer: spec [
+
 	spec
-		baseline: 'TelescopeRoassal3'
-		with: [ spec repository: 'github://TelescopeSt/TelescopeRoassal3' ]
+		baseline: 'STONCustomizer'
+		with: [ 
+		spec repository: 'github://jecisc/STONCustomizer:v1.x.x/src' ]
 ]
 
 { #category : #dependencies }
