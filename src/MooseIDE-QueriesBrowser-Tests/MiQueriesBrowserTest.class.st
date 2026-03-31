@@ -16,6 +16,22 @@ MiQueriesBrowserTest >> browserClass [
 	^ MiQueriesBrowser
 ]
 
+{ #category : #tests }
+MiQueriesBrowserTest >> queryResultTreeItems [
+
+	| resultTree |
+	resultTree := browser queryResultTreePresenter.
+	^ resultTree roots flatCollect: [ :root |
+		  resultTree childrenFor: root ]
+]
+
+{ #category : #tests }
+MiQueriesBrowserTest >> resetBrowser [
+
+	browser withWindowDo: [ :window | window close ].
+	browser := self browserClass openForTests: self application
+]
+
 { #category : #running }
 MiQueriesBrowserTest >> setUp [
 
@@ -25,17 +41,35 @@ MiQueriesBrowserTest >> setUp [
 ]
 
 { #category : #tests }
+MiQueriesBrowserTest >> testActivateActionButtons [
+
+	self resetBrowser.
+
+	browser actionButtons do: [ :button | self deny: button isEnabled ].
+
+	self receiveEntityToSelect.
+
+	browser actionButtons do: [ :button | self assert: button isEnabled ]
+]
+
+{ #category : #tests }
 MiQueriesBrowserTest >> testAddNewNAryQuery [
 
 	| unionQuery |
 	unionQuery := self unionQuery.
 	browser rootQuery addChild: unionQuery.
+
 	browser selectQuery: unionQuery.
 	self assert: (browser rootQuery children includes: unionQuery).
 	self assert: browser selectedQuery equals: unionQuery.
 	self
-		assertCollection: browser queryResultTreePresenter items
+		assertCollection: self queryResultTreeItems
 		hasSameElements: unionQuery result
+]
+
+{ #category : #tests }
+MiQueriesBrowserTest >> testCanTagEntities [
+	self deny: browser canTagEntities 
 ]
 
 { #category : #'tests - actions' }
@@ -87,7 +121,7 @@ MiQueriesBrowserTest >> testInitializePresenters [
 	self assert: browser queryCodePresenter text isNotEmpty.
 	self
 		assert: browser queryResultTreePresenter class
-		equals: QueryResultTreePresenter.
+		equals: MiMooseGroupsTreeTablePresenter.
 	self
 		assertCollection: browser queryResultEntities
 		hasSameElements: helper classesAndMethods
@@ -123,14 +157,14 @@ MiQueriesBrowserTest >> testRemoveQuery [
 	self deny: (browser rootQuery children includes: query).
 	self deny: (browser rootQuery children includes: query2).
 	self
-		assertCollection: browser queryResultTreePresenter items
+		assertCollection: self queryResultTreeItems
 		hasSameElements: browser queryResultEntities
 ]
 
 { #category : #tests }
 MiQueriesBrowserTest >> testSelectQuery [
 
-	| query previousCurrentQuery |
+	| query previousCurrentQuery newQuery |
 	query := (FQBooleanQuery property: #isDead) beChildOf:
 		         browser rootQuery.
 	previousCurrentQuery := browser selectedQuery.
@@ -138,13 +172,14 @@ MiQueriesBrowserTest >> testSelectQuery [
 	self deny: previousCurrentQuery equals: browser selectedQuery.
 	self assert: browser selectedQuery equals: query.
 	self
-		assertCollection: browser queryResultTreePresenter items
+		assertCollection: self queryResultTreeItems
 		hasSameElements: query result.
 	"Check if the code presenter changed its text to the new query"
-	self
-		assert: browser queryCodePresenter text
-		equals: (EFFormatter format: (RBParser parseExpression:
-					  (String streamContents: [ :s | query storeOn: s ])))
+
+	newQuery := Smalltalk compiler evaluate:
+		            browser queryCodePresenter text.
+	self assert: newQuery class equals: query class.
+	self assert: newQuery property equals: query property
 ]
 
 { #category : #tests }
@@ -163,14 +198,12 @@ MiQueriesBrowserTest >> testUnregisterAtClose [
 MiQueriesBrowserTest >> unionQuery [
 
 	| subqueries union |
-	subqueries := { 
-		           (FQBooleanQuery property: #isDead).
-		           (FQTypeQuery new type: FamixStClass) }.
+	subqueries := {
+		              (FQBooleanQuery property: #isDead).
+		              (FQTypeQuery new type: FamixStClass) }.
 	union := FQUnionQuery new.
-	subqueries do: [ :parent | 
-		parent beChildOf: browser rootQuery.
-		browser selectQuery: parent.
-		parent addChild: union ].
+	subqueries do: [ :parent | parent beChildOf: browser rootQuery ].
+
 	union subqueries: subqueries.
 	^ union
 ]

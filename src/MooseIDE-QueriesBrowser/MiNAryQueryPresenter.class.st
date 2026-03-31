@@ -32,12 +32,6 @@ MiNAryQueryPresenter >> addSubqueryToLayoutAction [
 	self initializeLayout
 ]
 
-{ #category : #actions }
-MiNAryQueryPresenter >> computeQuery: newSelectedItem [
-
-	self nAryOperation: newSelectedItem
-]
-
 { #category : #'api - actions' }
 MiNAryQueryPresenter >> configureFor: aQuery [
 
@@ -58,13 +52,17 @@ MiNAryQueryPresenter >> configureFor: aQuery [
 
 ]
 
+{ #category : #actions }
+MiNAryQueryPresenter >> configureQuery: newSelectedItem [
+
+	self nAryOperation: newSelectedItem
+]
+
 { #category : #initialization }
 MiNAryQueryPresenter >> initialize [
 
 	super initialize.
-	owner queriesListPresenter announcer
-		when: QueriesListChangedAnnouncement
-		do: [ self queryPresentersListChanged ]
+	owner queriesListPresenter announcer when: QueriesListChangedAnnouncement do: [ self queryPresentersListChanged ] for: self
 ]
 
 { #category : #initialization }
@@ -103,12 +101,15 @@ MiNAryQueryPresenter >> isQueryUsed: aQuery [
 MiNAryQueryPresenter >> nAryOperation: newSelectedItem [
 
 	| subqueries selectedDropListItems |
-	"Sometimes the SpDropListPresenter>>#whenSelectedItemChangedDo: in spec is triggered even though no item was selected. When this happends the selected item is nil. This is a spec problem."
+	"Sometimes the SpDropListPresenter>>#whenSelectedItemChangedDo: in spec is triggered even though no item was selected. 
+	When this happends the selected item is nil. This is a spec problem."
 	newSelectedItem ifNil: [ ^ self ].
-	(subqueryDropLists anySatisfy: [ :dropList | 
-		 dropList selectedItem isNil ]) ifTrue: [ ^ self ].
 
 	selectedDropListItems := subqueryDropLists collect: #selectedItem.
+
+	(selectedDropListItems anySatisfy: [ :selectedQuery | 
+		 selectedQuery isNil ]) ifTrue: [ ^ self ].
+	
 	subqueries := selectedDropListItems collect: #query.
 	query
 		subqueries: subqueries;
@@ -122,11 +123,14 @@ MiNAryQueryPresenter >> newLayout [
 	tempLayout := SpBoxLayout newLeftToRight
 		              spacing: 5;
 		              yourself.
+
 	subqueryDropLists do: [ :subqueryPresenter | 
 		tempLayout add: subqueryPresenter width: self class dropListWidth ].
+
 	tempLayout
 		add: addSubqueryToLayoutButton width: self class iconWidth;
 		add: removeSubqueryFromLayoutButton width: self class iconWidth.
+
 	^ tempLayout
 ]
 
@@ -134,8 +138,10 @@ MiNAryQueryPresenter >> newLayout [
 MiNAryQueryPresenter >> newSubqueryDropList [
 
 	| availableQueryPresentersForOperation |
-	availableQueryPresentersForOperation := owner allQueryPresentersExceptSelf.
+	availableQueryPresentersForOperation := owner
+		                                        allQueryPresentersExceptSelf.
 	^ self newDropList
+		  startWithoutSelection;
 		  items: availableQueryPresentersForOperation;
 		  display: [ :each | each name ];
 		  whenSelectedItemChangedDo: [ :selectedItem | 
@@ -146,14 +152,19 @@ MiNAryQueryPresenter >> newSubqueryDropList [
 { #category : #'api - actions' }
 MiNAryQueryPresenter >> queryPresentersListChanged [
 
-	"Since the list of available queries of the MiQueryBuilder changed, we need to update the items on the drop list. We do not want to have deleted queries on the list. We want to add to the list the new added query presenter. "
+	"Since the list of available queries of the MiQueryBuilder changed, 
+		we need to update the items on the drop list. 
+	We do not want to have deleted queries on the list. 
+	We want to add to the list the new added query presenter. "
 
 	| previouslySelectedQuery newAvailableQueries |
 	newAvailableQueries := owner allQueryPresentersExceptSelf.
+
 	subqueryDropLists do: [ :dropList | 
 		previouslySelectedQuery := dropList selectedItem.
 		(newAvailableQueries includes: previouslySelectedQuery)
-			ifTrue: [ dropList updateItemsKeepingSelection: newAvailableQueries ]
+			ifTrue: [ 
+			dropList updateItemsKeepingSelection: newAvailableQueries ]
 			ifFalse: [ dropList items: newAvailableQueries ] ]
 ]
 

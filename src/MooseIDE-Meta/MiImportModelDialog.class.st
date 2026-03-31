@@ -3,7 +3,7 @@ Abstract class for model import dialogs
 "
 Class {
 	#name : #MiImportModelDialog,
-	#superclass : #SpPresenter,
+	#superclass : #MiPresenter,
 	#instVars : [
 		'originBrowser'
 	],
@@ -12,10 +12,14 @@ Class {
 
 { #category : #opening }
 MiImportModelDialog class >> open [
-	^ self subclassResponsibility
+
+	<script>
+	^ self new
+		  openDialog;
+		  yourself
 ]
 
-{ #category : #initialization }
+{ #category : #accessing }
 MiImportModelDialog class >> windowExtent [
 
 	self subclassResponsibility
@@ -30,37 +34,57 @@ MiImportModelDialog >> importModel [
 	"Check if the model is empty. We are using size to optimize the code."
 	(mooseModel size - (mooseModel allUsing: FamixTSourceLanguage) size)
 		isZero ifTrue: [ 
-		self error: 'You must select at least one package.' ].
+		self error: 'Something is wrong, the imported model appears to be empty' ].
 
 	^ mooseModel
 ]
 
 { #category : #action }
-MiImportModelDialog >> importModelThenCloseDialogWindow: aDialog [
+MiImportModelDialog >> importModelStep1Import [
 
-	| mooseModel |
-	[self validateImportForm]  onErrorDo: [ :err | 
+	^ [ self importModel ] onErrorDo: [ :err |
+		  UIManager default alert: 'Import error: ' , err messageText.
+		  nil ]
+]
+
+{ #category : #action }
+MiImportModelDialog >> importModelStep2Install: mooseModel [
+
+	mooseModel ifNotNil: [
+		mooseModel installWithCache: self shouldCreateCache.
+		self withWindowDo: [ :window | window close ].
+		self updateBrowserWith: mooseModel
+	]
+]
+
+{ #category : #action }
+MiImportModelDialog >> importModelThenCloseDialogWindow [
+
+	| mooseModel aJob |
+	[ self validateImportForm ] onErrorDo: [ :err |
 		UIManager default alert: 'Invalid input: ' , err messageText.
 		^ self ].
 
-	mooseModel := [ self importModel ] onErrorDo: [ :err | 
-		              UIManager default alert:
-			              'Import error: ' , err messageText.
-		              nil ].
+	aJob := [ :job |
+	        job title: 'Importing model'.
+	        mooseModel := self importModelStep1Import.
+	        job currentValue: 50.
+	        self importModelStep2Install: mooseModel
+	] asJob.
 
-	mooseModel ifNotNil: [ 
-		mooseModel install.
-		aDialog close.
-		self updateBrowserWith: mooseModel ]
+	[ aJob run ] forkAt: Processor userBackgroundPriority
 ]
 
 { #category : #initialization }
 MiImportModelDialog >> initializeDialogWindow: aDialog [
 
+	| button |
+
+	button := nil.
 	aDialog initialExtent: self class windowExtent.
-	aDialog
-		addButton: 'Import'
-		do: [ :dialog | self importModelThenCloseDialogWindow: dialog ].
+	button := aDialog
+		          addButton: 'Import'
+		          do: [ self importModelThenCloseDialogWindow ].
 	aDialog addButton: 'Cancel' do: [ :dialog | dialog close ]
 ]
 
@@ -76,11 +100,24 @@ MiImportModelDialog >> setModelBeforeInitialization: aBrowserOrMoosePanel [
 	originBrowser := aBrowserOrMoosePanel
 ]
 
+{ #category : #accessing }
+MiImportModelDialog >> settings [
+
+	^ originBrowser settingsItem
+]
+
+{ #category : #accessing }
+MiImportModelDialog >> shouldCreateCache [
+
+	^ originBrowser specModel shouldCreateCache 
+]
+
 { #category : #action }
 MiImportModelDialog >> updateBrowserWith: mooseModel [
 
-	originBrowser ifNotNil: [ 
-		originBrowser updateForNewModel: mooseModel ]
+	originBrowser
+		ifNotNil: [ originBrowser updateForNewModel: mooseModel ]
+		ifNil: [ MiApplication current currentModelsBrowser updateList ]
 ]
 
 { #category : #action }

@@ -4,8 +4,14 @@ Class {
 	#instVars : [
 		'highlightedEntities'
 	],
-	#category : #'MooseIDE-Visualization'
+	#category : #'MooseIDE-Visualization-Helpers'
 }
+
+{ #category : #running }
+MiAbstractVisualization >> buildInCanvas: aCanvas [
+
+	self subclassResponsibility
+]
 
 { #category : #helpers }
 MiAbstractVisualization >> colorFor: anEntity [
@@ -21,16 +27,17 @@ MiAbstractVisualization >> highlightColor [
 
 { #category : #highlighting }
 MiAbstractVisualization >> highlightEntities: someEntities [
-	self highlightedEntities: someEntities.
+
+	self canvas shapes ifEmpty: [ ^ self ].
+	self highlightedEntities: someEntities asMooseGroup.
 	self highlightShapes.
 	self canvas signalUpdate
 ]
 
 { #category : #highlighting }
 MiAbstractVisualization >> highlightShapes [
-	"Override to react to Midas highlight action"
-
-	self subclassResponsibility
+	
+	self selectShapes: self shapesWithModel
 ]
 
 { #category : #accessing }
@@ -45,9 +52,24 @@ MiAbstractVisualization >> highlightedEntities: entities [
 
 { #category : #initialization }
 MiAbstractVisualization >> initialize [
+
 	super initialize.
+
 	highlightedEntities := MooseGroup new.
-	self script: [ :canvas | canvas @ RSCanvasController new noLegend ]
+
+	self script: [ :canvas | self buildInCanvas: canvas ]
+]
+
+{ #category : #accessing }
+MiAbstractVisualization >> miSelectedItem [
+
+	^ self canvas selectedShapes collect: [ :shape | self modelForShape: shape ]
+]
+
+{ #category : #accessing }
+MiAbstractVisualization >> modelForShape: aShape [
+
+	^ aShape model
 ]
 
 { #category : #helpers }
@@ -57,7 +79,25 @@ MiAbstractVisualization >> noHighlightColorFor: anEntity [
 
 { #category : #running }
 MiAbstractVisualization >> run [
-	self refresh
+
+	self canvas clear.
+	self canvas controllerInteraction: nil.
+	self script value: self canvas
+]
+
+{ #category : #highlighting }
+MiAbstractVisualization >> selectShapes: shapes [
+
+	self canvas setSelectedShapes: shapes
+]
+
+{ #category : #highlighting }
+MiAbstractVisualization >> shapesWithModel [
+	
+	^ self canvas shapes select: [ :shape |
+		  shape isLine not and: [
+			  shape model notNil and: [
+				  highlightedEntities includes: (self modelForShape: shape) ] ] ]
 ]
 
 { #category : #highlighting }

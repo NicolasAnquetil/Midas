@@ -1,6 +1,7 @@
 # MooseIDE
 
-[![Coverage Status](https://coveralls.io/repos/github/moosetechnology/MooseIDE/badge.svg)](https://coveralls.io/github/moosetechnology/MooseIDE) [![development](https://github.com/moosetechnology/MooseIDE/actions/workflows/daily.yml/badge.svg)](https://github.com/moosetechnology/MooseIDE/actions/workflows/daily.yml) [![Moose version](https://img.shields.io/badge/Moose-8-%23aac9ff.svg)](https://github.com/moosetechnology/Moose)
+[![Coverage Status](https://coveralls.io/repos/github/moosetechnology/MooseIDE/badge.svg)](https://coveralls.io/github/moosetechnology/MooseIDE) 
+[![Run tests](https://github.com/moosetechnology/MooseIDE/actions/workflows/tests.yml/badge.svg?branch=development)](https://github.com/moosetechnology/MooseIDE/actions/workflows/tests.yml)
 
 New Tools for Moose
 
@@ -16,13 +17,20 @@ New Tools for Moose
 
 ![Screen capture of Pharo Launcher to make MooseIDE image](https://user-images.githubusercontent.com/33934979/124268297-9e46f000-db39-11eb-8626-ab578dd16ffb.png)
 
-### From a Pharo Image
+### From a Pharo 10 Image
 
 ```smalltalk
-[ Metacello new
-    baseline: 'Moose';
-    repository: 'github://moosetechnology/MooseIDE:development/src';
-    load ]
-    on: MCMergeOrLoadWarning
-    do: [ :warning | warning load ]
+Metacello new
+  baseline: 'MooseIDE';
+  repository: 'github://moosetechnology/MooseIDE:development/src';
+  load
+```
+
+### From a Pharo 9 Image
+
+```smalltalk
+Metacello new
+  baseline: 'MooseIDE';
+  repository: 'github://moosetechnology/MooseIDE:v2.x.x/src';
+  load
 ```

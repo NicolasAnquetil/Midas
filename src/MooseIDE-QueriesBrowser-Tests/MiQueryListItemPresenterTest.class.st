@@ -1,6 +1,6 @@
 Class {
 	#name : #MiQueryListItemPresenterTest,
-	#superclass : #TestCase,
+	#superclass : #MiAbstractApplicationTest,
 	#instVars : [
 		'presenter',
 		'browser',
@@ -12,7 +12,7 @@ Class {
 { #category : #running }
 MiQueryListItemPresenterTest >> bus [
 
-	^ MiTestApplication current defaultBus
+	^ self application defaultBus
 ]
 
 { #category : #running }
@@ -22,9 +22,11 @@ MiQueryListItemPresenterTest >> setUp [
 	super setUp.
 
 	helper := FQTestsHelper new.
-	browser := MiQueriesBrowser openForTests.
+	browser := MiQueriesBrowser openForTests: self application.
 	browser receiveEntity: helper classesAndMethods.
-	parentPresenter := MiQueriesListPresenter on: browser.
+	parentPresenter := browser
+		                   instantiate: MiQueriesListPresenter
+		                   on: browser.
 
 	presenter := MiQueryListItemPresenter
 		             on: browser rootQuery
@@ -51,16 +53,17 @@ MiQueryListItemPresenterTest >> testAllQueryPresentersExceptSelf [
 	self assert: presenter allQueryPresentersExceptSelf size equals: 2.
 	self
 		denyCollection: presenter allQueryPresentersExceptSelf
-		includesAny: presenter asOrderedCollection
+		includesAny: (OrderedCollection with: presenter)
 ]
 
 { #category : #tests }
 MiQueryListItemPresenterTest >> testConfigureFor [
 
 	| newQuery rootQuery |
+
 	rootQuery := FQRootQuery new
-		result: helper classesAndMethods;
-		yourself.
+		             input: helper classesAndMethods;
+		             yourself.
 	newQuery := FQStringQuery defaultForParent: rootQuery.
 	newQuery
 		comparator: #includesSubstring:;
@@ -111,7 +114,7 @@ MiQueryListItemPresenterTest >> testNewQueryForClass [
 	"We check that the method doesn't die when calling it from non unary queries"
 
 	presenter newQueryForClass: FQComplementQuery.
-	presenter newQueryForClass: FQNAryQuery.
+	presenter newQueryForClass: FQUnionQuery.
 
 	self
 		assert: (presenter newQueryForClass: FQBooleanQuery) parent

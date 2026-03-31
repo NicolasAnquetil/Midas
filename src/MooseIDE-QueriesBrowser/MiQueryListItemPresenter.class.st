@@ -5,7 +5,7 @@ I manage all the logic related of changing dynamically this configuration presen
 "
 Class {
 	#name : #MiQueryListItemPresenter,
-	#superclass : #SpPresenter,
+	#superclass : #MiPresenter,
 	#instVars : [
 		'queryTypesDropListPresenter',
 		'parentQuery',
@@ -20,25 +20,30 @@ Class {
 { #category : #commands }
 MiQueryListItemPresenter class >> buildCommandsGroupWith: presenterInstance forRoot: rootCommandGroup [
 
-	rootCommandGroup register:
-		((MiAddChildQueryCommand forSpecContext: presenterInstance) 
-			 iconName: MiAddChildQueryCommand iconName).
-	rootCommandGroup register:
-		((MiRemoveQueryCommand forSpecContext: presenterInstance) iconName:
-			 MiRemoveQueryCommand iconName)
+	rootCommandGroup
+		register: 
+			(MiAddChildQueryCommand forSpecContext: presenterInstance);
+		register:
+			(MiClipBoardCopyQueryCommand forSpecContext: presenterInstance);
+		register:
+			(MiCreateDynamicTagQueryCommand forSpecContext: presenterInstance);
+		register: 
+			(MiSaveQueryCommand forSpecContext: presenterInstance);
+		register: 
+			(MiRemoveQueryCommand forSpecContext: presenterInstance)
 ]
 
 { #category : #'instance creation' }
 MiQueryListItemPresenter class >> newManualQueryOn: aQuery owner: aPresenter queriesListPresenter: aMiQueriesListPresenter [
 
-	^ self basicNew
-		application: self currentApplication;
-		owner: aPresenter;
-		setModelBeforeInitialization: aQuery;
-		queriesListPresenter: aMiQueriesListPresenter;
-		initialize;
-		beForManualQuery;
-		yourself
+	  ^ self basicNew
+		    application: aPresenter application;
+		    owner: aPresenter;
+		    setModelBeforeInitialization: aQuery;
+		    queriesListPresenter: aMiQueriesListPresenter;
+		    initialize;
+		    beForManualQuery;
+		    yourself
 ]
 
 { #category : #'instance creation' }
@@ -47,7 +52,7 @@ MiQueryListItemPresenter class >> on: aQuery owner: aPresenter queriesListPresen
 	"We need this method because the owner of the presenter will change to SpComponentListPresenter. The first time the owner is the same as parent presenter. But then, Spec internally changes it. And we need to have the access to the parent presenter."
 
 	^ self basicNew
-		  application: self currentApplication;
+		  application: aPresenter application;
 		  owner: aPresenter;
 		  setModelBeforeInitialization: aQuery;
 		  queriesListPresenter: aMiQueriesListPresenter;
@@ -75,19 +80,8 @@ MiQueryListItemPresenter >> beForManualQuery [
 MiQueryListItemPresenter >> configureFor: aQuery [
 
 	queryTypesDropListPresenter selectItem: aQuery class.
-	queryConfiguratorPresenter configureFor: aQuery
-]
-
-{ #category : #'api - actions' }
-MiQueryListItemPresenter >> disableProgressNotification [
-
-	queriesListPresenter disableProgressNotification
-]
-
-{ #category : #'api - actions' }
-MiQueryListItemPresenter >> enableProgressNotification [
-
-	queriesListPresenter enableProgressNotification
+	queryConfiguratorPresenter configureFor: aQuery.
+	queryConfiguratorPresenter initializeLayout
 ]
 
 { #category : #accessing }
@@ -114,35 +108,28 @@ MiQueryListItemPresenter >> indentationSpacesPresenters [
 MiQueryListItemPresenter >> initializeLayout [
 
 	| tempLayout |
+
 	tempLayout := SpBoxLayout newLeftToRight
 		              spacing: 5;
 		              borderWidth: 5;
 		              yourself.
-	self indentationSpacesPresenters do: [ :each | 
+	self indentationSpacesPresenters do: [ :each |
 		tempLayout add: each expand: false ].
 	tempLayout
 		add: queryNumberLabelPresenter expand: false;
 		add: queryTypesDropListPresenter width: 130;
 		add: queryConfiguratorPresenter;
-		addLast: optionsMenuButton expand: false.
+		add: optionsMenuButton width: 25.
 	self layout: tempLayout
 ]
 
 { #category : #initialization }
 MiQueryListItemPresenter >> initializeMenu [
 
-	| optionsMenuGroup |
-	optionsMenuGroup := (self class buildRootCommandsGroupFor: self)
-		                    asMenuPresenter.
-	optionsMenuGroup addGroup: [ :aGroup | 
-		aGroup addItem: [ :anItem | 
-			anItem
-				name: 'Cancel';
-				icon: (self iconNamed: #smallCancel);
-				action: [  ] ] ].
-
-	optionsMenuButton := self newMenuButton
-		                     menu: optionsMenuGroup;
+	optionsMenuButton := self newMenuBar
+		                     addItem: [ :item |
+			                     item subMenu:
+					                     self rootCommandsGroup asMenuPresenter ];
 		                     yourself
 ]
 
@@ -166,15 +153,15 @@ MiQueryListItemPresenter >> initializePresenters [
 { #category : #initialization }
 MiQueryListItemPresenter >> initializeQueryTypesDropList [
 
-	| sortedItems |
 	queryTypesDropListPresenter := self newDropList.
-	sortedItems := queriesListPresenter availableQueryTypes sorted: #label ascending.
+
 	queryTypesDropListPresenter
 		startWithoutSelection;
-		items: sortedItems;
+		items: self sortedAvailableQueries;
 		display: [ :queryClass | queryClass label ];
-		whenSelectedItemChangedDo: [ :queryClass | 
-			self updateQueryConfiguratorPresenterFor: queryClass ]
+		whenSelectedItemChangedDo: [ :queryClass |
+			queryClass ifNotNil: [
+					self updateQueryConfiguratorPresenterFor: queryClass ] ]
 ]
 
 { #category : #update }
@@ -199,7 +186,9 @@ MiQueryListItemPresenter >> newQueryForClass: queryClass [
 	(parentQuery children includes: self query) ifTrue: [ 
 		parentQuery removeChild: self query ].
 
-	newQuery := queryClass defaultForParent: parentQuery.
+	newQuery := queryClass new
+		            parent: parentQuery;
+		            yourself.
 	parentQuery addChild: newQuery.
 	^ newQuery
 ]
@@ -261,13 +250,20 @@ MiQueryListItemPresenter >> setQueryNumber: anInteger [
 	queryNumberLabelPresenter label: anInteger asString
 ]
 
+{ #category : #initialization }
+MiQueryListItemPresenter >> sortedAvailableQueries [
+
+	^ queriesListPresenter availableQueryTypes sorted:
+		  #yourself ascending
+]
+
 { #category : #update }
 MiQueryListItemPresenter >> updateQueryConfiguratorPresenterFor: queryClass [
 
 	| newQuery |
 	"Create the new query"
 	newQuery := self newQueryForClass: queryClass.
-
+	
 	"Instantiate the configuration presenter with the new created query"
 	self instantiateConfiguratorPresenterForQuery: newQuery.
 

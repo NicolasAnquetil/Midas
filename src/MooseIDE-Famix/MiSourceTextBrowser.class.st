@@ -1,7 +1,7 @@
 "
 Shows the source text of an entity if it has one.
 
-- Follow: Receives a MooseEntity that uses FamixTSourceEntity.
+- Accepted entities: a MooseEntity that uses FamixTSourceEntity.
 - Highlight: Nothing to do.
 - Propagate: <TODO>
 
@@ -9,33 +9,38 @@ Shows the source text of an entity if it has one.
 "
 Class {
 	#name : #MiSourceTextBrowser,
-	#superclass : #MiAbstractFamixBrowser,
+	#superclass : #MiAbstractBrowser,
 	#instVars : [
-		'sourceText',
-		'toolBarExternalEditor'
+		'toolBarExternalEditor',
+		'textRenderer'
 	],
 	#category : #'MooseIDE-Famix-SourceText'
 }
 
-{ #category : #specs }
-MiSourceTextBrowser class >> defaultSpec [
-	^super defaultSpec
-		add: #toolBarExternalEditor height: self toolbarHeight ;
-		add: #sourceText expand: true ;
-		yourself
+{ #category : #'world menu' }
+MiSourceTextBrowser class >> menuCommandOn: aBuilder [
+
+	<worldMenu>
+	<miBrowsersMenu>
+	^ self buildMenuItemIn: aBuilder
 ]
 
 { #category : #'world menu' }
-MiSourceTextBrowser class >> menuCommandOn: aBuilder [
-	<worldMenu>
-	<miBrowsers>
-	(aBuilder item: #SourceTextBrowser)
-		parent: (self toolbarFamixName) ;
-		label: (self title) ;
-		icon: (self iconNamed: #mooseSourceText);
-		order: 1 ;
-		help: (self helpMessage);
-		action: [ self open ]
+MiSourceTextBrowser class >> menuIconName [
+
+	^ #mooseSourceText
+]
+
+{ #category : #'world menu' }
+MiSourceTextBrowser class >> menuItem [
+
+	^ #SourceTextBrowser
+]
+
+{ #category : #'world menu' }
+MiSourceTextBrowser class >> menuPriority [
+
+	^ self menuCodeToolsPriority + 1
 ]
 
 { #category : #'instance creation' }
@@ -46,17 +51,20 @@ MiSourceTextBrowser class >> newModel [
 
 { #category : #'instance creation' }
 MiSourceTextBrowser class >> open [
+
 	<script>
 	^ super open
 ]
 
 { #category : #specs }
 MiSourceTextBrowser class >> title [
+
 	^ 'Source code'
 ]
 
 { #category : #specs }
 MiSourceTextBrowser class >> windowSize [
+
 	^ 600 @ 700
 ]
 
@@ -64,6 +72,20 @@ MiSourceTextBrowser class >> windowSize [
 MiSourceTextBrowser >> canFollowEntity: anObject [
 
 	^ anObject usesFamixTrait: FamixTSourceEntity
+]
+
+{ #category : #layout }
+MiSourceTextBrowser >> defaultLayout [
+
+	^ SpBoxLayout newVertical
+		  add: toolBarExternalEditor height: self class toolbarHeight;
+		  add: textRenderer expand: true;
+		  yourself
+]
+
+{ #category : #actions }
+MiSourceTextBrowser >> editExternally: anExternalTool [
+	anExternalTool new open: specModel selectedEntity
 ]
 
 { #category : #'private - testing' }
@@ -81,39 +103,62 @@ MiSourceTextBrowser >> externalEditor: anObject [
 { #category : #actions }
 MiSourceTextBrowser >> followEntity: anEntity [
 
-	model displayedEntity: anEntity.
-	self text: model formatedSource.
-	self updateWindowTitleWith: anEntity name.
+	super followEntity: anEntity.
+	specModel displayedEntity: anEntity.
 
-	toolBarExternalEditor newEntity.
+	toolBarExternalEditor newEntity
+]
+
+{ #category : #settings }
+MiSourceTextBrowser >> hasSettings [
+
+	^ true
 ]
 
 { #category : #initialization }
 MiSourceTextBrowser >> initializePresenters [
+
 	toolBarExternalEditor := self instantiate: MiSourceTextToolBar on: self.
-	sourceText := self newText beNotEditable 
+	"self withRoassalRenderer."
+	self withSpecRenderer.
 ]
 
 { #category : #accessing }
 MiSourceTextBrowser >> miSelectedItem [
 
-	^ model selected
-]
-
-{ #category : #actions }
-MiSourceTextBrowser >> sendTextTo: anExternalTool [
-	anExternalTool new open: model selected
+	^ specModel selectedEntity
 ]
 
 { #category : #initialization }
-MiSourceTextBrowser >> setModelBeforeInitialization: aModel [
-	super setModelBeforeInitialization: aModel.
-	aModel browser: self
+MiSourceTextBrowser >> open [
+	"redefined to change the cursor in the text morph"
+	super open.
+
+	textRenderer adapter widget theme: MiSourceTextRendererTheme new.
+
 ]
 
-{ #category : #actions }
-MiSourceTextBrowser >> text: aText [
-	sourceText text: aText
+{ #category : #formatting }
+MiSourceTextBrowser >> reRenderText [ 
+
+	textRenderer reRenderText
+]
+
+{ #category : #formatting }
+MiSourceTextBrowser >> renderTextFor: anEntity [
+
+	textRenderer renderTextFor: anEntity
+]
+
+{ #category : #settings }
+MiSourceTextBrowser >> settingsModel [
+
+	^ specModel settings
+]
+
+{ #category : #'private - testing' }
+MiSourceTextBrowser >> textRenderer [
+	^textRenderer
 ]
 
 { #category : #'private - testing' }
@@ -128,9 +173,16 @@ MiSourceTextBrowser >> toolBarExternalEditor: anObject [
 	toolBarExternalEditor := anObject
 ]
 
-{ #category : #actions }
-MiSourceTextBrowser >> updateWindowTitleWith: aName [
+{ #category : #formatting }
+MiSourceTextBrowser >> withRoassalRenderer [
 
-	self withWindowDo: [ :window | 
-		window title: self class title , ' of ' , aName ]
+	self deprecated: 'RoassalRenderer is out of sync with the rest of the code'.
+
+	textRenderer := self instantiate: MiSourceTextRoassalRenderer on: specModel
+]
+
+{ #category : #formatting }
+MiSourceTextBrowser >> withSpecRenderer [
+
+	textRenderer := self instantiate: MiSourceTextSpecRenderer on: specModel
 ]

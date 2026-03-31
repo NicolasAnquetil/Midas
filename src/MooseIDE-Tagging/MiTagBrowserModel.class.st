@@ -1,21 +1,26 @@
 Class {
 	#name : #MiTagBrowserModel,
-	#superclass : #Object,
+	#superclass : #MiAbstractModel,
 	#instVars : [
 		'currentTag',
 		'currentCategory',
 		'mooseModel',
-		'tagBrowser',
 		'entities',
 		'dynamicTags'
 	],
-	#category : #'MooseIDE-Tagging-Browser'
+	#category : #'MooseIDE-Tagging-Model'
 }
 
 { #category : #accessing }
 MiTagBrowserModel >> addCategory: aName [
 
 	self mooseModel createTagCategoryNamed: aName
+]
+
+{ #category : #initialization }
+MiTagBrowserModel >> addDynamicTag: aDynamicTag [
+
+	dynamicTags add: aDynamicTag
 ]
 
 { #category : #accessing }
@@ -40,6 +45,36 @@ MiTagBrowserModel >> allTags [
 		  ifNotNil: [ :model | model allTags ]
 ]
 
+{ #category : #testing }
+MiTagBrowserModel >> createDynamicTag: name description: aText color: aColor category: aCategory query: aQuery [
+
+	| newTag |
+	(name notNil and: [ name isNotEmpty ]) ifFalse: [ ^ self ].
+
+	newTag := MiDynamicTag new.
+	newTag name: name.
+	self addDynamicTag: newTag.
+
+	self setTag: newTag description: aText color: aColor category: aCategory.
+	aQuery
+		ifNotNil: [ newTag query: aQuery ]
+		ifNil: [ newTag query: FQNullQuery new ].
+
+	browser refreshTagList.
+	self currentApplication consumeItem: newTag
+]
+
+{ #category : #testing }
+MiTagBrowserModel >> createTag: name description: aText color: aColor category: aCategory [
+
+	| newTag |
+	newTag := self addTag: name.
+	self setTag: newTag description: aText color: aColor category: aCategory.
+
+	browser refreshTagList.
+	self currentApplication consumeItem: newTag
+]
+
 { #category : #accessing }
 MiTagBrowserModel >> currentCategory [
 
@@ -62,7 +97,7 @@ MiTagBrowserModel >> currentTag [
 { #category : #accessing }
 MiTagBrowserModel >> currentTag: anObject [
 	currentTag := anObject.
-	tagBrowser newTagSelected
+	browser newTagSelected
 ]
 
 { #category : #accessing }
@@ -75,10 +110,55 @@ MiTagBrowserModel >> deleteCurrentTag [
 
 	| tag |
 	tag := currentTag.
-	tag remove.
+	tag isIntent ifTrue: [ 
+		dynamicTags remove: tag.
+		^ tag ]. tag remove.
 	tag categories ifNotEmpty: [ tag categories first removeTag: tag ].
 	self currentTag: nil.
 	^ tag
+]
+
+{ #category : #accessing }
+MiTagBrowserModel >> dynamicTags [
+
+	^ dynamicTags
+]
+
+{ #category : #actions }
+MiTagBrowserModel >> editCurrentDynamicTag: name description: description color: color category: category query: query [
+
+	| tag |
+	tag := self currentTag.
+	tag ifNil: [ ^ self ].
+
+	(name isNil or: [ name isEmpty ]) ifTrue: [ ^ self ].
+
+	tag name: name.
+	self setTag: tag description: description color: color category: category.
+	tag query: query.
+
+	browser refreshTagList.
+	browser refreshDescriptionPage .
+	self currentApplication updateItem: tag
+]
+
+{ #category : #actions }
+MiTagBrowserModel >> editCurrentTag: name description: description color: color category: category [
+
+	| tag |
+	tag := self currentTag.
+	tag ifNil: [ ^ self ].
+
+	(name isNil or: [ name isEmpty ]) ifTrue: [ ^ self ].
+
+	tag name: name.
+	tag categories ifNotEmpty: [ tag removeCategory: tag categories anyOne ].
+	self setTag: tag description: description color: color category: category.
+
+	browser refreshTagList .
+	browser refreshDescriptionPage .
+	self currentApplication updateItem: tag.
+
 ]
 
 { #category : #accessing }
@@ -108,62 +188,17 @@ MiTagBrowserModel >> getTagNamed: tagName [
 		  do: [ nil ]
 ]
 
-{ #category : #accessing }
-MiTagBrowserModel >> iconForTag: aTag [
+{ #category : #initialization }
+MiTagBrowserModel >> initialize [
 
-	| arr |
-	arr := #( 0 0 4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 4278190080 0 0 0 0 0 0 0 0 4278190080 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 0 0 0 0 0 0 0 4278190080 4278190080 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 0 0 0 0 0 0 4278190080 4278190080 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 4278190080 0 0 0 0 0 4278190080 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 4278190080 4278190080 4278190080 0 0 0 0 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 0 0 0 4278190080 4278190080 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 4278190080 4278190080 0 0 0 0 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 4278190080 4278190080 4278190080 0 0 0 0 0 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 4278190080 4278190080 0 0 0 0 0 0 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 4278190080 0 0 0 0 0 0 0 4278190080 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          4278190080 4278190080 4278190080 4278190080 4278190080
-	          0 0 0 0 0 0 ).
-	^ (Form
-		   extent: 25 @ 11
-		   depth: 32
-		   fromArray: arr
-		   offset: 0 @ 0) mapColor: Color black to: (aTag serializedColor
-			   ifEmpty: [ Color transparent ]
-			   ifNotEmpty: [ aTag color ])
+	super initialize.
+	dynamicTags := OrderedCollection new
+]
+
+{ #category : #accessing }
+MiTagBrowserModel >> miSelectedItem [
+
+	^ self entitiesTaggedWithCurrentTag
 ]
 
 { #category : #accessing }
@@ -180,25 +215,31 @@ MiTagBrowserModel >> mooseModel: anAlcixModel [
 	mooseModel := anAlcixModel
 ]
 
-{ #category : #accessing }
-MiTagBrowserModel >> tagBrowser [
+{ #category : #testing }
+MiTagBrowserModel >> setTag: newTag description: aText color: aColor category: aCategory [
 
-	^ tagBrowser
-]
-
-{ #category : #accessing }
-MiTagBrowserModel >> tagBrowser: anObject [
-
-	tagBrowser := anObject
+	(aText notNil and: [ aText isNotEmpty ]) ifTrue: [
+		newTag description: aText ].
+	aColor ifNotNil: [ newTag color: aColor ].
+	aCategory ifNotNil: [
+		aCategory addTag: newTag.
+		newTag addCategory: aCategory ]
 ]
 
 { #category : #accessing }
 MiTagBrowserModel >> tagEntityNotYourself: anEntity [
-	self currentTag = anEntity
-	ifFalse: [self currentTag tagEntity: anEntity]
+
+	self tagEntity: anEntity with: self currentTag
 ]
 
 { #category : #accessing }
 MiTagBrowserModel >> untagEntity: anEntity [
-	anEntity removeTag: self currentTag
+
+	| assoc |
+	assoc := anEntity allTagAssociations
+		         detect: [ :a | a tag = self currentTag ]
+		         ifNone: [ nil ].
+	assoc ifNil: [ ^ self ].
+	browser application removeItem: assoc.
+	assoc remove
 ]

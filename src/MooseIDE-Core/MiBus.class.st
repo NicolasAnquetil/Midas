@@ -1,3 +1,6 @@
+"
+I am a moose entity bus to which registered browsers can ""write"" and ""read"" entities
+"
 Class {
 	#name : #MiBus,
 	#superclass : #Object,
@@ -23,8 +26,10 @@ MiBus >> browsers [
 
 { #category : #actions }
 MiBus >> globallySelect: anEntity [
-	anEntity
-		ifNotNil: [ (self logger newLogFor: anEntity) activateIn: self ]
+
+	anEntity isMooseObject
+		ifTrue: [ (self logger newLogFor: anEntity) activateIn: self ]
+		ifFalse: [ self inform: 'No Moose object to propagate.' ]
 ]
 
 { #category : #initialization }

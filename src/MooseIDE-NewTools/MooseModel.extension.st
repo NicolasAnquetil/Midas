@@ -1,22 +1,30 @@
 Extension { #name : #MooseModel }
 
 { #category : #'*MooseIDE-NewTools' }
-MooseModel >> miNavigationInspectorExtension [
+MooseModel >> miInspectionNavigation: aBuilder [
 
 	<inspectorPresentationOrder: -100 title: 'Navigation'>
-	^ MiModelNavigationBrowser on: self
+	^ aBuilder instantiate: MiMetaModelNavigationBrowser on: self
 ]
 
 { #category : #'*MooseIDE-NewTools' }
-MooseModel >> mooseInterestingEntity [
+MooseModel >> miMetaNavigationItems [
 
-	"Method used in UI. 
-		- For a group with one element, returns this element
-		- For a group, returns a specialized group
-		- For a model, returns the entity storage optimized for runtime."
+	| roots |
+	roots := self metamodel classes.
 
-	self flag:
-		'The entity storage should not be changed here, but in the loader or somewhere else'.
-	self entityStorage forRuntime.
-	^ self
+	^ ((roots
+		    collect: [ :fm3Class |
+			    fm3Class name -> (self
+				     allWithType: fm3Class implementingClass
+				     ofGroupClass: MooseSpecializedGroup) ]
+		    thenReject: [ :association | association value isEmpty ])
+		   sorted: #name ascending) , 
+		((roots
+		    collect: [ :fm3Class |
+			    'Model ' , fm3Class name -> ((self
+				      allWithType: fm3Class implementingClass
+				      ofGroupClass: MooseSpecializedGroup) reject: #isStub) ]
+		    thenReject: [ :association | association value isEmpty ])
+		   sorted: #name ascending)
 ]

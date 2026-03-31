@@ -1,3 +1,7 @@
+"
+I represent a command corresponding to a highlight button in browsers.
+This command allows to highlight changes that have been pushed by the bus last.
+"
 Class {
 	#name : #MiHighlightCommand,
 	#superclass : #MiReceivingModeCommand,
@@ -5,9 +9,21 @@ Class {
 }
 
 { #category : #default }
+MiHighlightCommand class >> defaultDescription [
+	^ 'A mode that allows to highlight in current visualization/state changes just pushed on the bus'
+]
+
+{ #category : #default }
 MiHighlightCommand class >> defaultName [
 
 	^ 'Highlight'
+]
+
+{ #category : #converting }
+MiHighlightCommand class >> registerWith: aBrowser inRoot: aCommandGroup [
+
+	aBrowser canHighlight ifFalse: [ ^ self ].
+	aCommandGroup register: (self forSpecContext: aBrowser)
 ]
 
 { #category : #testing }

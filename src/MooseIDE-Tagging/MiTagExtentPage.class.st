@@ -5,7 +5,7 @@ This is the so called _Extent description_ of the tag
 "
 Class {
 	#name : #MiTagExtentPage,
-	#superclass : #MiPresenter,
+	#superclass : #MiTagPage,
 	#instVars : [
 		'incomingEntitiesFilteringList',
 		'taggedEntitiesLabel',
@@ -13,48 +13,54 @@ Class {
 		'addButton',
 		'addAllButton',
 		'removeButton',
-		'removeAllButton',
-		'tagModel',
-		'tagDescription'
+		'removeAllButton'
 	],
 	#category : #'MooseIDE-Tagging-Browser'
 }
 
+{ #category : #accessing }
+MiTagExtentPage class >> maxNumberOfEntitiesToSort [
+	"If we have a 'small' number of untagged entities we will sort them to be user friendly. But if we have a lot of them, this will just take too much time. In that case we will just not sort them. Here I'm defining the limit, with a magic number for a start, maybe this could be a setting in the future but I'm not sure it brings much value."
+
+	^ 10000
+]
+
 { #category : #action }
 MiTagExtentPage >> add [
 
-	self currentTag ifNil: [ ^ self ].
+	(self currentTag isNil or: [
+		 incomingEntitiesFilteringList selectedItems isEmpty ]) ifTrue: [
+		^ self ].
 
-	incomingEntitiesFilteringList selectedItem ifNotNil: [ :entity | 
-		self tagModel tagEntityNotYourself: entity ].
-	self refreshTaggedEntitiesList
+	incomingEntitiesFilteringList selectedItems do: [ :entity |
+		self model tagEntityNotYourself: entity ].
+
+	self refreshTaggedEntitiesList.
+	self refreshEntitiesList.
+	self refreshBrowserToolbar
 ]
 
 { #category : #action }
 MiTagExtentPage >> addAll [
 
-	self currentTag ifNil: [ ^ self ].
-	incomingEntitiesFilteringList items do: [ :entity | 
-		self tagModel tagEntityNotYourself: entity ].
-	self refreshTaggedEntitiesList
+	self currentTag ifNil: [ ^ self ]. 
+	incomingEntitiesFilteringList items do: [ :entity |
+		self model tagEntityNotYourself: entity ].
+	self refreshTaggedEntitiesList.
+	self refreshEntitiesList.
+	self refreshBrowserToolbar
 ]
 
 { #category : #accessing }
 MiTagExtentPage >> currentTag [
 
-	^ self tagModel currentTag
+	^ self model currentTag
 ]
 
-{ #category : #initialization }
-MiTagExtentPage >> deleteCurrentTag [
+{ #category : #accessing }
+MiTagExtentPage >> incomingEntitiesFilteringList [
 
-	self owner deleteCurrentTag
-]
-
-{ #category : #action }
-MiTagExtentPage >> editCurrentTag [
-
-	self owner editCurrentTag
+	^ incomingEntitiesFilteringList
 ]
 
 { #category : #initialization }
@@ -77,31 +83,28 @@ MiTagExtentPage >> initializeButtons [
 { #category : #initialization }
 MiTagExtentPage >> initializeLayout [
 
-	self layout: (SpBoxLayout newVertical
-			 spacing: 10;
-			 add: tagDescription expand: false;
-			 add: (SpBoxLayout newHorizontal
-					  spacing: 3;
-					  add: (SpBoxLayout newTopToBottom
-							   spacing: 2;
-							   add: 'Entities queried:' expand: false;
-							   add: incomingEntitiesFilteringList;
-							   yourself);
-					  add: (SpBoxLayout newVertical
-							   spacing: 5;
-							   add: SpNullPresenter new expand: true;
-							   add: addButton expand: false;
-							   add: addAllButton expand: false;
-							   add: removeButton expand: false;
-							   add: removeAllButton expand: false;
-							   add: SpNullPresenter new expand: true;
-							   yourself)
-					  width: 35;
-					  add: (SpBoxLayout newTopToBottom
-							   spacing: 2;
-							   add: 'Entities in tag:' expand: false;
-							   add: taggedEntitiesFilteringList;
-							   yourself);
+	super initializeLayout.
+	self layout add: (SpBoxLayout newHorizontal
+			 spacing: 3;
+			 add: (SpBoxLayout newTopToBottom
+					  spacing: 2;
+					  add: 'Entities queried:' expand: false;
+					  add: incomingEntitiesFilteringList;
+					  yourself);
+			 add: (SpBoxLayout newVertical
+					  spacing: 5;
+					  add: SpNullPresenter new expand: true;
+					  add: addButton expand: false;
+					  add: addAllButton expand: false;
+					  add: removeButton expand: false;
+					  add: removeAllButton expand: false;
+					  add: SpNullPresenter new expand: true;
+					  yourself)
+			 width: 35;
+			 add: (SpBoxLayout newTopToBottom
+					  spacing: 2;
+					  add: 'Entities in tag:' expand: false;
+					  add: taggedEntitiesFilteringList;
 					  yourself);
 			 yourself)
 ]
@@ -109,23 +112,21 @@ MiTagExtentPage >> initializeLayout [
 { #category : #initialization }
 MiTagExtentPage >> initializePresenters [
 
+	super initializePresenters.
 	taggedEntitiesLabel := self newLabel label: 'Entities in tag:'.
-	incomingEntitiesFilteringList := self newFilteringList
-		                                 display: [ :entity | 
-			                                 String streamContents: [ :s | 
+	incomingEntitiesFilteringList := (self instantiate:
+			                                  SpFilteringSelectableListPresenter)
+		                                 display: [ :entity |
+			                                 String streamContents: [ :s |
 					                                 entity displayStringOn: s ] ];
-		                                 displayIcon: [ :entity | 
-			                                 entity mooseIcon ];
 		                                 yourself.
 	self refreshEntitiesList.
-	taggedEntitiesFilteringList := self newFilteringList
-		                               display: [ :entity | 
-			                               String streamContents: [ :s | 
+	taggedEntitiesFilteringList := (self instantiate:
+			                                SpFilteringSelectableListPresenter)
+		                               display: [ :entity |
+			                               String streamContents: [ :s |
 					                               entity displayStringOn: s ] ];
-		                               displayIcon: [ :entity | 
-			                               entity mooseIcon ];
 		                               yourself.
-	tagDescription := self instantiate: MiTagDescription on: tagModel.
 	self refreshTaggedEntitiesList.
 	self initializeButtons.
 	self initializeLayout
@@ -145,68 +146,77 @@ MiTagExtentPage >> onBrowserPageRedisplay [
 { #category : #refreshing }
 MiTagExtentPage >> refresh [
 
-	self refreshTagDescription.
-	self refreshEntitiesList. 
+	super refresh.
+	self refreshEntitiesList.
 	self refreshTaggedEntitiesList.
-	
+	self update
+]
+
+{ #category : #action }
+MiTagExtentPage >> refreshBrowserToolbar [
+
+	self owner owner updateToolbar
 ]
 
 { #category : #refreshing }
 MiTagExtentPage >> refreshEntitiesList [
-	
-	incomingEntitiesFilteringList items: self tagModel entities
-]
 
-{ #category : #refreshing }
-MiTagExtentPage >> refreshTagDescription [
+	| untaggedEntities |
 
-	tagDescription refresh
+	untaggedEntities := self model entities asCollection
+	                    \ self taggedEntities asCollection.
+	untaggedEntities size < self class maxNumberOfEntitiesToSort ifTrue: [
+		untaggedEntities sort: [ :a :b | a name < b name ] ].
+	incomingEntitiesFilteringList items: untaggedEntities
 ]
 
 { #category : #refreshing }
 MiTagExtentPage >> refreshTaggedEntitiesList [
+
 	taggedEntitiesFilteringList items: self taggedEntities
 ]
 
 { #category : #action }
 MiTagExtentPage >> remove [
 
-	self currentTag ifNil: [ ^ self ].
-	taggedEntitiesFilteringList selectedItem ifNotNil: [ :entity | 
-		self tagModel untagEntity: entity ].
-	self refreshTaggedEntitiesList
+	(self currentTag isNil or: [
+		 taggedEntitiesFilteringList selectedItems isEmpty ]) ifTrue: [
+		^ self ].
+
+	taggedEntitiesFilteringList selectedItems do: [ :entity |
+		self model untagEntity: entity ].
+	self refreshTaggedEntitiesList.
+	self refreshEntitiesList.
+	self refreshBrowserToolbar
 ]
 
 { #category : #action }
 MiTagExtentPage >> removeAll [
 
 	self currentTag ifNil: [ ^ self ].
-	taggedEntitiesFilteringList items do: [ :entity | 
-		self tagModel untagEntity: entity ].
-	self refreshTaggedEntitiesList
+	taggedEntitiesFilteringList items do: [ :entity |
+		self model untagEntity: entity ].
+	self refreshTaggedEntitiesList.
+	self refreshEntitiesList.
+	self refreshBrowserToolbar
 ]
 
-{ #category : #initialization }
-MiTagExtentPage >> setModelBeforeInitialization: aTagBrowser [
+{ #category : #accessing }
+MiTagExtentPage >> selectedItems [
 
-	tagModel := aTagBrowser
+	^ taggedEntitiesFilteringList selectedItems
 ]
 
 { #category : #accessing }
 MiTagExtentPage >> setTag: aTag [
 
-	tagDescription setTag: aTag.
+	super setTag: aTag.
 	self update
-]
-
-{ #category : #accessing }
-MiTagExtentPage >> tagModel [
-
-	^ tagModel
 ]
 
 { #category : #accessing }
 MiTagExtentPage >> taggedEntities [
 
-	^ self tagModel entitiesTaggedWithCurrentTag
+	^ self model entitiesTaggedWithCurrentTag sort: [ :a :b | 
+		  a name < b name ]
 ]

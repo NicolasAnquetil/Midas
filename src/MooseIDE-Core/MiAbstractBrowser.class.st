@@ -5,18 +5,19 @@ I provide a toolBar with:
 	- Buttons to inspect and propagate the current selection.
 	- A help button that shows the class comment for each browser. 
 
-Concrete browsers can use my instance variable #model (it can be initialized with #initializeModel).
-They should override:
+Concrete browsers should use my instance variable #model (MVC model, not Moose model).
+It is created by the default #open method on class side. 
+The model should inherit from MiAbstractModel and override:
 Instance side:
-	- #accept: | which entities the browser can receive
-	- #followAction | what to do with the received entity in Follow mode
-	- #highlightAction | what to do with the received entity in Highlight mode
+	- #canFollowEntity: | which entities the browser can receive
+	- #followEntity | what to do with the received entity in Follow mode
+	- #highlightEntity | what to do with the received entity in Highlight mode
 	- #miSelectedItem | entity (or entities) to propagate
 Class side:	
 	- #title | The browser window title
 	- #menuCommandOn: | To be integrated into Midas Browsers menu
 Spec2 methods: 
-	#initializePresenters, #defaultSpec, ...
+	#initializePresenters, #defaultLayout, ...
 
 Please comment your browser as follow: 
 *************************************************
@@ -36,23 +37,96 @@ Class {
 	#name : #MiAbstractBrowser,
 	#superclass : #MiPresenter,
 	#instVars : [
-		'model',
 		'buses',
-		'receivingMode'
+		'receivingMode',
+		'specModel',
+		'inspector'
 	],
 	#category : #'MooseIDE-Core-Browser'
 }
 
-{ #category : #specs }
-MiAbstractBrowser class >> defaultSpec [
+{ #category : #accessing }
+MiAbstractBrowser class >> allBrowsers [
 
-	^ SpBoxLayout newVertical
+	^ self allSubclasses reject: #isAbstract
+]
+
+{ #category : #menu }
+MiAbstractBrowser class >> allBrowsersMenuRoot: aRootMenu action: aBlock [
+
+	(self allBrowsers sortAscending: #menuPriority) do: [ :browserClass |
+		browserClass buildItemInMenu: aRootMenu action: aBlock ].
+
+	^ aRootMenu
+]
+
+{ #category : #keymaps }
+MiAbstractBrowser class >> browserKey [
+
+	"Override with a character to be used after m (for Moose) to open your browser"
+
+	^ nil
+]
+
+{ #category : #menu }
+MiAbstractBrowser class >> buildItemInMenu: aMenuGroupPresenter action: aBlock [
+
+	self isAbstract ifTrue: [ ^ self ].
+
+	aMenuGroupPresenter addItem: [ :item |
+		item
+			name: self title;
+			action: [ aBlock cull: self ];
+			help: self helpMessage;
+			icon: self menuIcon ]
+]
+
+{ #category : #'world menu' }
+MiAbstractBrowser class >> buildMenuItemIn: aBuilder [
+
+	"Method used in subclasses"
+
+	^ (aBuilder item: self menuItem)
+		  parent: self menuParent;
+		  label: self menuLabel;
+		  icon: self menuIcon;
+		  help: self helpMessage;
+		  order: self menuPriority;
+		  action: [ self open ];
+		  keyText: self keyText;
+		  yourself
+]
+
+{ #category : #'world menu' }
+MiAbstractBrowser class >> buildMenuItemIn: aBuilder action: aBlock [
+	"Method used in subclasses"
+
+	^ (aBuilder item: self menuItem)
+		  parent: self menuParent;
+		  label: self menuLabel;
+		  icon: self menuIcon;
+		  help: self helpMessage;
+		  order: self menuPriority;
+		  action: aBlock;
+		  keyText: self keyText;
+		  yourself
+]
+
+{ #category : #'world menu' }
+MiAbstractBrowser class >> famixMenuRoot [
+
+	^ #Famix
 ]
 
 { #category : #'world menu' }
 MiAbstractBrowser class >> helpMessage [
-	^ (self comment lines copyUpTo: '')
-		fold: [ :s1 :s2 | s1 , Character cr asString , s2 ]
+
+	^ self comment ifNil: [ '' ] ifNotNil: [ :comment |
+		  String streamContents: [ :s |
+			  comment lineIndicesDo: [ :start :end :ignored |
+				  start = (end + 1) ifTrue: [ "stop at empty line" ^ s contents ].
+				  start = 1 ifFalse: [ s nextPut: Character cr ].
+				  start to: end do: [ :i | s nextPut: (comment at: i) ] ] ] ]
 ]
 
 { #category : #testing }
@@ -60,51 +134,178 @@ MiAbstractBrowser class >> isAbstract [
 	^ self == MiAbstractBrowser
 ]
 
+{ #category : #testing }
+MiAbstractBrowser class >> isModelImporter [
+	^false
+]
+
+{ #category : #keymaps }
+MiAbstractBrowser class >> keyText [
+
+	^ self browserKey ifNotNil: [ :aCharacter |
+		  'M, {1}' format: { aCharacter asUppercase } ]
+]
+
+{ #category : #'world menu' }
+MiAbstractBrowser class >> menuCodeToolsPriority [
+
+	^ 20
+]
+
 { #category : #'world menu' }
 MiAbstractBrowser class >> menuCommandOn: aBuilder [
+	"Library > Famix > Old browsers"
 
 	<worldMenu>
-	(aBuilder item: self midasBrowserMenuLabel)
-		order: 8;
-		parent: #Moose;
-		icon: MooseIcons mooseIcon
+	(aBuilder item: self oldBrowserMenuRoot)
+		parent: self famixMenuRoot;
+		icon: self menuIcon;
+		order: self menuOldBrowsersPriority
 ]
 
 { #category : #'world menu' }
-MiAbstractBrowser class >> menuMetaCommandOn: aBuilder [
-	"need to be a separate method because of #miBrowsers pragma"
-	<worldMenu>
-	<miBrowsers>
-	(aBuilder item: self metaBrowsersMenuLabel)
-		order: 100;
-		parent: (self midasBrowserMenuLabel);
-		icon: MooseIcons mooseIcon
+MiAbstractBrowser class >> menuIcon [
+
+	^ self iconNamed: self menuIconName
 ]
 
 { #category : #'world menu' }
-MiAbstractBrowser class >> metaBrowsersMenuLabel [
-	^ #Meta
+MiAbstractBrowser class >> menuIconName [
+
+	"Override if needed"
+
+	^ #blank
 ]
 
 { #category : #'world menu' }
-MiAbstractBrowser class >> midasBrowserMenuLabel [
-	^ #'Specialized Browsers'
+MiAbstractBrowser class >> menuItem [
+
+	self subclassResponsibility
+]
+
+{ #category : #'world menu' }
+MiAbstractBrowser class >> menuLabel [
+
+	"Override if necessary"
+
+	^ self title
+]
+
+{ #category : #'world menu' }
+MiAbstractBrowser class >> menuMainToolsPriority [
+
+	^ 0
+]
+
+{ #category : #'world menu' }
+MiAbstractBrowser class >> menuMetaToolsPriority [
+
+	^ 40
+]
+
+{ #category : #'world menu' }
+MiAbstractBrowser class >> menuOldBrowsersPriority [
+
+	^ 200
+]
+
+{ #category : #'world menu' }
+MiAbstractBrowser class >> menuParent [
+
+	"Override if necessary"
+
+	^ self mooseMenuRoot
+]
+
+{ #category : #'world menu' }
+MiAbstractBrowser class >> menuPharoToolsPriority [
+
+	^ 30
+]
+
+{ #category : #'world menu' }
+MiAbstractBrowser class >> menuPriority [
+
+	^ 100
+]
+
+{ #category : #'world menu' }
+MiAbstractBrowser class >> menuVisualizationToolsPriority [
+
+	^ 10
+]
+
+{ #category : #menu }
+MiAbstractBrowser class >> miBrowsersMenuPresenter [
+
+	^ self
+		  allBrowsersMenuRoot: SpMenuPresenter new
+		  action: [ :browserClass | browserClass open ]
+]
+
+{ #category : #'world menu' }
+MiAbstractBrowser class >> mooseMenuRoot [
+
+	^ #Moose
+]
+
+{ #category : #'instance creation' }
+MiAbstractBrowser class >> new [
+
+	^ self on: self newModel
+]
+
+{ #category : #'world menu' }
+MiAbstractBrowser class >> newBrowser: aBrowserClass [
+
+	aBrowserClass open
 ]
 
 { #category : #'instance creation' }
 MiAbstractBrowser class >> newModel [
-	"Override to return a model for your browser"
+	"Override to return a model (in the MVC sense) for your browser"
 
 	^ nil
+]
+
+{ #category : #'world menu' }
+MiAbstractBrowser class >> oldBrowserMenuRoot [
+
+	^ #'Old browsers'
 ]
 
 { #category : #'instance creation' }
 MiAbstractBrowser class >> open [
 
 	^ (self on: self newModel)
-		  openWithSpec;
+		  open;
 		  followBus: self currentApplication defaultBus;
 		  yourself
+]
+
+{ #category : #keymaps }
+MiAbstractBrowser class >> openKeyMap [
+
+	^ self browserKey ifNotNil: [
+		  KMKeymap shortcut: self shortcut action: [ self open ] ]
+]
+
+{ #category : #'instance creation' }
+MiAbstractBrowser class >> openOn: anEntity [
+
+	^ (self on: self newModel)
+		  open;
+		  receiveEntity: anEntity;
+		  beFrozen;
+		  followBus: self currentApplication defaultBus;
+		  yourself
+]
+
+{ #category : #keymaps }
+MiAbstractBrowser class >> shortcut [
+
+	^ self browserKey ifNotNil: [ :aCharacter |
+		  $m shift meta , aCharacter shift meta ]
 ]
 
 { #category : #accessing }
@@ -113,9 +314,28 @@ MiAbstractBrowser class >> taskbarIcon [
 
 ]
 
+{ #category : #accessing }
+MiAbstractBrowser class >> titleForModelName: mooseModelName [
+
+	^ self title , ' (' , mooseModelName , ')'
+]
+
 { #category : #specs }
 MiAbstractBrowser class >> windowSize [
+
 	^ 500 @ 400
+]
+
+{ #category : #testing }
+MiAbstractBrowser >> acceptsDropFileExtension: aString [
+	^false
+]
+
+{ #category : #actions }
+MiAbstractBrowser >> beFrozen [
+
+	self receivingMode: MiFreezeMode.
+	self window updateReceivingModeButtons
 ]
 
 { #category : #'window control' }
@@ -123,9 +343,21 @@ MiAbstractBrowser >> browserClosed [
 	buses do: [ :bus | bus unregisterBrowser: self ]
 ]
 
+{ #category : #'window control' }
+MiAbstractBrowser >> browserCollapsed [
+
+	self beFrozen
+]
+
+{ #category : #'window control' }
+MiAbstractBrowser >> browserExpanded [
+	"should we 'unfroze' ?"
+]
+
 { #category : #accessing }
 MiAbstractBrowser >> buses [
-	^ buses
+
+	^ buses ifNil: [ Set new ]
 ]
 
 { #category : #testing }
@@ -161,26 +393,53 @@ MiAbstractBrowser >> canHighlight [
 MiAbstractBrowser >> canPropagate [
 
 	| entity |
-
+	"Ideally we should use miSelectedItemToPropagate but this would make the models browser really slow since it would copy the whole model and reject the stubs each time I'm called. So we do not care about checking the stubs here by calling #miSelectedItem.."
 	entity := self miSelectedItem.
-	^ entity isMooseObject and: [ 
-		  entity asMooseGroup isNotEmpty or: [ entity isMooseModel ] ]
+	^ (entity isCollection and: [ entity isNotEmpty ]) or: [
+		  entity isMooseObject and: [ entity isCollection not ] ]
+]
+
+{ #category : #testing }
+MiAbstractBrowser >> canTagEntities [
+
+	^ true
+]
+
+{ #category : #'private - for tests' }
+MiAbstractBrowser >> closeSettings [
+	"to close the settings window when testing
+	Should not be used otherwise"
+
+	self hasSettings 
+	ifTrue: [ self model settings window close]
+]
+
+{ #category : #layout }
+MiAbstractBrowser >> defaultLayout [
+
+	^ SpBoxLayout newVertical
+		  add: #mainPresenter;
+		  yourself
 ]
 
 { #category : #buses }
 MiAbstractBrowser >> followBus: aBus [
 
-	(self buses includes: aBus) ifTrue: [ ^ self ].
+	(self buses includes: aBus) ifTrue: [
+		application defaultBus: aBus.
+		^ self ].
+
 	self buses add: aBus.
 	aBus registerBrowser: self.
 	self window ifNotNil: [ :window | window updateBusButton ].
-	self receiveEntity: aBus logger mostRecentEntity
+	self receiveEntity: aBus logger mostRecentEntity.
+	application defaultBus: aBus
 ]
 
 { #category : #actions }
 MiAbstractBrowser >> followEntity: anEntity [
-
-	^ self subclassResponsibility
+   anEntity ifNotNil: [ self updateWindowTitleWith: anEntity ].
+	
 ]
 
 { #category : #actions }
@@ -194,7 +453,19 @@ MiAbstractBrowser >> freezeDuring: aBlock [
 	aBlock ensure: [ receivingMode := previousMode ]
 ]
 
-{ #category : #actions }
+{ #category : #testing }
+MiAbstractBrowser >> hasSettings [
+
+	^false
+]
+
+{ #category : #testing }
+MiAbstractBrowser >> hasVisualization [
+	
+	^ false
+]
+
+{ #category : #highlighting }
 MiAbstractBrowser >> highlightEntity: anEntity [
 
 	"Override to add behavior on highlight. 
@@ -205,7 +476,7 @@ MiAbstractBrowser >> highlightEntity: anEntity [
 
 { #category : #testing }
 MiAbstractBrowser >> ifAutonomous: aBlock [
-
+	
 	self owner isNotNil and: [ 
 		self owner isWindowPresenter ifTrue: aBlock ]
 ]
@@ -223,17 +494,30 @@ MiAbstractBrowser >> initializeWindow: aMiWindowPresenter [
 
 	super initializeWindow: aMiWindowPresenter.
 
-	aMiWindowPresenter buildToolbar.
+	self shouldBuildToolbar ifTrue: [ aMiWindowPresenter buildToolbar ].
 
-	aMiWindowPresenter whenClosedDo: [ 
-		self browserClosed ].
+	aMiWindowPresenter whenClosedDo: [ self browserClosed ].
+	aMiWindowPresenter withAdapterPerformOrDefer: [ :anAdapter |
+		self registerToAdapterEvents: anAdapter ].
 
-	aMiWindowPresenter initialExtent: self class windowSize
+	aMiWindowPresenter initialExtent: self class windowSize.
+	aMiWindowPresenter setContextBindingKeys
+]
+
+{ #category : #'private - for tests' }
+MiAbstractBrowser >> inspector [
+
+	^ inspector ifNil: [ inspector := MiInspectorBrowser ]
 ]
 
 { #category : #testing }
 MiAbstractBrowser >> isMiBrowser [
 	^ true
+]
+
+{ #category : #testing }
+MiAbstractBrowser >> isModelImporter [
+	^self class isModelImporter
 ]
 
 { #category : #accessing }
@@ -243,19 +527,26 @@ MiAbstractBrowser >> miSelectedItem [
 ]
 
 { #category : #accessing }
+MiAbstractBrowser >> miSelectedItemToPropagate [
+	"Hook to be able to add some filters in the model browser."
+
+	^ self miSelectedItem
+]
+
+{ #category : #accessing }
 MiAbstractBrowser >> model [
-	^ model
+	^ specModel
 ]
 
 { #category : #accessing }
 MiAbstractBrowser >> model: anObject [
-	model := anObject
+	specModel := anObject
 ]
 
 { #category : #testing }
 MiAbstractBrowser >> needUpdate: anEntity [
 
-	^ anEntity ~= model selected
+	^ anEntity ~= specModel selected
 ]
 
 { #category : #'private - accessing' }
@@ -279,26 +570,75 @@ MiAbstractBrowser >> receivingMode: aReceivingMode [
 	receivingMode := aReceivingMode
 ]
 
+{ #category : #'window control' }
+MiAbstractBrowser >> registerToAdapterEvents: anAdapter [
+	"spec does not give access to window collapsing/expanding events
+	 This is a hack to get them on Morph backend"
+
+	anAdapter widget announcer when: WindowCollapsed do: [ self browserCollapsed ] for: self.
+	anAdapter widget announcer when: WindowExpanded do: [ self browserExpanded ] for: self
+]
+
+{ #category : #accessing }
+MiAbstractBrowser >> selectedTag [
+
+	^ self model ifNil: [ nil ] ifNotNil: [ :model | model selectedTag ]
+]
+
+{ #category : #accessing }
+MiAbstractBrowser >> selectedTag: aTag [
+
+	self model
+		ifNil: [ nil ]
+		ifNotNil: [ :model | model selectedTag: aTag ].
+	self updateToolbar
+]
+
 { #category : #initialization }
 MiAbstractBrowser >> setDefaultReceivingMode [
 
 	self receivingMode: MiFollowMode
 ]
 
-{ #category : #'accessing - model' }
-MiAbstractBrowser >> setModelBeforeInitialization: aModel [
-	model := aModel
+{ #category : #initialization }
+MiAbstractBrowser >> setModelBeforeInitialization: aBrowserModel [
+	aBrowserModel ifNil: [ ^self ].
+
+	specModel := aBrowserModel.
+	specModel browser: self
 ]
 
 { #category : #actions }
-MiAbstractBrowser >> showHelp [
+MiAbstractBrowser >> settings [
 
-	| help |
-	(help := self newPopover)
-		relativeTo: self window toolbar;
-		bePositionRight;
-		presenter: (MiHelpPopup owner: help on: self);
-		popup
+	self hasSettings ifTrue: [ specModel openSettings ]
+]
+
+{ #category : #testing }
+MiAbstractBrowser >> shouldBuildToolbar [
+
+	^ true
+]
+
+{ #category : #accessing }
+MiAbstractBrowser >> tagList [
+
+	^self model
+		ifNil: [ #() ]
+		ifNotNil: [ :model | model tagList ]
+]
+
+{ #category : #accessing }
+MiAbstractBrowser >> tagName [
+	^self selectedTag
+		ifNil: [ '' ]
+		ifNotNil: [ :tag | tag name ]
+]
+
+{ #category : #actions }
+MiAbstractBrowser >> tagSelectedEntities [
+
+	self model ifNotNil: [ :model | model tagSelectedEntities ]
 ]
 
 { #category : #buses }
@@ -314,4 +654,15 @@ MiAbstractBrowser >> unfollowBus: aBus [
 MiAbstractBrowser >> updateToolbar [
 
 	self window ifNotNil: [ :window | window updateToolbar ]
+]
+
+{ #category : #actions }
+MiAbstractBrowser >> updateWindowTitleWith: anEntity [
+
+	| modelName |
+	modelName := (anEntity isMooseObject and: [ anEntity isMooseModel ])
+		             ifTrue: [ anEntity name ]
+		             ifFalse: [ anEntity printString ].
+	self withWindowDo: [ :window |
+		window title: (self class titleForModelName: modelName) ]
 ]

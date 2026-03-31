@@ -1,7 +1,7 @@
 Extension { #name : #MooseModel }
 
 { #category : #'*MooseIDE-Meta' }
-MooseModel class >> canBeImportedFromFile [
+MooseModel class >> possibleModelsToImportFromFiles [
 
-	^ false
+	^ self withAllSubclasses reject: [ :model | model isDeprecated or: [ model canBeImportedFromFile not ] ]
 ]

@@ -1,8 +1,7 @@
 Class {
 	#name : #MiApplicationTest,
-	#superclass : #TestCase,
+	#superclass : #MiAbstractApplicationTest,
 	#instVars : [
-		'application',
 		'bus'
 	],
 	#category : #'MooseIDE-Tests-Application'
@@ -14,27 +13,17 @@ MiApplicationTest >> alternativeBusName [
 ]
 
 { #category : #running }
-MiApplicationTest >> application [
-	^ MiTestApplication current
-]
-
-{ #category : #running }
 MiApplicationTest >> busName [
 
 	^ 'Not the default bus'
 ]
 
-{ #category : #running }
+{ #category : #initialization }
 MiApplicationTest >> setUp [
-	super setUp.
-	bus := self application busNamed: self busName
-]
 
-{ #category : #running }
-MiApplicationTest >> tearDown [
+	  super setUp.
 
-	self application reset.
-	super tearDown
+	  bus := self application busNamed: self busName
 ]
 
 { #category : #tests }
@@ -60,12 +49,13 @@ MiApplicationTest >> testDefaultBus [
 
 { #category : #tests }
 MiApplicationTest >> testDeleteBus [
-	| initialSize |
+	| initialSize busToDelete |
+	busToDelete := self application buses first.
 	initialSize := self application buses size.
 
-	self application deleteBus: bus.
+	self application deleteBus: busToDelete.
 
-	self deny: (self application buses includes: bus).
+	self deny: (self application buses includes: busToDelete).
 	self assert: self application buses size equals: initialSize - 1
 ]
 
@@ -74,11 +64,134 @@ MiApplicationTest >> testDeleteBusNamed [
 
 	| initialSize |
 	initialSize := self application buses size.
-	self application deleteBusNamed: self busName.
+	
+	self application deleteBusNamed: self application class defaultBusName.
 
 	self deny:
 		(self application buses anySatisfy: [ :app | 
-			 app name = self busName ]).
-	self deny: (self application buses includes: bus).
+			 app name = self application class defaultBusName ]).
 	self assert: self application buses size equals: initialSize - 1
+]
+
+{ #category : #'tests dragNDrop' }
+MiApplicationTest >> testHandleJSONDropEvent [
+	"must reset (i.e. remove) MiApplication singleton instance
+	 for MiTestApplication special handling method to be asked to handle the drop"
+	| dropped wasHandled |
+	wasHandled := false.
+	dropped := Mock named: 'dropped'.
+	(dropped stub wasHandled) will: [ wasHandled := true].
+
+	MiApplication reset.
+	(ExternalDropHandler lookupExternalDropHandler: 'whatever.json' asFileReference)
+		handle: dropped in: nil dropEvent: nil.
+
+	self assert: wasHandled.
+	
+	"recreate MiApplication instance to go back to normal"
+	MiApplication current
+]
+
+{ #category : #'tests dragNDrop' }
+MiApplicationTest >> testJSONRegisteredHandler [
+	"There should be only 2 handlers: MiApplication & MiTestApplication
+	 
+	Other tests may fail and not unregister their MiTestApplication, so we clean first the
+	registeredHandlers, then we recreate a MiTestApplication and we can perfrom the actual test"
+	
+	ExternalDropHandler registeredHandlers copy do: [ :registeredHandler |
+		(registeredHandler handler class = MiTestApplication)
+		ifTrue: [ ExternalDropHandler registeredHandlers remove: registeredHandler ]
+	].
+	application := MiTestApplication new.
+
+	self assert: (ExternalDropHandler registeredHandlers select: [:handler | handler extension = #json]) size equals: 2.
+
+]
+
+{ #category : #'tests dragNDrop' }
+MiApplicationTest >> testMSERegisteredHandler [
+	"There should be only 2 handlers: MiApplication & MiTestApplication
+	 
+	Other tests may fail and not unregister their MiTestApplication, so we clean first the
+	registeredHandlers, then we recreate a MiTestApplication and we can perfrom the actual test"
+	
+	ExternalDropHandler registeredHandlers copy do: [ :registeredHandler |
+		(registeredHandler handler class = MiTestApplication)
+		ifTrue: [ ExternalDropHandler registeredHandlers remove: registeredHandler ]
+	].
+	application := MiTestApplication new.
+
+	self assert: (ExternalDropHandler registeredHandlers select: [:handler | handler extension = #mse]) size equals: 2.
+
+]
+
+{ #category : #tests }
+MiApplicationTest >> testMiPropagate [
+	"This test propagate an entity on the defaultBus and checks otherBuses (if there are any) are not changed"
+	| mooseModel defaultBus otherBuses originalMostRecentEntities newMostRecentEntities |
+	
+	mooseModel := MooseModel new.
+	MooseEntity new mooseModel: mooseModel.
+	defaultBus :=  MiApplication current  buses 
+		detect: [ :b | b name = MiApplication defaultBusName ]
+		ifNone: [ self expectedFailures ].
+	otherBuses := MiApplication current  buses reject: [:b | b = defaultBus].
+
+	originalMostRecentEntities := otherBuses collect: [ :b | b logger mostRecentEntity ]. 
+	
+	mooseModel entities miPropagate.
+	
+	newMostRecentEntities := otherBuses collect: [ :b | b logger mostRecentEntity ]. 	 
+	self assertCollection: originalMostRecentEntities hasSameElements: newMostRecentEntities .
+	
+	self assertCollection:  defaultBus logger mostRecentEntity hasSameElements: mooseModel entities  .
+
+	"Tear down: Removing the entity (as a collection of entities) we propagated on the default bus"
+	defaultBus logger removeLog: ({defaultBus logger mostRecentLog}) .
+	
+]
+
+{ #category : #'tests dragNDrop' }
+MiApplicationTest >> testMooseRootBrowserIsModelImporter [
+	| browser |
+	browser := application openCurrentModelsBrowser.
+	self assert: browser class equals: MiModelsBrowser.
+	browser window close
+]
+
+{ #category : #'tests dragNDrop' }
+MiApplicationTest >> testOpenCurrentModelsBrowser [
+
+	| browser1 browser2 |
+	browser1 := application openCurrentModelsBrowser.
+	self assert: browser1 class equals: MiModelsBrowser.
+
+	"This should not open a new browser but get the first one"
+	browser2 := application openCurrentModelsBrowser.
+	self assert: browser2 class equals: MiModelsBrowser.
+	self assert: browser1 equals: browser2.
+
+	browser1 window close
+]
+
+{ #category : #'tests dragNDrop' }
+MiApplicationTest >> testUnregisterHandler [
+	| jsonHandlers mseHandlers |
+	jsonHandlers := ExternalDropHandler registeredHandlers
+		select: [:handler | handler extension = #json].
+	mseHandlers := ExternalDropHandler registeredHandlers
+		select: [:handler | handler extension = #mse].
+
+	application unregisterForDropFilesEvent.
+
+	self assert:
+		(ExternalDropHandler registeredHandlers
+			select: [:handler | handler extension = #json]) size
+	equals: jsonHandlers size - 1.
+	self assert:
+		(ExternalDropHandler registeredHandlers
+			select: [:handler | handler extension = #mse]) size
+	equals: mseHandlers size - 1.
+
 ]

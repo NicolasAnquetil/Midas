@@ -1,3 +1,8 @@
+"
+I am a bus log browser. I display logs of all buses, each one in a notebook.
+
+Accepted entities: Does not apply.
+"
 Class {
 	#name : #MiLogsBrowser,
 	#superclass : #MiAbstractBrowser,
@@ -11,14 +16,20 @@ Class {
 MiLogsBrowser class >> menuCommandOn: aBuilder [
 
 	<worldMenu>
-	<miBrowsers>
-	(aBuilder item: #Logger)
-		parent: #Moose;
-		label: self title;
-		order: 4;
-		help: self helpMessage;
-		action: [ self open ];
-		withSeparatorAfter
+	<miBrowsersMenu>
+	^ self buildMenuItemIn: aBuilder
+]
+
+{ #category : #'world menu' }
+MiLogsBrowser class >> menuItem [
+
+	^ #Logger
+]
+
+{ #category : #'world menu' }
+MiLogsBrowser class >> menuPriority [
+
+	^ self menuMetaToolsPriority + 1
 ]
 
 { #category : #'instance creation' }
@@ -27,7 +38,7 @@ MiLogsBrowser class >> open [
 	<script>
 	^ (self on: self newModel)
 		  followBuses: self currentApplication buses;
-		  openWithSpec;
+		  open;
 		  updateToolbars;
 		  yourself
 ]
@@ -47,25 +58,24 @@ MiLogsBrowser >> canFollowEntity: anObject [
 ]
 
 { #category : #testing }
-MiLogsBrowser >> canPropagate [
+MiLogsBrowser >> canTagEntities [
 
-	^ self miSelectedItem isMooseObject and: [ 
-		  self miSelectedItem asMooseGroup isNotEmpty or: [ 
-			  self miSelectedItem isMooseModel ] ]
+	^false
 ]
 
 { #category : #buses }
 MiLogsBrowser >> followBus: aBus [
 
-	| busPage |
-	super followBus: aBus.
+	  | busPage |
+	  super followBus: aBus.
 
-	mainPresenter addPage: (busPage := SpNotebookPage
-			            title: aBus name
-			            provider: [ MiBusLogBrowser forBus: aBus ]).
+	  mainPresenter addPage: (busPage := SpNotebookPage
+			              title: aBus name
+			              provider: [ 
+			              MiBusLogBrowser forBus: aBus application: application ]).
 
-	self window ifNotNil: [ mainPresenter selectPage: busPage ].
-	busPage activePresenter ifNotNil: #updateToolbars
+	  self window ifNotNil: [ mainPresenter selectPage: busPage ].
+	  busPage activePresenter ifNotNil: #updateToolbars
 ]
 
 { #category : #buses }
@@ -81,6 +91,12 @@ MiLogsBrowser >> followEntity: anEntity [
 	"Subpresenters are MiBrowsers. They are responsible for entities reception"
 
 	
+]
+
+{ #category : #'accessing - private tests' }
+MiLogsBrowser >> getSelectedPage [
+
+	^ mainPresenter selectedPage
 ]
 
 { #category : #initialization }

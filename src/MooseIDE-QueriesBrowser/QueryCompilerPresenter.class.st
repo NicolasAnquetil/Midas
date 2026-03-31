@@ -3,7 +3,7 @@ I am used in the manual query condigurator presenter. I have a code presenter in
 "
 Class {
 	#name : #QueryCompilerPresenter,
-	#superclass : #SpPresenter,
+	#superclass : #MiPresenter,
 	#instVars : [
 		'submitButton',
 		'codePresenter',
@@ -33,6 +33,12 @@ QueryCompilerPresenter >> compileQuery [
 QueryCompilerPresenter >> initialExtent [
 
 	^ 350 @ 200
+]
+
+{ #category : #initialization }
+QueryCompilerPresenter >> initialize [ 
+	super initialize.
+	codePresenter text: 'FQCollectScriptQuery script: [ :mooseEntity | "Your code here" ]'
 ]
 
 { #category : #initialization }

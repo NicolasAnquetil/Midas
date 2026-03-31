@@ -38,5 +38,6 @@ MiModelUtilityCommand >> canBeExecuted [
 
 { #category : #accessing }
 MiModelUtilityCommand >> model [
+
 	^ self context miSelectedItem
 ]

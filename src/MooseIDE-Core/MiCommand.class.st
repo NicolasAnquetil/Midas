@@ -38,7 +38,7 @@ MiCommand >> asSpecCommand [
 		           name: self class defaultName;
 		           yourself.
 
-	self class defaultShortcut ifNotNil: [ :keyCombination | 
+	self class defaultShortcut ifNotNil: [ :keyCombination |
 		command shortcutKey: keyCombination ].
 
 	^ command

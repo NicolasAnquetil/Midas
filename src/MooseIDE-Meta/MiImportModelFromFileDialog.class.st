@@ -5,22 +5,35 @@ Class {
 		'mooseModelDroplist',
 		'filePathInput',
 		'filePathButton',
-		'importedFile',
 		'modelNameInput',
 		'rootFolderInput',
 		'rootFolderButton',
-		'modelFile'
+		'modelFile',
+		'importingContext',
+		'customEntities',
+		'customEntitiesButton',
+		'allEntitiesButton'
 	],
 	#category : #'MooseIDE-Meta-Import'
 }
 
-{ #category : #'instance creation' }
+{ #category : #accessing }
+MiImportModelFromFileDialog class >> defaultDirectory [
+
+	^ FileLocator home
+]
+
+{ #category : #accessing }
+MiImportModelFromFileDialog class >> fullWindowExtent [
+
+	^ self windowExtent + (0 @ MiImportingContextPresenter windowExtent y)
+]
+
+{ #category : #opening }
 MiImportModelFromFileDialog class >> open [
 
 	<script>
-	^ self new
-		  openDialogWithSpec;
-		  yourself
+	^ super open
 ]
 
 { #category : #accessing }
@@ -32,42 +45,93 @@ MiImportModelFromFileDialog class >> title [
 { #category : #accessing }
 MiImportModelFromFileDialog class >> windowExtent [
 
-	^ 600 @ 220
+	^ 600 @ 250
 ]
 
 { #category : #action }
-MiImportModelFromFileDialog >> defaultDirectory [
+MiImportModelFromFileDialog >> closeEntitiesChoice [
 
-	^ FileLocator home
+	self layout: self defaultLayout.
+
+	self withWindowDo: [ :window |
+		window resize: self class windowExtent ]
 ]
 
-{ #category : #action }
+{ #category : #initialization }
+MiImportModelFromFileDialog >> connectPresenters [
+
+	mooseModelDroplist whenSelectionChangedDo: [ 
+		customEntitiesButton state ifTrue: [ self openEntitiesChoice ] ]
+]
+
+{ #category : #initialization }
+MiImportModelFromFileDialog >> defaultLayout [
+
+	| spacing size labelWidth |
+	spacing := 10.
+	size := 25.
+	labelWidth := 120.
+	^ SpBoxLayout newTopToBottom
+		  spacing: spacing;
+		  add: (SpBoxLayout newLeftToRight
+				   spacing: spacing;
+				   add: 'File path:' width: labelWidth;
+				   add: filePathInput;
+				   add: filePathButton width: size;
+				   yourself)
+		  height: size;
+		  add: (SpBoxLayout newLeftToRight
+				   spacing: spacing;
+				   add: 'Model type:' width: labelWidth;
+				   add: mooseModelDroplist;
+				   yourself)
+		  height: size;
+		  add: (SpBoxLayout newLeftToRight
+				   spacing: spacing;
+				   add: 'Model name:' width: labelWidth;
+				   add: modelNameInput;
+				   add: self newNullPresenter width: size;
+				   yourself)
+		  height: size;
+		  add: (SpBoxLayout newLeftToRight
+				   spacing: spacing;
+				   add: 'Root folder (optional):' width: labelWidth;
+				   add: rootFolderInput;
+				   add: rootFolderButton width: size;
+				   yourself)
+		  height: size;
+		  add: (SpBoxLayout newLeftToRight
+				   spacing: spacing;
+				   add: 'Entity types:' width: labelWidth;
+				   add: allEntitiesButton;
+				   add: customEntitiesButton;
+				   yourself)
+		  height: size;
+		  yourself
+]
+
+{ #category : #private }
 MiImportModelFromFileDialog >> getModelFile [
 
 	| chosenFile |
 	chosenFile := UIManager default
 		              chooseExistingFileReference:
-		              'Select your model source file, MSE or JSON'
-		              extensions: #( 'mse' 'json' )
+		              'Select your model source file'
+		              extensions: FamixAbstractFileImporter knownExtensions
 		              path:
 			              (modelFile
-				               ifNil: [ self defaultDirectory ]
-				               ifNotNil: [ 
+				               ifNil: [ self class defaultDirectory ]
+				               ifNotNil: [
 					               modelFile isFile
 						               ifTrue: [ modelFile parent ]
 						               ifFalse: [ modelFile ] ]).
 
-	chosenFile ifNotNil: [ self updateForModelFile: chosenFile ]
+	chosenFile ifNil: [ ^ self ].
+
+	self tryUpdatingForModelFile:  chosenFile
 ]
 
-{ #category : #action }
-MiImportModelFromFileDialog >> getModelFileFromTextInput [
-
-	filePathInput text ifNotEmpty: [ 
-		self updateForModelFile: filePathInput text asFileReference ]
-]
-
-{ #category : #action }
+{ #category : #private }
 MiImportModelFromFileDialog >> getRootFolder [
 
 	| chosenDirectory |
@@ -77,17 +141,31 @@ MiImportModelFromFileDialog >> getRootFolder [
 		                   path: (rootFolderInput text ifEmpty: [ 
 				                    modelFile
 					                    ifNotNil: [ modelFile parent ]
-					                    ifNil: [ self defaultDirectory ] ]).
+					                    ifNil: [ self class defaultDirectory ] ]).
 
 	chosenDirectory ifNotNil: [ 
 		rootFolderInput text: chosenDirectory asFileReference pathString ]
 ]
 
 { #category : #action }
+MiImportModelFromFileDialog >> handleDropFile: aFileReference [
+
+	self tryUpdatingForModelFile: aFileReference
+]
+
+{ #category : #action }
+MiImportModelFromFileDialog >> handleDropFileAndImport: aFileReference [
+
+	self handleDropFile: aFileReference.
+
+	self importModelThenCloseDialogWindow
+]
+
+{ #category : #action }
 MiImportModelFromFileDialog >> importModel [
 
 	| rootFolder mooseModel |
-	
+
 	"If rootFolderInput isEmpty, rootFolder will be nil. That is expected."
 	rootFolderInput text ifNotEmpty: [ 
 		rootFolder := rootFolderInput text asFileReference.
@@ -99,19 +177,47 @@ MiImportModelFromFileDialog >> importModel [
 	^ mooseModel
 ]
 
+{ #category : #private }
+MiImportModelFromFileDialog >> importerForFile [
+
+	^ (FamixAbstractFileImporter importerFor: modelFile) ifNil: [ 
+		  self error: 'No importer found for this input file' ]
+]
+
+{ #category : #initialization }
+MiImportModelFromFileDialog >> initializeEntitiesSelectionWidgets [
+
+	allEntitiesButton := self newRadioButton
+		                     label: 'All Entities';
+		                     whenActivatedDo: [ 
+			                     importingContext importMaximum ];
+		                     yourself.
+
+	customEntitiesButton := self newRadioButton
+		                        label: 'Custom Entities';
+		                        whenActivatedDo: [ self openEntitiesChoice ];
+		                        whenDeactivatedDo: [ 
+			                        self closeEntitiesChoice ];
+		                        yourself.
+
+	allEntitiesButton associatedRadioButtons: { customEntitiesButton }
+]
+
 { #category : #initialization }
 MiImportModelFromFileDialog >> initializeFilePathWidgets [
 
 	filePathInput := self newTextInput
 		                 placeholder:
-			                 self defaultDirectory asFileReference pathString;
-		                 whenSubmitDo: [ self getModelFileFromTextInput ];
+			                 self class defaultDirectory asFileReference
+				                 pathString;
+		                 whenSubmitDo: [ :modelPath |
+			                 self newFilePathInput: modelPath ];
 		                 help:
 			                 'Tip: to choose a file in the directory of this Pharo image, type ''local/path/to/myFile.mse''';
 		                 yourself.
 
-	filePathInput eventHandler whenFocusLostDo: [ 
-		self getModelFileFromTextInput ].
+	filePathInput eventHandler whenFocusLostDo: [
+		self newFilePathInput: filePathInput text ].
 
 	filePathButton := self newButton
 		                  action: [ self getModelFile ];
@@ -119,92 +225,106 @@ MiImportModelFromFileDialog >> initializeFilePathWidgets [
 ]
 
 { #category : #initialization }
-MiImportModelFromFileDialog >> initializeLayout [
+MiImportModelFromFileDialog >> initializeMooseModelDroplist [
 
-	| spacing size labelWidth |
-	spacing := 10.
-	size := 25.
-	labelWidth := 120.
-	self layout: (SpBoxLayout newTopToBottom
-			 spacing: spacing;
-			 add: (SpBoxLayout newLeftToRight
-					  spacing: spacing;
-					  add: 'Model type:' width: labelWidth;
-					  add: mooseModelDroplist;
-					  yourself)
-			 height: size;
-			 add: (SpBoxLayout newLeftToRight
-					  spacing: spacing;
-					  add: 'File path:' width: labelWidth;
-					  add: filePathInput;
-					  add: filePathButton width: size;
-					  yourself)
-			 height: size;
-			 add: (SpBoxLayout newLeftToRight
-					  spacing: spacing;
-					  add: 'Model name:' width: labelWidth;
-					  add: modelNameInput;
-					  add: self newNullPresenter width: size;
-					  yourself)
-			 height: size;
-			 add: (SpBoxLayout newLeftToRight
-					  spacing: spacing;
-					  add: 'Root folder (optional):' width: labelWidth;
-					  add: rootFolderInput;
-					  add: rootFolderButton width: size;
-					  yourself)
-			 height: size;
-			 yourself)
+	mooseModelDroplist := self newDropList
+		                      items: MooseModel possibleModelsToImportFromFiles;
+		                      whenSelectedItemChangedDo: [ :mooseModelClass |
+			                      importingContext := mooseModelClass importingContextClass new
+				                                          importMaximum;
+				                                          yourself ];
+		                      selectItem: FamixStModel;
+		                      yourself
 ]
 
 { #category : #initialization }
 MiImportModelFromFileDialog >> initializePresenters [
 
 	super initializePresenters.
-
-	mooseModelDroplist := self newDropList
-		                      items:
-			                      (MooseModel withAllSubclasses reject: [ 
-					                       :model | 
-					                       model isDeprecated or: [ 
-							                       model canBeImportedFromFile not ] ]);
-		                      yourself.
-
+	self initializeMooseModelDroplist.
 	self initializeFilePathWidgets.
 
 	modelNameInput := self newTextInput placeholder: 'MooseModel'.
-
 	rootFolderInput := self newTextInput.
 	rootFolderButton := self newButton
 		                    action: [ self getRootFolder ];
 		                    icon: (self iconNamed: #open).
-	self initializeLayout
+
+	self initializeEntitiesSelectionWidgets
+]
+
+{ #category : #'metamodel-guess' }
+MiImportModelFromFileDialog >> metaModelForFile [
+
+	mooseModelDroplist selectItem: (self importerForFile
+			 findPossibleModelClassIn: mooseModelDroplist items
+			 forFile: modelFile)
+]
+
+{ #category : #'instance creation' }
+MiImportModelFromFileDialog >> newFilePathInput: aString [
+
+	| file |
+	aString ifEmpty: [ ^ self ].
+
+	file := aString asFileReference.
+	file isFile ifFalse: [ ^ self ].
+
+	self tryUpdatingForModelFile: file
+]
+
+{ #category : #action }
+MiImportModelFromFileDialog >> openEntitiesChoice [
+
+	customEntities := self
+		                  instantiate: MiImportingContextPresenter
+		                  on: importingContext.
+
+	self withWindowDo: [ :window | "The double #window is a patch for a spec bug. August 2024"
+		window resize: self class fullWindowExtent ].
+
+	self layout: (self defaultLayout
+			 add: customEntities;
+			 yourself).
+
+	"Add style AFTER #layout: or it will be applied to all sub-layouts"
+	customEntities addStyle: 'mooseContainer'
 ]
 
 { #category : #action }
 MiImportModelFromFileDialog >> privateImportModel [
 
-	| model stream |
+	| model importer |
+	importer := self importerForFile.
+
 	model := mooseModelDroplist selectedItem new.
 
-	(modelFile isFile and: [ 
-		 { 'mse'. 'json' } includes: modelFile extension ]) ifFalse: [ 
-		self error: 'Your model file path is incorrect: please specify a MSE or JSON file' ].
-
-	stream := modelFile readStream.
-	modelFile extension = 'mse' ifTrue: [ 
-		model importFromMSEStream: stream ].
-	modelFile extension = 'json' ifTrue: [ 
-		model importFromJSONStream: stream ].
-	stream close.
+	importer new
+		model: model;
+		inputFile: modelFile;
+		runFilteredBy: importingContext.
 
 	model name: (modelNameInput text ifEmpty: [ 'MooseModel' ]).
 
 	^ model
 ]
 
-{ #category : #accessing }
+{ #category : #private }
+MiImportModelFromFileDialog >> tryUpdatingForModelFile: aFile [
+
+	[ self updateForModelFile: aFile ]
+		on: Error
+		do: [ :err |
+			err freeze.
+			MiImportErrorDialog new
+				label: 'Error: ' , err messageText;
+				onCancel: [ err debug ];
+				openDialog ]
+]
+
+{ #category : #private }
 MiImportModelFromFileDialog >> updateForModelFile: aFile [
+	"updates all fileds in the presenter according to new modelFile"
 
 	modelFile := aFile.
 
@@ -212,9 +332,10 @@ MiImportModelFromFileDialog >> updateForModelFile: aFile [
 	modelNameInput text: modelFile basenameWithoutExtension.
 	rootFolderInput text: modelFile asFileReference parent pathString.
 
+	self metaModelForFile
 ]
 
-{ #category : #action }
+{ #category : #private }
 MiImportModelFromFileDialog >> validateImportForm [
 	"checks that required fields are properly filled in"
 	filePathInput text ifEmpty: [ Error signal: 'Please choose an input file' ].

@@ -16,8 +16,16 @@ MiNegationQueryPresenter class >> dropListWidth [
 	^ 57
 ]
 
+{ #category : #'api - actions' }
+MiNegationQueryPresenter >> configureFor: aQuery [
+
+	subqueryDropListPresenter selectItem:
+		(owner queriesListPresenter findPresenterForQuery: aQuery queryToNegate).
+	query := aQuery
+]
+
 { #category : #actions }
-MiNegationQueryPresenter >> computeQuery: selectedPresenter [
+MiNegationQueryPresenter >> configureQuery: selectedPresenter [
 
 	"Sometimes the SpDropListPresenter>>#whenSelectedItemChangedDo: in spec is triggered even though no item were selected. When this happends the selected item is nil. So to avoid crashin we check in an if that the item is not nil. This is an spec problem."
 
@@ -27,21 +35,11 @@ MiNegationQueryPresenter >> computeQuery: selectedPresenter [
 	query runOn: selectedPresenter query parent result
 ]
 
-{ #category : #'api - actions' }
-MiNegationQueryPresenter >> configureFor: aQuery [
-
-	subqueryDropListPresenter selectItem:
-		(owner queriesListPresenter findPresenterForQuery: aQuery queryToNegate).
-	query := aQuery
-]
-
 { #category : #initialization }
 MiNegationQueryPresenter >> initialize [
 
 	super initialize.
-	owner queriesListPresenter announcer
-		when: QueriesListChangedAnnouncement
-		do: [ self queryPresentersListChanged ]
+	owner queriesListPresenter announcer when: QueriesListChangedAnnouncement do: [ self queryPresentersListChanged ] for: self
 ]
 
 { #category : #initialization }

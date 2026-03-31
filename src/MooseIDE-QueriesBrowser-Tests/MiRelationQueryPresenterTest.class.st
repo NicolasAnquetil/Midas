@@ -22,8 +22,9 @@ MiRelationQueryPresenterTest >> classToTest [
 MiRelationQueryPresenterTest >> createNewQuery [
 
 	| rootQuery |
+
 	rootQuery := FQRootQuery new
-		             result: helper classesAndMethods;
+		             input: helper classesAndMethods;
 		             yourself.
 	^ FQRelationQuery defaultForParent: rootQuery
 ]
@@ -54,7 +55,7 @@ MiRelationQueryPresenterTest >> testPresentersOnImpossibleQuery [
 { #category : #tests }
 MiRelationQueryPresenterTest >> testQueryValidity [
 
-	self assert: presenter query isValid.
+	self deny: presenter query isValid.
 
 	presenter relationsList selectIndex: 2.
 	self assert: presenter query isValid.

@@ -2,7 +2,7 @@
 Root folder explorer.
 Allows to explore the root folder of a model (left panel) and shows the entities contained in each file (right panel).
 
-- Follow: Receives a MooseModel that has a root folder
+- Accepted entities: a MooseModel that has a root folder
 - Highlight: <TODO>
   Entities if present and visible.
   Could highlight the file owning a received entity.
@@ -10,7 +10,7 @@ Allows to explore the root folder of a model (left panel) and shows the entities
 "
 Class {
 	#name : #MiFilesBrowser,
-	#superclass : #MiAbstractFamixBrowser,
+	#superclass : #MiAbstractBrowser,
 	#instVars : [
 		'tree',
 		'treeEntity'
@@ -18,43 +18,54 @@ Class {
 	#category : #'MooseIDE-Famix-FilesBrowser'
 }
 
-{ #category : #specs }
-MiFilesBrowser class >> defaultSpec [
-	^ super defaultSpec
-		add:
-			(SpBoxLayout newHorizontal
-				add: #tree;
-				add: #treeEntity;
-				yourself);
-		yourself
+{ #category : #'world menu' }
+MiFilesBrowser class >> menuCommandOn: aBuilder [
+
+	<worldMenu>
+	<miBrowsersMenu>
+	^ self buildMenuItemIn: aBuilder
 ]
 
 { #category : #'world menu' }
-MiFilesBrowser class >> menuCommandOn: aBuilder [
-	<worldMenu>
-	<miBrowsers>
-	(aBuilder item: #FilesBrowser)
-		parent: (self toolbarFamixName);
-		label: (self title);
-		icon: (self iconNamed: #mooseFolder);
-		help: (self helpMessage);
-		order: 3;
-		action: [ self open ]
+MiFilesBrowser class >> menuIconName [
+
+	^ #mooseFolder
+]
+
+{ #category : #'world menu' }
+MiFilesBrowser class >> menuItem [
+
+	^ #FilesBrowser
+]
+
+{ #category : #'world menu' }
+MiFilesBrowser class >> menuParent [
+
+	^ self oldBrowserMenuRoot
+]
+
+{ #category : #'world menu' }
+MiFilesBrowser class >> menuPriority [
+
+	^ self menuOldBrowsersPriority + 3
 ]
 
 { #category : #'instance creation' }
 MiFilesBrowser class >> newModel [
+
 	^ MiFilesModel new
 ]
 
 { #category : #'instance creation' }
 MiFilesBrowser class >> open [
+
 	<script>
 	^ super open
 ]
 
 { #category : #specs }
 MiFilesBrowser class >> title [
+
 	^ 'Files'
 ]
 
@@ -65,6 +76,12 @@ MiFilesBrowser >> canFollowEntity: anObject [
 		  anObject isMooseModel and: [ 
 			  anObject rootFolder isNotNil and: [ 
 				  anObject rootFolder asFileReference exists ] ] ]
+]
+
+{ #category : #testing }
+MiFilesBrowser >> canTagEntities [ 
+	self flag: 'Remove browser ? (issue #810)'.
+	^false
 ]
 
 { #category : #initialization }
@@ -87,6 +104,15 @@ MiFilesBrowser >> connectPresenters [
 				treeEntity roots: (self computeItemsInFileReference: self model fileReference) ] ] 
 ]
 
+{ #category : #layout }
+MiFilesBrowser >> defaultLayout [
+
+	^ self newBoxLayoutLeftToRight
+		  add: tree;
+		  add: treeEntity;
+		  yourself
+]
+
 { #category : #actions }
 MiFilesBrowser >> followEntity: anEntity [
 
@@ -102,7 +128,7 @@ MiFilesBrowser >> initializePresenters [
 	treeEntity := self newTreeTable.
 	treeEntity
 		addColumn: (SpCompositeTableColumn new
-				 addColumn: ((SpImageTableColumn evaluated: #midasIcon)
+				 addColumn: ((SpImageTableColumn evaluated: #mooseIcon)
 						  width: 20;
 						  yourself);
 				 addColumn: (SpStringTableColumn evaluated: #name);
@@ -140,7 +166,7 @@ MiFilesBrowser >> initializeTreeTable [
 { #category : #accessing }
 MiFilesBrowser >> miSelectedItem [
 
-	^ model mooseModel
+	^ specModel mooseModel
 ]
 
 { #category : #refreshing }

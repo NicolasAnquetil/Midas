@@ -1,3 +1,8 @@
+"
+I am a browser displaying logs for a specific bus. I am used by the overview browser as a browser and by the logs browser as a presenter in a notebook.
+
+Accepted entities: Does not apply.
+"
 Class {
 	#name : #MiBusLogBrowser,
 	#superclass : #MiAbstractBrowser,
@@ -9,10 +14,19 @@ Class {
 	#category : #'MooseIDE-Core-Logger'
 }
 
-{ #category : #'instance creation' }
-MiBusLogBrowser class >> forBus: aBus [
+{ #category : #adding }
+MiBusLogBrowser class >> buildItemInMenu: aMenuGroupPresenter action: aBlok [
+	"Do not appear in menu"
 
-	^ self new followBus: aBus
+	
+]
+
+{ #category : #'instance creation' }
+MiBusLogBrowser class >> forBus: aBus application: anApplication [
+
+	^ (self newApplication: anApplication)
+		  followBus: aBus;
+		  yourself
 ]
 
 { #category : #commands }
@@ -35,12 +49,27 @@ MiBusLogBrowser class >> menuCommandGroupFor: presenter [
 ]
 
 { #category : #'instance creation' }
-MiBusLogBrowser class >> openForBus: aBus [
+MiBusLogBrowser class >> openForBus: aBus application: anApplication [
 
-	^ (self forBus: aBus)
-		  openWithSpec;
-		  updateToolbars;
-		  yourself
+	| busLogPresenter |
+	busLogPresenter := (self forBus: aBus application: anApplication)
+		                   open;
+		                   updateToolbars;
+		                   yourself.
+	busLogPresenter owner title: 'Logs of bus: ' , aBus name.
+	^ busLogPresenter
+]
+
+{ #category : #'instance creation' }
+MiBusLogBrowser class >> openForTests: anApplication [
+
+	| busLogPresenter |
+	busLogPresenter := (self forBus: anApplication defaultBus application: anApplication)
+		                   open;
+		                   updateToolbars;
+		                   yourself.
+	busLogPresenter owner title: 'Logs of bus: ' , anApplication defaultBus name.
+	^ busLogPresenter
 ]
 
 { #category : #commands }
@@ -68,6 +97,12 @@ MiBusLogBrowser >> canFollowEntity: anObject [
 	^ true
 ]
 
+{ #category : #testing }
+MiBusLogBrowser >> canTagEntities [
+
+	^false
+]
+
 { #category : #actions }
 MiBusLogBrowser >> clearLogs [
 
@@ -75,18 +110,16 @@ MiBusLogBrowser >> clearLogs [
 	self updateList
 ]
 
-{ #category : #buses }
-MiBusLogBrowser >> followBus: aBus [
-
-	super followBus: aBus.
-	self ifAutonomous: [ 
-		self window title: 'Logs of bus: ' , buses anyOne name ]
-]
-
 { #category : #actions }
 MiBusLogBrowser >> followEntity: anEntity [
 
 	self updateList
+]
+
+{ #category : #'accessing - private tests' }
+MiBusLogBrowser >> getDisplayedList [
+
+	^list
 ]
 
 { #category : #initialization }
@@ -102,7 +135,8 @@ MiBusLogBrowser >> initializePresenters [
 	list
 		display: [ :log | log entity mooseName ];
 		contextMenu: [ self menuCommandGroup asMenuPresenter ];
-		whenSelectedDo: [ :log | self updateToolbars ]
+		whenSelectionChangedDo: [ :log | self updateToolbars ]	;
+		selectionMode: (SpMultipleSelectionMode on: list)
 ]
 
 { #category : #commandGroups }
@@ -128,13 +162,23 @@ MiBusLogBrowser >> menuCommandGroup [
 { #category : #accessing }
 MiBusLogBrowser >> miSelectedItem [
 
-	^ list selectedItem ifNotNil: [ :log | log entity ]
+	| flattened |
+	flattened := OrderedCollection new.
+
+	list selectedItems ifNotNil: [ :logs |
+		logs do: [ :aLog |
+			aLog entity isCollection
+				ifTrue: [ flattened addAll: aLog entity ] 
+				ifFalse: [ flattened add: aLog entity ]
+		]
+	].
+
+	^ flattened 
 ]
 
 { #category : #actions }
 MiBusLogBrowser >> removeSelectedLog [
-
-	self logger removeLog: list selectedItem.
+	self logger removeLog: (list selectedItems).
 	self updateList
 ]
 
@@ -142,13 +186,13 @@ MiBusLogBrowser >> removeSelectedLog [
 MiBusLogBrowser >> updateList [
 
 	| logs |
+	
 	logs := self logger logs.
 
 	list items: logs.
-
+	
 	logs
 		ifEmpty: [ self updateToolbars ]
-		ifNotEmpty: [ list selectFirst ]
 ]
 
 { #category : #updating }
