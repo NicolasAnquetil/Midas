@@ -1,65 +1,80 @@
+"
+I am a moose entity bus to which registered browsers can ""write"" and ""read"" entities
+"
 Class {
-	#name : #MiBus,
-	#superclass : #Object,
+	#name : 'MiBus',
+	#superclass : 'Object',
 	#instVars : [
 		'name',
 		'browsers',
 		'logger'
 	],
-	#category : #'MooseIDE-Core-Application'
+	#category : 'MooseIDE-Core-Application',
+	#package : 'MooseIDE-Core',
+	#tag : 'Application'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 MiBus class >> named: aName [
 	^ self new
 		name: aName;
 		yourself
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MiBus >> browsers [
 	^ browsers
 ]
 
-{ #category : #actions }
+{ #category : 'private' }
 MiBus >> globallySelect: anEntity [
-	anEntity
-		ifNotNil: [ (self logger newLogFor: anEntity) activateIn: self ]
+
+	(self logger newLogFor: anEntity) activateIn: self
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiBus >> initialize [
 	super initialize.
 	browsers := Set new.
 	logger := MiLogger new
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MiBus >> logger [
 	^ logger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MiBus >> name [
 	^ name
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MiBus >> name: anObject [
 	name := anObject
 ]
 
-{ #category : #actions }
+{ #category : 'printing' }
+MiBus >> printOn: aStream [
+
+	super printOn: aStream.
+	aStream
+		nextPutAll: ':''' ;
+		nextPutAll: name ;
+		nextPut: $'
+]
+
+{ #category : 'actions' }
 MiBus >> refreshBrowsersWith: anEntity [
 	self browsers do: [ :browser | browser receiveEntity: anEntity ]
 ]
 
-{ #category : #actions }
+{ #category : 'actions' }
 MiBus >> registerBrowser: aBrowser [
 	browsers add: aBrowser
 ]
 
-{ #category : #actions }
+{ #category : 'actions' }
 MiBus >> unregisterBrowser: aBrowser [
 	browsers remove: aBrowser
 ]

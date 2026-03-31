@@ -1,6 +1,11 @@
+"
+A spec presenter for the toolbar of external editors
+
+It looks for availableMiSourceTextExternalEditors, offer the choice to the user and can send the code of the displayed entity (in the browser) to this external editor, either on demand or automatically
+"
 Class {
-	#name : #MiSourceTextToolBar,
-	#superclass : #SpPresenter,
+	#name : 'MiSourceTextToolBar',
+	#superclass : 'SpPresenter',
 	#instVars : [
 		'btnSend',
 		'lstExternalEditors',
@@ -9,41 +14,43 @@ Class {
 		'chkAutoTransmit',
 		'autoTransmit'
 	],
-	#category : #'MooseIDE-Famix-SourceText'
+	#category : 'MooseIDE-Famix-SourceText',
+	#package : 'MooseIDE-Famix',
+	#tag : 'SourceText'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MiSourceTextToolBar >> autoTransmit [
 	^autoTransmit
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MiSourceTextToolBar >> autoTransmit: aBoolean [
 	autoTransmit := aBoolean 
 ]
 
-{ #category : #action }
+{ #category : 'action' }
 MiSourceTextToolBar >> editExternally [
-	sourceTextBrowser sendTextTo: self externalEditor
+	sourceTextBrowser editExternally: self externalEditor
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MiSourceTextToolBar >> externalEditor [
 	^externalEditor
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MiSourceTextToolBar >> externalEditor: aMiSourceTextExternalEditor [
 	externalEditor := aMiSourceTextExternalEditor 
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiSourceTextToolBar >> initialize [
 	super initialize.
 	self autoTransmit: false.
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiSourceTextToolBar >> initializeLayout [
 
 	self layout: (SpBoxLayout newLeftToRight
@@ -54,7 +61,7 @@ MiSourceTextToolBar >> initializeLayout [
 		yourself)
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiSourceTextToolBar >> initializePresenters [
 
 	btnSend := self newButton 
@@ -80,12 +87,12 @@ MiSourceTextToolBar >> initializePresenters [
 	self initializeLayout
 ]
 
-{ #category : #action }
+{ #category : 'action' }
 MiSourceTextToolBar >> newEntity [
 	self autoTransmit ifTrue: [ self editExternally ]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiSourceTextToolBar >> setModelBeforeInitialization: aSourceTextBrowser [
 	sourceTextBrowser := aSourceTextBrowser 
 ]

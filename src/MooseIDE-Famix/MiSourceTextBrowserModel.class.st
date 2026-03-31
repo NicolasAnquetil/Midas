@@ -1,109 +1,140 @@
 "
 I am a model for the SourceTextBrowser
 
-I take care of getting the source code for an entity and formatting it or setting hyperlinks
+I take care of getting the source code for an entity and ""formatting"" it (actually finding where to apply formats: the highlights)
+
+I also keep the displayedEntity and the selectedEntity (in the source code) if any
 "
 Class {
-	#name : #MiSourceTextBrowserModel,
-	#superclass : #Object,
+	#name : 'MiSourceTextBrowserModel',
+	#superclass : 'MiAbstractModel',
 	#instVars : [
-		'displayed',
-		'selected',
-		'browser'
+		'shouldHighlightChildren',
+		'entity',
+		'renderer'
 	],
-	#category : #'MooseIDE-Famix-SourceText'
+	#category : 'MooseIDE-Famix-SourceText',
+	#package : 'MooseIDE-Famix',
+	#tag : 'SourceText'
 }
 
-{ #category : #accessing }
-MiSourceTextBrowserModel >> browser: aMiBrowser [
-	browser := aMiBrowser 
+{ #category : 'accessing' }
+MiSourceTextBrowserModel class >> defaultConfiguration [
+
+	^ MiSourceTextSettingsConfiguration new
+		  shouldHighlightChildren: self defaultShouldHighlightChildren;
+		  yourself
 ]
 
-{ #category : #formatting }
-MiSourceTextBrowserModel >> createSourceTextReference [
+{ #category : 'as yet unclassified' }
+MiSourceTextBrowserModel class >> defaultShouldHighlightChildren [
 
-	^(displayed sourceText
-		ifEmpty: [ MiSourceTextVoidReference new ]
-		ifNotEmpty: [ MiSourceTextReference new
-			referenceText: displayed sourceText ])
-		referenceEntity: displayed;
-		textBrowser: self;
-		yourself
+	^ true
 ]
 
-{ #category : #accessing }
-MiSourceTextBrowserModel >> displayedEntity [
-	"the entity which source code is shown in the browser"
-	^ displayed
+{ #category : 'settings management' }
+MiSourceTextBrowserModel >> currentConfiguration [
+
+	^ MiSourceTextSettingsConfiguration new
+		  shouldHighlightChildren: shouldHighlightChildren;
+		  yourself
 ]
 
-{ #category : #accessing }
-MiSourceTextBrowserModel >> displayedEntity: anObject [
-	displayed := anObject.
-	selected := anObject
+{ #category : 'settings management' }
+MiSourceTextBrowserModel >> defaultConfiguration [
+
+	^ self class defaultConfiguration
 ]
 
-{ #category : #formatting }
-MiSourceTextBrowserModel >> formatSource [
-	^self createSourceTextReference
-		gatherHighlights;
-		applyHighlights;
-		yourself
+{ #category : 'accessing' }
+MiSourceTextBrowserModel >> displayedEntity: anEntity [
+
+	self selectedEntity: anEntity.
+
+	renderer renderTextFor: anEntity
 ]
 
-{ #category : #formatting }
-MiSourceTextBrowserModel >> formatedSource [
-	^self formatSource referenceText
+{ #category : 'accessing' }
+MiSourceTextBrowserModel >> entities [
+
+	^ entity ifNil: [ #(  ) ] ifNotNil: [ { entity } ]
 ]
 
-{ #category : #formatting }
-MiSourceTextBrowserModel >> highlightInterval: aTextInterval inText: mainText [
-	| start end childEntity |
-	start := aTextInterval first.
-	end := aTextInterval last.
-	childEntity := aTextInterval entity.
-	mainText
-		addAttribute: TextEmphasis underlined from: start to: end ;
-		addAttribute: TextEmphasis italic from: start to: end ;
-		addAttribute: (TextDoIt new
-			actOnClickBlock: [ self selected: childEntity ])  from: start to: end
-		"addAttribute: TextColor black  from: start to: end ".
-				
-	childEntity tags do: [ :tag |
-		mainText
-			addAttribute: (TextBackgroundColor color: (tag color)) from: start to: end
-	]
-
+{ #category : 'accessing' }
+MiSourceTextBrowserModel >> entity: anEntity [
 ]
 
-{ #category : #formatting }
-MiSourceTextBrowserModel >> noSourceCodeMessageFor: anEntity [
-	| text |
-	text := ('There is no source code to show for {1}'
-		format: { anEntity name })
-		asText.
-	text addAttribute: (TextColor red) from: 1 to: 35.
-	^text
+{ #category : 'actions' }
+MiSourceTextBrowserModel >> event: aMouseEvent selectedEntity: anEntity [
+
+	self selectedEntity: anEntity.
+
+	aMouseEvent controlKeyPressed
+		ifTrue: [ anEntity inspect ]
 ]
 
-{ #category : #accessing }
-MiSourceTextBrowserModel >> selected [
-	"an entity selected (clicked upon) in the source code of the #displayedEntity"
-	^ selected
+{ #category : 'testing' }
+MiSourceTextBrowserModel >> hasSettings [
+
+	^ true
 ]
 
-{ #category : #accessing }
-MiSourceTextBrowserModel >> selected: anEntity [
-	selected := anEntity.
-	browser updateToolbar 
+{ #category : 'initialization' }
+MiSourceTextBrowserModel >> initialize [
+	super initialize.
+
+	renderer := MiSourceTextRendererModel new.
+	renderer resetHighlights
 ]
 
-{ #category : #accessing }
+{ #category : 'initialization' }
+MiSourceTextBrowserModel >> initializeSettings [
+
+	shouldHighlightChildren := self class defaultShouldHighlightChildren
+]
+
+{ #category : 'accessing' }
+MiSourceTextBrowserModel >> miSelectedItem [
+
+	^self entities
+]
+
+{ #category : 'accessing' }
+MiSourceTextBrowserModel >> rendererModel [
+
+	^renderer 
+]
+
+{ #category : 'accessing' }
 MiSourceTextBrowserModel >> selectedEntity [
-	^ selected
+	^entity
 ]
 
-{ #category : #accessing }
-MiSourceTextBrowserModel >> sourceText [
-	^ displayed sourceText
+{ #category : 'accessing' }
+MiSourceTextBrowserModel >> selectedEntity: anEntity [
+
+	entity := anEntity.
+	browser updateToolbar
+]
+
+{ #category : 'settings management' }
+MiSourceTextBrowserModel >> settingsPresenterExtent [
+
+	^ 375 @ 200
+]
+
+{ #category : 'accessing' }
+MiSourceTextBrowserModel >> shouldHighlightChildren: aBoolean [
+
+	renderer shouldHighlightChildren: aBoolean 
+]
+
+{ #category : 'settings management' }
+MiSourceTextBrowserModel >> updateFromConfiguration: aConfiguration [
+
+	self shouldHighlightChildren: aConfiguration shouldHighlightChildren.
+
+	entity ifNil: [ ^ self ].
+
+	renderer renderTextFor: entity
 ]

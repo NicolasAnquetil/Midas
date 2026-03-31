@@ -1,10 +1,21 @@
-Extension { #name : #FamixTSourceEntity }
+Extension { #name : 'FamixTSourceEntity' }
 
-{ #category : #'*MooseIDE-Famix' }
-FamixTSourceEntity >> textIntervalForChild: aChildEntity [
-	"receiver is the parent of aChildEntity,
-	returns the child code interval within the receiver's source text"
+{ #category : '*MooseIDE-Famix' }
+FamixTSourceEntity >> inspectionSource: aBuilder [
 
-	^self sourceAnchor
-		ifNotNil: [ :anchor | anchor textIntervalForChild: aChildEntity ]
+	<inspectorPresentationOrder: 3 title: 'SourceText'>
+
+	| rendererModel rendererView |
+	rendererModel := MiSourceTextRendererModel new.
+
+	rendererView := aBuilder instantiate: MiSourceTextSpecRenderer on: rendererModel.
+
+	rendererModel renderTextFor: self.
+	^rendererView 
+]
+
+{ #category : '*MooseIDE-Famix' }
+FamixTSourceEntity >> sourceCodeBoundingEntity [
+
+	^self
 ]

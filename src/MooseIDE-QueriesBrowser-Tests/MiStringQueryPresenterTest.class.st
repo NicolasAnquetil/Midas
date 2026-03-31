@@ -1,10 +1,12 @@
 Class {
-	#name : #MiStringQueryPresenterTest,
-	#superclass : #MiComparativeQueryPresenterTest,
-	#category : #'MooseIDE-QueriesBrowser-Tests-Queries Configuration'
+	#name : 'MiStringQueryPresenterTest',
+	#superclass : 'MiComparativeQueryPresenterTest',
+	#category : 'MooseIDE-QueriesBrowser-Tests-Queries Configuration',
+	#package : 'MooseIDE-QueriesBrowser-Tests',
+	#tag : 'Queries Configuration'
 }
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiStringQueryPresenterTest >> assertSubpresentersAreConfigured [
 
 	self assert: presenter propertyDropList selectedItem equals: self createNewQuery property.
@@ -12,42 +14,56 @@ MiStringQueryPresenterTest >> assertSubpresentersAreConfigured [
 	self assert: presenter comparatorDropList selectedItem equals: self createNewQuery comparator 
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 MiStringQueryPresenterTest >> classToTest [
 	^ MiStringQueryPresenter
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiStringQueryPresenterTest >> createNewQuery [
 
 	| rootQuery |
+
 	rootQuery := FQRootQuery new
-		result: helper classesAndMethods;
-		yourself.
+		             input: helper classesAndMethods;
+		             yourself.
 	^ (FQStringQuery defaultForParent: rootQuery)
-			comparator: #includesSubstring:;
-			property: #name;
-			valueToCompare: 'f';
-			yourself
+		  comparator: #includesSubstring:;
+		  property: #name;
+		  valueToCompare: 'f';
+		  yourself
 ]
 
-{ #category : #running }
+{ #category : 'running' }
+MiStringQueryPresenterTest >> propertyDropList [
+
+	^ presenter instVarNamed: #propertyDropList
+]
+
+{ #category : 'running' }
 MiStringQueryPresenterTest >> queryClass [
 	^ FQStringQuery
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 MiStringQueryPresenterTest >> setUp [
 	super setUp.
 	self resetPresenterWithEntities: helper methods
 ]
 
-{ #category : #running }
+{ #category : 'tests' }
+MiStringQueryPresenterTest >> testDropListDefaultSelection [
+
+
+	self assert: self propertyDropList isStartWithSelection.
+]
+
+{ #category : 'running' }
 MiStringQueryPresenterTest >> valueInput [
 	^ 'Server'
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 MiStringQueryPresenterTest >> valueInputClass [
 	^ SpTextInputFieldPresenter
 ]

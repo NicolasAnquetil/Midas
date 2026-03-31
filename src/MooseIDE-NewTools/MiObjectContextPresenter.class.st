@@ -4,23 +4,18 @@ I am a subclass of `StObjectContextPresenter`.
 I force my initialization to be without the evaluator (the code presenter in the below part of the inspector). This is because in `MiInspectorBrowser` the evaluator is not wanted in any case.
 "
 Class {
-	#name : #MiObjectContextPresenter,
-	#superclass : #StObjectContextPresenter,
+	#name : 'MiObjectContextPresenter',
+	#superclass : 'StObjectContextPresenter',
 	#instVars : [
 		'actionBar'
 	],
-	#category : #'MooseIDE-NewTools-Inspector'
+	#category : 'MooseIDE-NewTools-Inspector',
+	#package : 'MooseIDE-NewTools',
+	#tag : 'Inspector'
 }
 
-{ #category : #initialization }
-MiObjectContextPresenter >> initializePresenters [
-
-	view := self model newInspectionView.
-	self intializePresentersWithBetterEvaluator
-]
-
-{ #category : #initialization }
-MiObjectContextPresenter >> intializePresentersWithBetterEvaluator [
+{ #category : 'initialization' }
+MiObjectContextPresenter >> intializePresentersWithEvaluator [
 
 	| mainLayout toogled |
 	toogled := false.

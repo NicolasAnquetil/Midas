@@ -9,72 +9,65 @@ This difference is now implemented as a conditional, we should do it smarter.
 The buses are shown in a SpTable. We don't have action on selection for now. An issue is filled on Spec to add this behavior (https://github.com/pharo-spec/Spec/issues/1122).
 "
 Class {
-	#name : #MiBusesPopup,
-	#superclass : #MiPresenter,
+	#name : 'MiBusesPopup',
+	#superclass : 'SpFilteringSelectableListPresenter',
 	#instVars : [
 		'busesList',
 		'browser'
 	],
-	#category : #'MooseIDE-Core-Browser'
+	#category : 'MooseIDE-Core-Browser',
+	#package : 'MooseIDE-Core',
+	#tag : 'Browser'
 }
 
-{ #category : #specs }
-MiBusesPopup class >> defaultSpec [
-
-	^ SpBoxLayout newTopToBottom
-		  add: #busesList;
-		  yourself
-]
-
-{ #category : #initialization }
-MiBusesPopup >> followNewBusNamed: aName [
+{ #category : 'initialization' }
+MiBusesPopup >> createNewBusNamed: aName [
 
 	| newBus |
 	"Create new bus"
 	newBus := self application busNamed: aName.
 
 	"Follow new bus"
-	browser isMiBrowser ifTrue: [ browser followBus: newBus ].
+	browser followBus: newBus.
 
 	"Update"
-	busesList filterInputPresenter clearContent.
-	busesList items: self application buses
+	self filterInputPresenter clearContent.
+	self items: self application buses.
+	self selectItem: newBus
 ]
 
-{ #category : #initialization }
-MiBusesPopup >> initializePresenters [
+{ #category : 'initialization' }
+MiBusesPopup >> initialize [
 
-	busesList := self newSelectableListForPopoverExtent: 125 @ 150.
-	busesList display: [ :bus | bus name ].
-	busesList items: self application buses.
-	busesList selectItems: browser buses.
-
-	busesList
+	super initialize.
+	self
+		addStyle: 'smallList';
+		display: #name;
+		items: self application buses;
+		selectItems: browser buses copy;
 		onActivation: [ :bus | bus ifNotNil: [ browser followBus: bus ] ];
 		onDeactivation: [ :bus | bus ifNotNil: [ browser unfollowBus: bus ] ].
 
 	self useTextInputForBusCreation
 ]
 
-{ #category : #'accessing - model' }
+{ #category : 'accessing - model' }
 MiBusesPopup >> setModelBeforeInitialization: aBrowser [
+
 	browser := aBrowser
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiBusesPopup >> useTextInputForBusCreation [
-
 	"Do not filter but use text input for bus creation"
 
-	busesList filterInputPresenter placeholder: '+ New bus'.
+	self filterInputPresenter placeholder: '+ New bus'.
 
-	busesList itemFilter: [ :each :pattern | 
+	self itemFilter: [ :each :pattern |
 		true "We do not want to filter anything" ].
 
-	busesList filterInputPresenter whenSubmitDo: [ 
-		self followNewBusNamed: busesList filterInputPresenter text.
-		busesList filterInputPresenter clearContent.
-		busesList
-			items: self application buses;
-			selectItems: browser buses copy ]
+	self filterInputPresenter whenSubmitDo: [ :busName |
+		self createNewBusNamed: busName.
+		self filterInputPresenter clearContent.
+		self items: self application buses ]
 ]

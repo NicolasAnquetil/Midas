@@ -1,100 +1,132 @@
 "
 Shows UML of the received entities.
 
-- Follow: Receives a TypeGroup or entities using TType.
+- Accepted entities: a TypeGroup or entities using TType.
 - Highlight: Entities if present
-- Propagate: The selected entity if there is one
+- Propagate: The selected entity if there is one.
+
+Controls:
+
+* Mouse over to highlight common inner boxes
+* Mouse click to keep the highlight
+* right click over a box, to use the menu
+* right click over the view to use the general menu
+* command+click to use the last tag.
+
+* Mouse left to drag
+* Arrrow keys to move the visualization around
+* Scrolls bars to change the view's position
+* M to collapse or expand the window
+* I to zoom in
+* O to zoom out
+* Moouse Wheel to zoom in/out
+* S to search entities by their name (several search can be applied)
+* R to clear all searches
 "
 Class {
-	#name : #MiUMLBrowser,
-	#superclass : #MiAbstractFamixBrowser,
-	#instVars : [
-		'diagram'
-	],
-	#category : #'MooseIDE-Famix-UML'
+	#name : 'MiUMLBrowser',
+	#superclass : 'MiAbstractVisualizationBrowser',
+	#category : 'MooseIDE-Famix-UML',
+	#package : 'MooseIDE-Famix',
+	#tag : 'UML'
 }
 
-{ #category : #specs }
-MiUMLBrowser class >> defaultSpec [
-	^ super defaultSpec
-		add: #diagram;
-		yourself
+{ #category : 'accessing' }
+MiUMLBrowser class >> mapClass [ 
+
+	^MiUMLVisualization
 ]
 
-{ #category : #'world menu' }
+{ #category : 'world menu' }
 MiUMLBrowser class >> menuCommandOn: aBuilder [
+
 	<worldMenu>
-	<miBrowsers>
-	(aBuilder item: #UMLVisualisationBrowser)
-		parent: (self toolbarFamixName);
-		label: (self title);
-		icon: (self iconNamed: #mooseUml);
-		order: 4;
-		help: (self helpMessage);
-		action: [ self open ]
+	<miBrowsersMenu>
+	^ self buildMenuItemIn: aBuilder
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'world menu' }
+MiUMLBrowser class >> menuIconName [
+
+	^ #mooseUml
+]
+
+{ #category : 'world menu' }
+MiUMLBrowser class >> menuItem [
+
+	^ #UMLVisualisationBrowser
+]
+
+{ #category : 'world menu' }
+MiUMLBrowser class >> menuParent [
+
+	^ self oldBrowserMenuRoot
+]
+
+{ #category : 'world menu' }
+MiUMLBrowser class >> menuPriority [
+
+	^ self menuOldBrowsersPriority + 2
+]
+
+{ #category : 'instance creation' }
 MiUMLBrowser class >> newModel [
 
 	^ MiUMLModel new
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 MiUMLBrowser class >> open [
+
 	<script>
 	^ super open
 ]
 
-{ #category : #specs }
+{ #category : 'specs' }
 MiUMLBrowser class >> title [
+
 	^ 'UML'
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 MiUMLBrowser >> canFollowEntity: anObject [
 
 	^ anObject isMooseObject and: [ 
 		  anObject asMooseSpecializedGroup isKindOf: FamixTypeGroup ]
 ]
 
-{ #category : #testing }
-MiUMLBrowser >> canHighlight [
+{ #category : 'testing' }
+MiUMLBrowser >> canTagEntities [
 
-	^ true
+	^ false
 ]
 
-{ #category : #actions }
+{ #category : 'actions' }
 MiUMLBrowser >> followEntity: anEntity [
 
-	model
+	super followEntity: anEntity.
+	specModel
 		entities: anEntity asMooseSpecializedGroup;
 		unselectAll.
-	diagram
-		rootEntities: model entities;
+	mainPresenter
+		rootEntities: specModel entities;
 		run
 ]
 
-{ #category : #actions }
+{ #category : 'highlighting' }
 MiUMLBrowser >> highlightEntity: anEntity [
 
-	diagram highlightEntities: anEntity asCollection
+	mainPresenter highlightEntities: anEntity asCollection
 ]
 
-{ #category : #initialization }
-MiUMLBrowser >> initializePresenters [
-
-	diagram := self instantiate: MiUML
-]
-
-{ #category : #accessing }
+{ #category : 'accessing' }
 MiUMLBrowser >> miSelectedItem [
 
-	^ (model selected ifNil: [ model entities ]) mooseInterestingEntity
+	^ specModel selected ifNil: [ specModel entities ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MiUMLBrowser >> selected: anEntity [
 
-	model selected: anEntity
+	specModel selected: anEntity
 ]

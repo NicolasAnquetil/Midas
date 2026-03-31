@@ -2,16 +2,18 @@
 A MiSaveQueriesCommandTest is a test class for testing the behavior of MiSaveQueriesCommand
 "
 Class {
-	#name : #MiSaveQueriesCommandTest,
-	#superclass : #TestCase,
+	#name : 'MiSaveQueriesCommandTest',
+	#superclass : 'TestCase',
 	#instVars : [
 		'saver',
 		'fixture'
 	],
-	#category : #'MooseIDE-QueriesBrowser-Tests-Commands'
+	#category : 'MooseIDE-QueriesBrowser-Tests-Commands',
+	#package : 'MooseIDE-QueriesBrowser-Tests',
+	#tag : 'Commands'
 }
 
-{ #category : #running }
+{ #category : 'running' }
 MiSaveQueriesCommandTest >> setUp [
 
 	super setUp.
@@ -19,35 +21,28 @@ MiSaveQueriesCommandTest >> setUp [
 	fixture := SaveQueriesFixture new
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiSaveQueriesCommandTest >> testCopyQueriesReferencesOf [
 
 	| copy original |
 	original := fixture exampleForCopyingQueries.
 	copy := saver copyQueriesReferencesOf: original.
-	
+
 	self assert: copy second parent equals: copy first.
 	self assert: copy third parent equals: copy second.
-	
+
 	self assert: copy first children anyOne equals: copy second.
 	self assert: copy second children anyOne equals: copy third.
-	
-	self deny: copy equals: original.
-	copy
-		with: original
-		do: [ :a :b | self deny: a equals: b ].
-	copy
-		with: original
-		do: [ :a :b | 
-		a parent ifNotNil: [ self deny: a parent equals: b parent ] ].
-	copy
-		with: original
-		do: [ :a :b | 
-		a children
-			ifNotEmpty: [ self deny: a children anyOne equals: b children anyOne ] ]
+
+	self assert: copy equals: original.
+	copy with: original do: [ :a :b |
+		self assert: a equals: b.
+		a parent ifNotNil: [ self assert: a parent equals: b parent ].
+		a children ifNotEmpty: [
+			self assert: a children anyOne equals: b children anyOne ] ]
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiSaveQueriesCommandTest >> testPutChildrenInPlace [
 
 	| sortedQueriesWithChildreInPlace |
@@ -55,34 +50,53 @@ MiSaveQueriesCommandTest >> testPutChildrenInPlace [
 	sortedQueriesWithChildreInPlace := saver putChildrenInPlace: fixture expectedTopologicalOrder.
 
 	self
-		assert: sortedQueriesWithChildreInPlace asOrderedCollection
-		equals: fixture expectedChildrenInPlaceOrder asOrderedCollection
+		assertCollection: sortedQueriesWithChildreInPlace 
+		hasSameElements: fixture expectedChildrenInPlaceOrder 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiSaveQueriesCommandTest >> testTopologicalSortForQueries [
 
-	| query1 query2 complementQuery andQuery resultSize orQuery unSortedQueries
-		sortedQueries query3 complement2 |
+	| query1 query2 complementQuery andQuery resultSize orQuery unSortedQueries sortedQueries query3 complement2 |
 	query1 := FQBooleanQuery property: #isStub.
-	query2 := FQStringQuery property: #name comparator: #includesSubstring: valueToCompare: ''.
-	query3 := FQTypeQuery types: FamixStClass asOrderedCollection.
+	query2 := FQStringQuery
+		          property: #name
+		          comparator: #includesSubstring:
+		          valueToCompare: ''.
+	query3 := FQTypeQuery types: (OrderedCollection with: FamixStClass).
 	complementQuery := FQComplementQuery queryToNegate: query2.
 	complement2 := FQComplementQuery queryToNegate: query3.
-	resultSize := FQResultSizeQuery innerQuery: complementQuery comparator: #> valueToCompare: 9.
-	andQuery := FQIntersectionQuery subqueries: { query1. query2. resultSize }.
-	orQuery := FQUnionQuery subqueries: { andQuery. query1 . complement2}.
+	resultSize := FQResultSizeQuery
+		              innerQuery: complementQuery
+		              comparator: #>
+		              valueToCompare: 9.
+	andQuery := FQIntersectionQuery subqueries: {
+			            query1.
+			            query2.
+			            resultSize }.
+	orQuery := FQUnionQuery subqueries: {
+			           andQuery.
+			           query1.
+			           complement2 }.
 
-	unSortedQueries :=
-		{ orQuery. query1. query2. andQuery. resultSize. complementQuery. query3. complement2 } shuffle.
+	unSortedQueries := {
+		                   orQuery.
+		                   query1.
+		                   query2.
+		                   andQuery.
+		                   resultSize.
+		                   complementQuery.
+		                   query3.
+		                   complement2 } shuffle.
 	sortedQueries := saver topologicalSortForQueries: unSortedQueries.
 
-	self assert: (sortedQueries indexOf: complementQuery) < (sortedQueries indexOf: resultSize).
+	self assert: (sortedQueries indexOf: complementQuery)
+		< (sortedQueries indexOf: resultSize).
 	self assert: sortedQueries nextToLast equals: andQuery.
 	self assert: sortedQueries last equals: orQuery
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiSaveQueriesCommandTest >> testTopologicalSortForQueries2 [
 
 	| sortedQueries |
@@ -90,7 +104,5 @@ MiSaveQueriesCommandTest >> testTopologicalSortForQueries2 [
 	sortedQueries := saver topologicalSortForQueries:
 		                 fixture unsortedQueries.
 
-	self
-		assert: sortedQueries
-		equals: fixture expectedTopologicalOrder asOrderedCollection
+	self assertCollection: sortedQueries hasSameElements: fixture expectedTopologicalOrder
 ]

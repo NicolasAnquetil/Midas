@@ -1,29 +1,36 @@
 Class {
-	#name : #MiFilesModel,
-	#superclass : #Object,
+	#name : 'MiFilesModel',
+	#superclass : 'MiAbstractModel',
 	#instVars : [
 		'fileReference',
 		'mooseModel'
 	],
-	#category : #'MooseIDE-Famix-FilesBrowser'
+	#category : 'MooseIDE-Famix-FilesBrowser',
+	#package : 'MooseIDE-Famix',
+	#tag : 'FilesBrowser'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
+MiFilesModel >> entities [
+	^#()
+]
+
+{ #category : 'accessing' }
 MiFilesModel >> fileReference [
 	^ fileReference
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MiFilesModel >> fileReference: anObject [
 	fileReference := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MiFilesModel >> mooseModel [
 	^ mooseModel
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MiFilesModel >> mooseModel: anObject [
 	mooseModel := anObject
 ]

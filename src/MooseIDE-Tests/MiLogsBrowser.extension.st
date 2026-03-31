@@ -1,11 +1,11 @@
-Extension { #name : #MiLogsBrowser }
+Extension { #name : 'MiLogsBrowser' }
 
-{ #category : #'*MooseIDE-Tests' }
-MiLogsBrowser class >> openForTests [
+{ #category : '*MooseIDE-Tests' }
+MiLogsBrowser class >> openForTests: aTestApplication [
 
-	^ (self newApplication: MiTestApplication current)
-		  followBuses: MiTestApplication current buses;
-		  openWithSpec;
+	^ (self newApplication: aTestApplication)
+		  followBuses: aTestApplication buses;
+		  open;
 		  updateToolbars;
 		  yourself
 ]

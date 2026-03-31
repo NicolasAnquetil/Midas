@@ -1,10 +1,12 @@
 Class {
-	#name : #MiNumericQueryPresenterTest,
-	#superclass : #MiComparativeQueryPresenterTest,
-	#category : #'MooseIDE-QueriesBrowser-Tests-Queries Configuration'
+	#name : 'MiNumericQueryPresenterTest',
+	#superclass : 'MiComparativeQueryPresenterTest',
+	#category : 'MooseIDE-QueriesBrowser-Tests-Queries Configuration',
+	#package : 'MooseIDE-QueriesBrowser-Tests',
+	#tag : 'Queries Configuration'
 }
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiNumericQueryPresenterTest >> assertSubpresentersAreConfigured [
 
 	self assert: presenter propertyDropList selectedItem equals: self createNewQuery property.
@@ -12,35 +14,36 @@ MiNumericQueryPresenterTest >> assertSubpresentersAreConfigured [
 	self assert: presenter comparatorDropList selectedItem equals: self createNewQuery comparator
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 MiNumericQueryPresenterTest >> classToTest [
 	^ MiNumericQueryPresenter
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiNumericQueryPresenterTest >> createNewQuery [
 
 	| rootQuery |
+
 	rootQuery := FQRootQuery new
-		result: helper classesAndMethods;
-		yourself.
+		             input: helper classesAndMethods;
+		             yourself.
 	^ (FQNumericQuery defaultForParent: rootQuery)
-			property: #fanIn;
-			comparator: #>;
-			valueToCompare: 5
+		  property: #fanIn;
+		  comparator: #>;
+		  valueToCompare: 5
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 MiNumericQueryPresenterTest >> queryClass [
 	^ FQNumericQuery
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 MiNumericQueryPresenterTest >> valueInput [
 	^ '5'
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 MiNumericQueryPresenterTest >> valueInputClass [
 	^ SpNumberInputFieldPresenter
 ]

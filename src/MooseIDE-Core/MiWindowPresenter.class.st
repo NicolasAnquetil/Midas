@@ -1,17 +1,23 @@
 Class {
-	#name : #MiWindowPresenter,
-	#superclass : #SpWindowPresenter,
+	#name : 'MiWindowPresenter',
+	#superclass : 'SpWindowPresenter',
 	#instVars : [
 		'toolbarCommandGroup'
 	],
-	#category : #'MooseIDE-Core-Browser'
+	#category : 'MooseIDE-Core-Browser',
+	#package : 'MooseIDE-Core',
+	#tag : 'Browser'
 }
 
-{ #category : #commands }
+{ #category : 'commands' }
 MiWindowPresenter class >> actionsCommandGroupFor: aPresenter [
+	"displayedOnrightSide, therefore in reverse order"
 
 	^ CmCommandGroup forSpec
 		  name: 'Actions';
+		  register:
+			  (MiPropagateMenuCommand forSpecContext: aPresenter)
+				  beDisplayedOnRightSide;
 		  register:
 			  (MiPropagateCommand forSpecContext: aPresenter)
 				  beDisplayedOnRightSide;
@@ -20,7 +26,7 @@ MiWindowPresenter class >> actionsCommandGroupFor: aPresenter [
 				  beDisplayedOnRightSide
 ]
 
-{ #category : #commands }
+{ #category : 'commands' }
 MiWindowPresenter class >> buildCommandsGroupWith: aPresenter forRoot: rootCommandGroup [
 
 	rootCommandGroup
@@ -32,7 +38,33 @@ MiWindowPresenter class >> buildCommandsGroupWith: aPresenter forRoot: rootComma
 		register: (self actionsCommandGroupFor: aPresenter)
 ]
 
-{ #category : #toolbar }
+{ #category : 'commands' }
+MiWindowPresenter class >> buildExtensionCommandsWith: aPresenter forRoot: rootCommandGroup [
+
+	aPresenter canTagEntities ifTrue: [
+		rootCommandGroup register: (self taggingCommandGroupFor: aPresenter) ].
+
+	aPresenter hasSettings ifTrue: [
+		rootCommandGroup register:
+			(MiSettingsCommand forSpecContext: aPresenter)
+				beDisplayedOnRightSide ].
+
+	aPresenter hasVisualization ifTrue: [
+		rootCommandGroup register:
+			(MiExportVisualizationCommand forSpecContext: aPresenter)
+				beDisplayedOnRightSide ]
+]
+
+{ #category : 'commands' }
+MiWindowPresenter class >> taggingCommandGroupFor: aPresenter [
+
+	^ CmCommandGroup forSpec
+		  name: 'Tagging';
+		  register: (MiTagCommand forSpecContext: aPresenter);
+		  register: (MiSelectTagCommand forSpecContext: aPresenter)
+]
+
+{ #category : 'toolbar' }
 MiWindowPresenter >> buildToolbar [
 
 	self toolbar: (self newToolbar
@@ -40,26 +72,33 @@ MiWindowPresenter >> buildToolbar [
 			 yourself)
 ]
 
-{ #category : #toolbar }
+{ #category : 'toolbar' }
 MiWindowPresenter >> defaultCommandsContext [
 
 	^ presenter
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 MiWindowPresenter >> defaultInitialExtent [
 
 	^ 500 @ 400
 ]
 
-{ #category : #toolbar }
+{ #category : 'initialization' }
+MiWindowPresenter >> setContextBindingKeys [
+
+	self contextKeyBindings:
+		(self class actionsCommandGroupFor: presenter) asKMCategory
+]
+
+{ #category : 'toolbar' }
 MiWindowPresenter >> toolbarCommandGroup [
 
 	^ toolbarCommandGroup ifNil: [ 
 		  toolbarCommandGroup := self rootCommandsGroup ]
 ]
 
-{ #category : #toolbar }
+{ #category : 'toolbar' }
 MiWindowPresenter >> updateBusButton [
 
 	| busEditCommand |
@@ -68,12 +107,12 @@ MiWindowPresenter >> updateBusButton [
 		                  ifNone: [ ^ self ].
 	busEditCommand presenter ifNil: [ ^ self ].
 	busEditCommand presenter
-		label: busEditCommand decoratedCommand label;
-		help: busEditCommand decoratedCommand help.
+		label: busEditCommand dynamicName;
+		help: busEditCommand dynamicDescription.
 	busEditCommand updateEnableStatus
 ]
 
-{ #category : #toolbar }
+{ #category : 'toolbar' }
 MiWindowPresenter >> updateReceivingModeButtons [
 
 	(self toolbarCommandGroup commandOrGroupNamed: 'Receiving Mode')
@@ -81,15 +120,39 @@ MiWindowPresenter >> updateReceivingModeButtons [
 		cmd updateIconForMode: presenter receivingMode ]
 ]
 
-{ #category : #toolbar }
-MiWindowPresenter >> updateToolbar [
-
-	self toolbarCommandGroup allCommands do: [ :cmd | 
-		cmd updateEnableStatus ].
+{ #category : 'toolbar' }
+MiWindowPresenter >> updateReceivingModelToolbarButtons [
 
 	(self toolbarCommandGroup
 		 commandOrGroupNamed: 'Receiving Mode'
-		 ifNone: [ ^ self ]) commands do: [ :cmd | 
-		cmd canBeExecuted ifFalse: [ 
+		 ifNone: [ ^ self ]) commands do: [ :cmd |
+		cmd canBeExecuted ifFalse: [
 			cmd presenter icon: (cmd icon lighter: 0.4) ] ]
+]
+
+{ #category : 'toolbar' }
+MiWindowPresenter >> updateTaggingToolbarButton [
+
+	| tagCommand |
+	tagCommand := (self toolbarCommandGroup
+		               commandOrGroupNamed: 'Tagging'
+		               ifNone: [ ^ self ])
+		              commandOrGroupNamed: MiTagCommand defaultName
+		              ifNone: [ ^ self ].
+
+	tagCommand canBeExecuted ifTrue: [
+		tagCommand presenter label: self presenter selectedTag name ].
+	tagCommand presenter icon:
+		(self application iconForTag: self presenter selectedTag)
+]
+
+{ #category : 'toolbar' }
+MiWindowPresenter >> updateToolbar [
+
+	self toolbarCommandGroup allCommands do: [ :cmd |
+		cmd updateEnableStatus ].
+
+	self updateReceivingModelToolbarButtons.
+
+	self updateTaggingToolbarButton
 ]

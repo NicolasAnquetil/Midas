@@ -2,8 +2,8 @@
 Dialog used to import models from Pharo
 "
 Class {
-	#name : #MiImportModelFromSmalltalkDialog,
-	#superclass : #MiImportModelDialog,
+	#name : 'MiImportModelFromSmalltalkDialog',
+	#superclass : 'MiImportModelDialog',
 	#instVars : [
 		'modelNameField',
 		'packagesSelector',
@@ -12,76 +12,59 @@ Class {
 		'classesAndMetaclassesCheckBox',
 		'importSubclassesCheckBox',
 		'computeAttributesTypeCheckBox',
-		'factoryClass',
-		'metamodelCheckBox',
 		'invocationStrategyDroplist',
 		'entitiesToImport',
 		'contextCheckBoxes'
 	],
-	#category : #'MooseIDE-Meta-Import'
+	#category : 'MooseIDE-Meta-Import',
+	#package : 'MooseIDE-Meta',
+	#tag : 'Import'
 }
 
-{ #category : #specs }
-MiImportModelFromSmalltalkDialog class >> defaultSpec [
-
-	^ SpBoxLayout newTopToBottom
-		  spacing: 10;
-		  add: (SpBoxLayout newLeftToRight
-				   add: 'Model name: ' width: 100;
-				   add: #modelNameField;
-				   yourself)
-		  height: self inputTextHeight;
-		  add: 'Select packages: ' height: self inputTextHeight;
-		  add: #packagesSelector;
-		  add: #advancedSettingsButton height: self buttonHeight;
-		  yourself
-]
-
-{ #category : #initialization }
+{ #category : 'accessing' }
 MiImportModelFromSmalltalkDialog class >> fullWindowExtent [
 
 	^ 500 @ 700
 ]
 
-{ #category : #opening }
+{ #category : 'opening' }
 MiImportModelFromSmalltalkDialog class >> open [
 
 	<script>
-	^ self new openDialogWithSpec
+	^ super open
 ]
 
-{ #category : #specs }
+{ #category : 'specs' }
 MiImportModelFromSmalltalkDialog class >> title [
 	^ 'Import model from Pharo image'
 ]
 
-{ #category : #initialization }
+{ #category : 'accessing' }
 MiImportModelFromSmalltalkDialog class >> windowExtent [
 
 	^ 500 @ 400
 ]
 
-{ #category : #action }
+{ #category : 'action' }
 MiImportModelFromSmalltalkDialog >> addContext: aContext [
 
 	entitiesToImport add: aContext.
 
-	(MooseImportingContext entityDependencies at: aContext) do: [ 
+	(FamixStImporterContext entityDependencies at: aContext) do: [ 
 		:dependency | 
 		(contextCheckBoxes detect: [ :checkBox | 
 			 checkBox label = dependency asString ]) state: true ]
 ]
 
-{ #category : #'advanced settings' }
+{ #category : 'advanced settings' }
 MiImportModelFromSmalltalkDialog >> advancedSettingsLayout [
 
 	^ SpBoxLayout newTopToBottom
 		  spacing: 5;
 		  add: (SpGridLayout new
-				   add: #metamodelCheckBox at: 1 @ 1;
 				   add: #computeAttributesTypeCheckBox at: 2 @ 1;
-				   add: #classesAndMetaclassesCheckBox at: 1 @ 2;
-				   add: #importSubclassesCheckBox at: 2 @ 2)
+				   add: #classesAndMetaclassesCheckBox at: 1 @ 1;
+				   add: #importSubclassesCheckBox at: 1 @ 2)
 		  height: 80;
 		  add: 'Select context to import: '
 		  height: self class inputTextHeight;
@@ -94,64 +77,62 @@ MiImportModelFromSmalltalkDialog >> advancedSettingsLayout [
 		  yourself
 ]
 
-{ #category : #action }
+{ #category : 'action' }
 MiImportModelFromSmalltalkDialog >> candidateClass [
 
-	^ CandidateListOperator
+	^ invocationStrategyDroplist selectedItem
 ]
 
-{ #category : #accessing }
-MiImportModelFromSmalltalkDialog >> factoryClass [
+{ #category : 'layout' }
+MiImportModelFromSmalltalkDialog >> defaultLayout [
 
-	^ factoryClass ifNil: [ factoryClass := SmalltalkMetamodelFactory ]
+	^ SpBoxLayout newTopToBottom
+		  spacing: 10;
+		  add: (SpBoxLayout newLeftToRight
+				   add: 'Model name: ' width: 100;
+				   add: modelNameField;
+				   yourself)
+		  height: self class inputTextHeight;
+		  add: 'Select packages: ' height: self class inputTextHeight;
+		  add: packagesSelector;
+		  add: advancedSettingsButton height: self class buttonHeight;
+		  yourself
 ]
 
-{ #category : #accessing }
-MiImportModelFromSmalltalkDialog >> factoryClass: aFactoryClass [
-
-	factoryClass := aFactoryClass
-]
-
-{ #category : #'advanced settings' }
+{ #category : 'advanced settings' }
 MiImportModelFromSmalltalkDialog >> hideAdvancedSettings [
 
 	advancedSettingsButton icon: (self iconNamed: #arrowDown).
-	self withWindowDo: [ :window | 
-		window extent: self class windowExtent ].
-	self layout: self simpleLayout
+	self withWindowDo: [ :window |
+		window resize: self class windowExtent ].
+	self layout: self defaultLayout
 ]
 
-{ #category : #action }
+{ #category : 'action' }
 MiImportModelFromSmalltalkDialog >> importingContext [
 
-	^ MooseImportingContext new importMaximum
+	^ importingContext
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiImportModelFromSmalltalkDialog >> initialize [
 
-	importingContext := MooseImportingContext new.
-	entitiesToImport := MooseImportingContext entityDependencies keys
-		                    asSet.
+	importingContext := FamixStImporterContext new.
+	entitiesToImport := FamixStImporterContext entityDependencies keys asSet.
 	contextCheckBoxes := OrderedCollection new.
 	super initialize
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiImportModelFromSmalltalkDialog >> initializeAdvancedSettingsPresenters [
 
 	self initializeConfigurationCheckBoxes.
 	self initializeInvocationStrategyDroplist
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiImportModelFromSmalltalkDialog >> initializeConfigurationCheckBoxes [
 
-	metamodelCheckBox := self newCheckBox
-		label: 'Use Compatibility Metamodel';
-		whenActivatedDo: [ self factoryClass: SmalltalkCompatibilityMetamodelFactory ];
-		whenDeactivatedDo: [ self factoryClass: SmalltalkMetamodelFactory ].
-	
 	classesAndMetaclassesCheckBox := self newCheckBox
 		label: 'Merge classes and metaclasses';
 		whenActivatedDo: [ importingContext mergeClassAndMetaclass ];
@@ -173,13 +154,13 @@ MiImportModelFromSmalltalkDialog >> initializeConfigurationCheckBoxes [
 		yourself
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiImportModelFromSmalltalkDialog >> initializeEntitiesCheckBoxes [
 
 	| checkBoxesLayout |
 	checkBoxesLayout := SpBoxLayout newLeftToRight.
 
-	((MooseImportingContext entityDependencies keys sort:
+	((FamixStImporterContext entityDependencies keys sort:
 		  #yourself ascending) groupsOf: 5) do: [ :group | 
 		| subLayout |
 		subLayout := SpBoxLayout newVertical.
@@ -197,7 +178,7 @@ MiImportModelFromSmalltalkDialog >> initializeEntitiesCheckBoxes [
 	^ checkBoxesLayout
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiImportModelFromSmalltalkDialog >> initializeInvocationStrategyDroplist [
 
 	invocationStrategyDroplist := self newDropList
@@ -207,16 +188,13 @@ MiImportModelFromSmalltalkDialog >> initializeInvocationStrategyDroplist [
 			yourself
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiImportModelFromSmalltalkDialog >> initializePresenters [
 
 	modelNameField := self newTextInput text: 'MooseModel'.
 
-	packagesSelector := self instantiate: MiListSelector.
-	packagesSelector
-		initialListHeader: 'All packages in the system';
-		selectedListHeader: 'Packages in your model';
-		initialItems: RPackage organizer packageNames.
+	packagesSelector := self instantiate: SpChooserPresenter.
+	packagesSelector sourceItems: self packageOrganizer packageNames.
 
 	advancedSettingsButton := self newToggleButton
 		label: 'Advanced settings';
@@ -227,23 +205,21 @@ MiImportModelFromSmalltalkDialog >> initializePresenters [
 	self initializeAdvancedSettingsPresenters
 ]
 
-{ #category : #action }
+{ #category : 'action' }
 MiImportModelFromSmalltalkDialog >> modelName [
 
 	^ modelNameField text
 ]
 
-{ #category : #action }
+{ #category : 'action' }
 MiImportModelFromSmalltalkDialog >> privateImportModel [
 
 	| mooseModel |
 	self setImportingContext.
 
-	mooseModel := self factoryClass new modelClass named: self modelName.
-
-	MoosePharoImporterTask new
+	FamixStPharoImporterTask new
 		importingContext: self importingContext;
-		model: mooseModel;
+		model: (mooseModel := FamixStModel named: self modelName);
 		addFromPackagesNamed: self selectedPackages;
 		candidateClass: self candidateClass;
 		runWithProgress.
@@ -251,43 +227,53 @@ MiImportModelFromSmalltalkDialog >> privateImportModel [
 	^ mooseModel
 ]
 
-{ #category : #action }
+{ #category : 'action' }
 MiImportModelFromSmalltalkDialog >> removeContext: aContext [
 
 	entitiesToImport remove: aContext.
 
-	(MooseImportingContext entityDependencies select: [ :values | 
+	(FamixStImporterContext entityDependencies select: [ :values | 
 		 values includes: aContext ]) keysDo: [ :dependency | 
 		(contextCheckBoxes detect: [ :checkBox | 
 			 checkBox label = dependency asString ]) state: false ]
 ]
 
-{ #category : #action }
+{ #category : 'action' }
 MiImportModelFromSmalltalkDialog >> selectedPackages [
 
-	^ packagesSelector selectedItems
+	^ packagesSelector chosenItems
 ]
 
-{ #category : #action }
+{ #category : 'action' }
 MiImportModelFromSmalltalkDialog >> setImportingContext [
 
 	entitiesToImport do: [ :each | 
 		importingContext perform: ('import' , each) asSymbol ]
 ]
 
-{ #category : #'advanced settings' }
+{ #category : 'advanced settings' }
 MiImportModelFromSmalltalkDialog >> showAdvancedSettings [
 
 	advancedSettingsButton icon: (self iconNamed: #arrowUp).
-	self withWindowDo: [ :window | 
-		window extent: self class fullWindowExtent ].
+	self withWindowDo: [ :window |
+		window resize: self class fullWindowExtent ].
 	self layout: (self simpleLayout
+			 add: advancedSettingsButton height: self class buttonHeight;
 			 add: self advancedSettingsLayout;
 			 yourself)
 ]
 
-{ #category : #'advanced settings' }
+{ #category : 'advanced settings' }
 MiImportModelFromSmalltalkDialog >> simpleLayout [
 
-	^ self class defaultSpec
+	^ SpBoxLayout newVertical
+]
+
+{ #category : 'action' }
+MiImportModelFromSmalltalkDialog >> validateImportForm [
+
+	"checks that required fields are properly filled in"
+
+	packagesSelector chosenItems ifEmpty: [ Error signal: 'Please select at least one package' ].
+	modelNameField text ifEmpty: [ Error signal: 'Please name the model' ]
 ]

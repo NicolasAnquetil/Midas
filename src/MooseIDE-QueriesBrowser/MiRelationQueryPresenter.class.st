@@ -2,56 +2,66 @@
 The query configuration presenter for `FQRelationQuery`
 "
 Class {
-	#name : #MiRelationQueryPresenter,
-	#superclass : #MiQueryConfiguratorPresenter,
+	#name : 'MiRelationQueryPresenter',
+	#superclass : 'MiQueryConfiguratorPresenter',
 	#instVars : [
 		'relationsList'
 	],
-	#category : #'MooseIDE-QueriesBrowser-Configuration presenters'
+	#category : 'MooseIDE-QueriesBrowser-Configuration presenters',
+	#package : 'MooseIDE-QueriesBrowser',
+	#tag : 'Configuration presenters'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MiRelationQueryPresenter class >> title [
 
 	^ 'Relation Query'
 ]
 
-{ #category : #actions }
-MiRelationQueryPresenter >> computeQuery: anObject [
+{ #category : 'api - actions' }
+MiRelationQueryPresenter >> configureFor: aQuery [
+
+	query := aQuery.
+	self initializeDropListForRelations: { aQuery relationName }.
+	relationsList selectItem: aQuery relationName.
+	query relationName: aQuery relationName
+]
+
+{ #category : 'actions' }
+MiRelationQueryPresenter >> configureQuery: anObject [
 
 	self query relationName: anObject
 ]
 
-{ #category : #'api - actions' }
-MiRelationQueryPresenter >> configureFor: aQuery [
+{ #category : 'initialization' }
+MiRelationQueryPresenter >> initializeDropListForRelations: relationNames [
 
-	relationsList selectItem: aQuery relationName.
-	query relationName: aQuery relationName.
-	query := aQuery
+	relationsList := relationNames
+		                 ifEmpty: [ self noParameterMessage: 'relations' ]
+		                 ifNotEmpty: [ 
+			                 self 
+				                 initializeRelationDroplistForValidQueryRelations:
+				                 relationNames ]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiRelationQueryPresenter >> initializePresenters [
 
-	self initializeRelationsDropList.
+	self initializeDropListForRelations: query availableRelationNames.
 	self initializeLayout
 ]
 
-{ #category : #initialization }
-MiRelationQueryPresenter >> initializeRelationsDropList [
+{ #category : 'initialization' }
+MiRelationQueryPresenter >> initializeRelationDroplistForValidQueryRelations: relationNames [
 
-	relationsList := self query availableRelationNames
-		ifEmpty: [ self noParameterMessage: 'No relations available' ]
-		ifNotEmpty: [ :relationNames | 
-			self newDropList
-				startWithoutSelection;
-				items: relationNames;
-				whenSelectedItemChangedDo: [ :selectedRelationName | 
-					query relationName: selectedRelationName.
-					self notifyQueryChanged ] ]
+	^ self newDropList
+		  startWithoutSelection;
+		  items: relationNames;
+		  whenSelectedItemChangedDo: [ :selectedRelationName | 
+			  self computeQueryAction: selectedRelationName ]
 ]
 
-{ #category : #layout }
+{ #category : 'layout' }
 MiRelationQueryPresenter >> newLayout [
 
 	| padding |

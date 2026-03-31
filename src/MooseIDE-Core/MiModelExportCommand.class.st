@@ -1,10 +1,12 @@
 Class {
-	#name : #MiModelExportCommand,
-	#superclass : #MiCommand,
-	#category : #'MooseIDE-Core-Command'
+	#name : 'MiModelExportCommand',
+	#superclass : 'MiCommand',
+	#category : 'MooseIDE-Core-Command',
+	#package : 'MooseIDE-Core',
+	#tag : 'Command'
 }
 
-{ #category : #converting }
+{ #category : 'converting' }
 MiModelExportCommand class >> asCommandGroupWith: aPresenter [
 
 	| exportCommandGroup |
@@ -17,41 +19,38 @@ MiModelExportCommand class >> asCommandGroupWith: aPresenter [
 	^ exportCommandGroup
 ]
 
-{ #category : #default }
+{ #category : 'default' }
 MiModelExportCommand class >> defaultDescription [
 	^ 'Export this model'
 ]
 
-{ #category : #default }
+{ #category : 'default' }
 MiModelExportCommand class >> defaultName [
 	^ 'Export'
 ]
 
-{ #category : #executing }
+{ #category : 'executing' }
 MiModelExportCommand >> execute [
 	self exportModel: self context miSelectedItem
 ]
 
-{ #category : #executing }
+{ #category : 'executing' }
 MiModelExportCommand >> exportModel: aModel [
+
 	| fileReference |
-	fileReference := UITheme builder
-		chooseForSaveFileReference: 'Choose location'
-		extensions: self fileExtension
-		path: ''.
-	fileReference
-		ifNotNil: [ fileReference
-				writeStreamDo: [ :stream | 
+	fileReference := UITheme builder chooseForSaveFileReference: 'Choose location' extensions: self fileExtension path: nil.
+	fileReference ifNotNil: [
+			fileReference writeStreamDo: [ :stream |
 					self exportModel: aModel toStream: stream.
 					Notification signal: 'Save successful!' ] ]
 ]
 
-{ #category : #executing }
+{ #category : 'executing' }
 MiModelExportCommand >> exportModel: aModel toStream: stream [
 	self subclassResponsibility
 ]
 
-{ #category : #executing }
+{ #category : 'executing' }
 MiModelExportCommand >> fileExtension [
 	^ self subclassResponsibility
 ]

@@ -1,70 +1,74 @@
 Class {
-	#name : #MiSelection,
-	#superclass : #RSInteraction,
+	#name : 'MiSelection',
+	#superclass : 'RSInteraction',
 	#instVars : [
 		'shadowColor',
 		'selectionAction',
 		'marginPercentage'
 	],
-	#category : #'MooseIDE-Visualization'
+	#category : 'MooseIDE-Visualization-Helpers',
+	#package : 'MooseIDE-Visualization',
+	#tag : 'Helpers'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 MiSelection class >> on: selectionAction [
 	^ self new
 		on: selectionAction;
 		yourself
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MiSelection >> key [
 	^ self class name
 ]
 
-{ #category : #hooks }
+{ #category : 'hooks' }
 MiSelection >> marginPercentage [
 	^ marginPercentage ifNil: [ marginPercentage := 0.05 ]
 ]
 
-{ #category : #hooks }
+{ #category : 'hooks' }
 MiSelection >> marginPercentage: aFloat [
 	marginPercentage := aFloat
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 MiSelection >> on: aBlock [
 	selectionAction := aBlock
 ]
 
-{ #category : #hooks }
+{ #category : 'hooks' }
 MiSelection >> onShape: aShape [
 
 	aShape model ifNil: [ ^ self ].
-	aShape when: RSMouseClick do: [ self selection: aShape ]
+	aShape when: RSMouseClick do: [ self selection: aShape ] for: self
 ]
 
-{ #category : #hooks }
+{ #category : 'hooks' }
 MiSelection >> putShadowOn: aShape [
+
 	| shadow |
 	shadow := RSBox new
-		fromRectangle:
-			(aShape encompassingRectangle
-				expandBy: aShape extent * self marginPercentage);
-		paint: self shadowColor;
-		yourself.
+		          fromRectangle: (aShape encompassingRectangle expandBy:
+					           aShape extent * self marginPercentage);
+		          paint: self shadowColor;
+		          yourself.
 	aShape parent addShape: shadow before: aShape.
-	aShape topParent propertyAt: self key put: shadow
+	aShape canvas propertyAt: self key put: shadow
 ]
 
-{ #category : #hooks }
+{ #category : 'hooks' }
 MiSelection >> removeShadowOn: aShape [
-	aShape topParent
+
+	aShape canvas
 		propertyAt: self key
-		ifPresent: [ :shadow |shadow remove ].
+		ifPresent: [ :shadow | shadow remove ]
 ]
 
-{ #category : #hooks }
+{ #category : 'hooks' }
 MiSelection >> selection: aShape [
+
 	self
 		removeShadowOn: aShape;
 		putShadowOn: aShape.
@@ -72,12 +76,12 @@ MiSelection >> selection: aShape [
 	selectionAction value: aShape model
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MiSelection >> shadowColor [
 	^ shadowColor ifNil: [ shadowColor := Color blue alpha: 0.3 ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MiSelection >> shadowColor: aColor [
 	shadowColor := aColor
 ]

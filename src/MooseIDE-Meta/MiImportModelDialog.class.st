@@ -2,26 +2,29 @@
 Abstract class for model import dialogs
 "
 Class {
-	#name : #MiImportModelDialog,
-	#superclass : #SpPresenter,
-	#instVars : [
-		'originBrowser'
-	],
-	#category : #'MooseIDE-Meta-Import'
+	#name : 'MiImportModelDialog',
+	#superclass : 'MiPresenter',
+	#category : 'MooseIDE-Meta-Import',
+	#package : 'MooseIDE-Meta',
+	#tag : 'Import'
 }
 
-{ #category : #opening }
+{ #category : 'opening' }
 MiImportModelDialog class >> open [
-	^ self subclassResponsibility
+
+	<script>
+	^ self new
+		  openDialog;
+		  yourself
 ]
 
-{ #category : #initialization }
+{ #category : 'accessing' }
 MiImportModelDialog class >> windowExtent [
 
 	self subclassResponsibility
 ]
 
-{ #category : #action }
+{ #category : 'action' }
 MiImportModelDialog >> importModel [
 
 	| mooseModel |
@@ -30,51 +33,95 @@ MiImportModelDialog >> importModel [
 	"Check if the model is empty. We are using size to optimize the code."
 	(mooseModel size - (mooseModel allUsing: FamixTSourceLanguage) size)
 		isZero ifTrue: [ 
-		self error: 'You must select at least one package.' ].
+		self error: 'Something is wrong, the imported model appears to be empty' ].
 
 	^ mooseModel
 ]
 
-{ #category : #action }
-MiImportModelDialog >> importModelThenCloseDialogWindow: aDialog [
+{ #category : 'action' }
+MiImportModelDialog >> importModelStep1Import [
 
-	| mooseModel |
-	mooseModel := [ self importModel ] onErrorDo: [ :err | 
-		              UIManager default alert:
-			              'Import error: ' , err messageText.
-		              nil ].
-
-	mooseModel ifNotNil: [ 
-		mooseModel install.
-		aDialog close.
-		self updateBrowserWith: mooseModel ]
+	^ [ self importModel ] onErrorDo: [ :err |
+		    (MorphicUIManager new
+        confirm: ('Import error: ' , err messageText)
+        trueChoice: 'Ignore'
+        falseChoice: nil
+        cancelChoice: 'Debug'
+        default: false)
+    ifNil: [ err pass ]
+	 ifNotNil: [  ].
+	]
 ]
 
-{ #category : #initialization }
+{ #category : 'action' }
+MiImportModelDialog >> importModelStep2Install: mooseModel [
+
+	mooseModel ifNotNil: [
+		mooseModel installWithCache: self shouldCreateCache.
+		self withWindowDo: [ :window | window close ].
+		self updateBrowserWith: mooseModel
+	]
+]
+
+{ #category : 'action' }
+MiImportModelDialog >> importModelThenCloseDialogWindow [
+
+	| mooseModel aJob |
+	[ self validateImportForm ] onErrorDo: [ :err |
+		UIManager default alert: 'Invalid input: ' , err messageText.
+		^ self ].
+
+		aJob := [ :job |
+		        job title: 'Importing model'.
+		        mooseModel := self importModelStep1Import.
+		        job currentValue: 50.
+		        self importModelStep2Install: mooseModel ] asJob.
+
+		[ aJob run ] forkAt: Processor userBackgroundPriority.
+		self withWindowDo: [ :window | window close ].
+	
+
+]
+
+{ #category : 'initialization' }
 MiImportModelDialog >> initializeDialogWindow: aDialog [
 
+	| button |
+	button := nil.
 	aDialog initialExtent: self class windowExtent.
+	button := aDialog addButton: 'Cancel' do: [ :dialog | dialog close ].
 	aDialog
-		addButton: 'Import'
-		do: [ :dialog | self importModelThenCloseDialogWindow: dialog ].
-	aDialog addButton: 'Cancel' do: [ :dialog | dialog close ]
+		 addButton: 'Import'
+		 do: [ self importModelThenCloseDialogWindow ].
 ]
 
-{ #category : #action }
+{ #category : 'action' }
 MiImportModelDialog >> privateImportModel [
 
 	self subclassResponsibility
 ]
 
-{ #category : #'accessing - model' }
-MiImportModelDialog >> setModelBeforeInitialization: aBrowserOrMoosePanel [
+{ #category : 'testing' }
+MiImportModelDialog >> shouldCreateCache [
 
-	originBrowser := aBrowserOrMoosePanel
+	^ self application currentModelsBrowser specModel shouldCreateCache 
 ]
 
-{ #category : #action }
+{ #category : 'action' }
 MiImportModelDialog >> updateBrowserWith: mooseModel [
 
-	originBrowser ifNotNil: [ 
-		originBrowser updateForNewModel: mooseModel ]
+	self application currentModelsBrowser updateForNewModel: mooseModel
+]
+
+{ #category : 'action' }
+MiImportModelDialog >> validateImportForm [
+	"checks that required fields are properly filled in"
+	self subclassResponsibility 
+]
+
+{ #category : 'accessing' }
+MiImportModelDialog >> windowTitle [ 
+
+	^ self class title 
+	
 ]

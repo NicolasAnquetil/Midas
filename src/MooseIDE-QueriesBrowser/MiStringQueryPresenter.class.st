@@ -2,34 +2,38 @@
 A query configuration presenter for the `FQStringQuery`
 "
 Class {
-	#name : #MiStringQueryPresenter,
-	#superclass : #MiPropertyQueryPresenter,
-	#category : #'MooseIDE-QueriesBrowser-Configuration presenters'
+	#name : 'MiStringQueryPresenter',
+	#superclass : 'MiPropertyQueryPresenter',
+	#category : 'MooseIDE-QueriesBrowser-Configuration presenters',
+	#package : 'MooseIDE-QueriesBrowser',
+	#tag : 'Configuration presenters'
 }
 
-{ #category : #actions }
-MiStringQueryPresenter >> computeQuery: pattern [
+{ #category : 'api - actions' }
+MiStringQueryPresenter >> configureFor: aQuery [
+
+	super configureFor: aQuery.
+
+	comparatorDropList selectItem: aQuery comparator.
+	valueInputField text: aQuery valueToCompare
+]
+
+{ #category : 'actions' }
+MiStringQueryPresenter >> configureQuery: pattern [
 
 	self query valueToCompare: pattern
 ]
 
-{ #category : #'api - actions' }
-MiStringQueryPresenter >> configureFor: aQuery [
-
-	propertyDropList selectItem: aQuery property.
-	comparatorDropList selectItem: aQuery comparator.
-	valueInputField text: aQuery valueToCompare.
-	query := aQuery
-]
-
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiStringQueryPresenter >> initializePresenters [
 
 	super initializePresenters.
-	self initializeLayout
+	self initializeLayout.
+	propertyDropList startWithSelection.
+	comparatorDropList class = SpNullPresenter ifFalse: [comparatorDropList startWithSelection]
 ]
 
-{ #category : #layout }
+{ #category : 'layout' }
 MiStringQueryPresenter >> newLayout [
 
 	| padding |
@@ -50,13 +54,12 @@ MiStringQueryPresenter >> newLayout [
 		  yourself
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiStringQueryPresenter >> newValueInputField [
 
 	^ self newTextInput
-		placeholder: 'Pattern';
-		autoAccept: true;
-		whenTextChangedDo: [ :pattern |
-			delayer waitAndRun: [ self computeQueryAction: pattern ] ];
-		yourself
+		  placeholder: 'Pattern';
+		  whenTextChangedDo: [ :pattern | 
+			  delayer waitAndRun: [ self computeQueryAction: pattern ] ];
+		  yourself
 ]

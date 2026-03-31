@@ -2,22 +2,25 @@
 I am used in the manual query condigurator presenter. I have a code presenter in which you can enter some valid query code that I will compile an return the object
 "
 Class {
-	#name : #QueryCompilerPresenter,
-	#superclass : #SpPresenter,
+	#name : 'QueryCompilerPresenter',
+	#superclass : 'MiPresenter',
 	#instVars : [
 		'submitButton',
 		'codePresenter',
-		'configuratorPresenter'
+		'configuratorPresenter',
+		'closeButton'
 	],
-	#category : #'MooseIDE-QueriesBrowser-Widgets'
+	#category : 'MooseIDE-QueriesBrowser-Widgets',
+	#package : 'MooseIDE-QueriesBrowser',
+	#tag : 'Widgets'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 QueryCompilerPresenter >> code [
 	^ codePresenter text
 ]
 
-{ #category : #compiling }
+{ #category : 'compiling' }
 QueryCompilerPresenter >> compileQuery [
 
 	| compiledQuery |
@@ -25,26 +28,36 @@ QueryCompilerPresenter >> compileQuery [
 		evaluate: codePresenter text
 		onCompileError: [ :e | ^ self ]
 		onError: [ :e | e pass ].
-	compiledQuery beChildOf: configuratorPresenter queriesBrowser rootQuery.
+	compiledQuery beChildOf: configuratorPresenter owner specModel rootQuery.
 	^ compiledQuery
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 QueryCompilerPresenter >> initialExtent [
 
 	^ 350 @ 200
 ]
 
-{ #category : #initialization }
-QueryCompilerPresenter >> initializeButtons [
+{ #category : 'initialization' }
+QueryCompilerPresenter >> initialize [ 
+	super initialize.
+	codePresenter text: 'FQCollectScriptQuery script: [ :mooseEntity | "Your code here" ]'
+]
 
+{ #category : 'initialization' }
+QueryCompilerPresenter >> initializeButtons [
+	
 	submitButton := self newButton.
 	submitButton
 		label: 'Submit';
-		icon: (self iconNamed: #smallDoIt)
+		icon: (self iconNamed: #smallDoIt).
+	closeButton := self newButton.
+	closeButton
+		label: 'Close';
+		action: [ self owner dismiss ]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 QueryCompilerPresenter >> initializeCoder [
 
 	codePresenter := self newCode.
@@ -53,12 +66,13 @@ QueryCompilerPresenter >> initializeCoder [
 		beForScripting
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 QueryCompilerPresenter >> initializeLayout [
 
 	| tempLayout |
 	tempLayout := SpBoxLayout newTopToBottom
 		add: (SpBoxLayout newLeftToRight
+			add: closeButton expand: false;
 			addLast: submitButton expand: false;
 			yourself)
 		expand: false;
@@ -74,7 +88,7 @@ QueryCompilerPresenter >> initializeLayout [
 		yourself)
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 QueryCompilerPresenter >> initializePresenters [
 
 	self initializeButtons.
@@ -82,13 +96,13 @@ QueryCompilerPresenter >> initializePresenters [
 	self initializeLayout
 ]
 
-{ #category : #'accessing - model' }
+{ #category : 'accessing - model' }
 QueryCompilerPresenter >> setModelBeforeInitialization: aModel [
 
 	configuratorPresenter := aModel
 ]
 
-{ #category : #compiling }
+{ #category : 'compiling' }
 QueryCompilerPresenter >> submitQueryAction: aBlock [
 
 	submitButton action: aBlock

@@ -1,6 +1,6 @@
-Extension { #name : #MooseAbstractGroup }
+Extension { #name : 'MooseAbstractGroup' }
 
-{ #category : #'*MooseIDE-NewTools' }
+{ #category : '*MooseIDE-NewTools' }
 MooseAbstractGroup >> customNavigationItems [
 
 	| result |
@@ -13,7 +13,7 @@ MooseAbstractGroup >> customNavigationItems [
 	^ result
 ]
 
-{ #category : #'*MooseIDE-NewTools' }
+{ #category : '*MooseIDE-NewTools' }
 MooseAbstractGroup >> details [
 
 	^ String streamContents: [ :s | 
@@ -29,9 +29,10 @@ MooseAbstractGroup >> details [
 				   ifFalse: [ typeName ]) ] ]
 ]
 
-{ #category : #'*MooseIDE-NewTools' }
-MooseAbstractGroup >> miNavigationInspectorExtension [
+{ #category : '*MooseIDE-NewTools' }
+MooseAbstractGroup >> miMetaNavigationItems [
 
-	<inspectorPresentationOrder: 0 title: 'Navigation'>
-	^ MiAbstractGroupNavigationBrowser on: self
+	^ self
+		  reject: [ :entity | entity isNil ]
+		  thenCollect: [ :entity | entity inspectorToString -> entity ]
 ]

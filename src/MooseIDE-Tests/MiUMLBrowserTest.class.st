@@ -1,25 +1,22 @@
 Class {
-	#name : #MiUMLBrowserTest,
-	#superclass : #MiAbstractBrowserTest,
-	#category : #'MooseIDE-Tests-Browsers'
+	#name : 'MiUMLBrowserTest',
+	#superclass : 'MiAbstractBrowserTest',
+	#category : 'MooseIDE-Tests-Browsers',
+	#package : 'MooseIDE-Tests',
+	#tag : 'Browsers'
 }
 
-{ #category : #running }
+{ #category : 'running' }
 MiUMLBrowserTest >> browserClass [
 	^ MiUMLBrowser
 ]
 
-{ #category : #tests }
-MiUMLBrowserTest >> testActivateActionButtons [
-
-	browser actionButtons do: [ :button | self deny: button isEnabled ].
-
-	browser receiveEntity: (FamixStClass named: 'TestClass').
-
-	browser actionButtons do: [ :button | self assert: button isEnabled ]
+{ #category : 'tests' }
+MiUMLBrowserTest >> testCanTagEntities [
+	self deny: browser canTagEntities 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiUMLBrowserTest >> testMiSelectedItem [
 
 	| entityToSelect |
@@ -28,5 +25,6 @@ MiUMLBrowserTest >> testMiSelectedItem [
 	entityToSelect := FamixStClass named: 'TestClass'.
 	browser followEntity: entityToSelect.
 
-	self assert: browser miSelectedItem equals: entityToSelect
+	self assert: browser miSelectedItem size equals: 1.
+	self assert: browser miSelectedItem anyOne equals: entityToSelect
 ]

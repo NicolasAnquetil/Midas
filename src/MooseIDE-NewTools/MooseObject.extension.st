@@ -1,61 +1,38 @@
-Extension { #name : #MooseObject }
+Extension { #name : 'MooseObject' }
 
-{ #category : #'*MooseIDE-NewTools' }
+{ #category : '*MooseIDE-NewTools' }
 MooseObject >> customNavigationItems [
 
 	^ {  }
 ]
 
-{ #category : #'*MooseIDE-NewTools' }
+{ #category : '*MooseIDE-NewTools' }
 MooseObject class >> inspectorToString [
 	^ name
 ]
 
-{ #category : #'*MooseIDE-NewTools' }
-MooseObject >> miFameInspectorExtension [
+{ #category : '*MooseIDE-NewTools' }
+MooseObject >> miInspectionNavigation: aBuilder [
 
-	<inspectorPresentationOrder: 3 title: 'Fame'>
-	^ MiFameExtension on: self
+	<inspectorPresentationOrder: 1 title: 'Navigation'>
+	^ aBuilder instantiate: MiNavigationInspectionTab on: self
 ]
 
-{ #category : #'*MooseIDE-NewTools' }
-MooseObject >> miNavigationInspectorExtension [
-
-	<inspectorPresentationOrder: 0 title: 'Navigation'>
-	^ MiNavigationBrowser on: self
+{ #category : '*MooseIDE-NewTools' }
+MooseObject >> miMetaNavigationItems [
+	^ self mooseDescription allComplexProperties
+		  collect: [ :property |
+				  | value |
+				  value := self valueOfFameProperty: property.
+				 value := self valueOfPropertyForInspector: value.
+				  value isCollection ifTrue: [ value := value asMooseGroup ].
+				  property name -> value ]
+		  thenReject: [ :assoc |
+				  assoc value isNil or: [
+					  assoc value isCollection and: [ assoc value isEmpty ] ] ]
 ]
 
-{ #category : #'*MooseIDE-NewTools' }
-MooseObject >> miPropertiesInspectorExtension [
-
-	<inspectorPresentationOrder: 2 title: 'Moose Properties'>
-	^ MiPropertyExtension on: self
-]
-
-{ #category : #'*MooseIDE-NewTools' }
-MooseObject >> navigationItemsFromAttributes [
-
-	| entity assocs attrs |
-	"returns associations in form name->object for navigation entities obtained from
-	the the meta-model attributes of the item"
-	entity := self mooseInterestingEntity.
-	attrs := entity allDeclaredProperties reject: [ :attribute | 
-		         attribute type isPrimitive ].
-	assocs := attrs collect: [ :anAttribute | 
-		          anAttribute name
-		          -> (entity perform: anAttribute compiledMethod selector) ].
-
-	"filter out nils and empty collections, sort"
-	^ (assocs reject: [ :association | 
-		   association value isNil or: [ 
-			   association value isCollection and: [ association value isEmpty ] ] ]) 
-		  sorted:
-			  [ :a | 
-			  a key formatForNavigationPresentation asLowercase asString ]
-				  ascending
-]
-
-{ #category : #'*MooseIDE-NewTools' }
+{ #category : '*MooseIDE-NewTools' }
 MooseObject >> navigationItemsFromPragmas [
 
 	| pragmaValueAssociations |
@@ -63,17 +40,28 @@ MooseObject >> navigationItemsFromPragmas [
 	the pragma #navigation:"
 	pragmaValueAssociations := (self mooseInterestingEntity
 		                            navigationPragmas sorted:
-		                            [ :pragma | 
-		                            pragma argumentNamed: #navigation ]
-			                            ascending) collect: [ :pragma | 
+		                            [ :pragma |
+		                            pragma argumentNamed: #navigation: ]
+			                            ascending) collect: [ :pragma |
 		                           pragma inspectorToString
-		                           ->
-			                           ([ 
-			                            self mooseInterestingEntity perform:
-				                            pragma methodSelector ] onErrorDo: [ 
-				                            nil ]) mooseInterestingEntity ].
+		                           -> pragma methodSelector ].
 
 	"filter out nils and empty collections, sort"
-	^ pragmaValueAssociations reject: [ :entity | 
-		  entity isNil or: [ entity isCollection and: [ entity isEmpty ] ] ]
+	^ pragmaValueAssociations reject: [ :entity | entity isNil ]
+]
+
+{ #category : '*MooseIDE-NewTools' }
+MooseObject >> valueOfPropertyForInspector: propertyValue [
+
+	propertyValue isCollection ifTrue: [ 
+		^ propertyValue collect: [ :each | self valueOfPropertyForInspector: each ]
+	].
+
+	propertyValue isAssociation ifFalse: [ ^ propertyValue ].
+
+	propertyValue source = self ifFalse: [ ^propertyValue source ].
+
+	^propertyValue target isCollection
+		ifTrue: [ propertyValue target asMooseGroup ]
+		ifFalse: [ propertyValue target ]
 ]

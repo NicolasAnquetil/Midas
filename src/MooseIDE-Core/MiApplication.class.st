@@ -1,35 +1,71 @@
+"
+The spec application for Moose IDE.
+This is a singleton
+"
 Class {
-	#name : #MiApplication,
-	#superclass : #SpApplication,
+	#name : 'MiApplication',
+	#superclass : 'SpApplication',
 	#instVars : [
 		'buses',
 		'defaultBus',
 		'producers',
-		'consumers'
+		'consumers',
+		'dropFileHandlers',
+		'mooseModelsTag',
+		'currentModelsBrowser',
+		'visualizationTimeout'
 	],
-	#classInstVars : [
+	#classVars : [
 		'Current'
 	],
-	#category : #'MooseIDE-Core-Application'
+	#category : 'MooseIDE-Core-Application',
+	#package : 'MooseIDE-Core',
+	#tag : 'Application'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 MiApplication class >> current [
-	^ Current ifNil: [ Current := self new ]
+
+	^ Current ifNil: [ Current := self basicNew initialize ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MiApplication class >> defaultBusName [
+
 	^ 'Default'
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
+MiApplication class >> new [
+
+	self error: 'Do not create another MiApplication'
+]
+
+{ #category : 'class initialization' }
 MiApplication class >> reset [
 	<script>
+	Current ifNotNil: [ [Current unregisterForDropFilesEvent] onErrorDo: [ "ignore" ] ].
 	Current := nil
 ]
 
-{ #category : #brokerage }
+{ #category : 'settings' }
+MiApplication class >> visualizationTimeoutSetting: aBuilder [
+
+	<systemsettings>
+	| aMiApplication |
+	aMiApplication := self current.
+	(aBuilder range: #visualizationTimeout)
+		parent: #moose;
+		range: (10 to: 300);
+		target: aMiApplication;
+		order: 1;
+		label: 'Visualization timeout (seconds)';
+		description:
+			'How long can a visualization be unresponsive while building, before failing';
+		default: 30
+]
+
+{ #category : 'brokerage' }
 MiApplication >> add: anObject toDictionary: aDictionary for: aKey [
 	"adds anObject to the list of objects for given aKey in aDictionary
 	 We expect the list for objects (producers or consumers) for any key will remain small"
@@ -40,48 +76,83 @@ MiApplication >> add: anObject toDictionary: aDictionary for: aKey [
 	
 ]
 
-{ #category : #accessing }
+{ #category : 'bindings' }
+MiApplication >> addBindingForModel: aModel [
+
+	self addSharedBinding:
+		(WorkspaceVariable key: aModel name asValidSelector value: aModel)
+]
+
+{ #category : 'accessing' }
+MiApplication >> allBrowsers: aMiClass [
+	^self browsers select: [ :aBrowser | aBrowser isKindOf: aMiClass ]
+]
+
+{ #category : 'queries' }
+MiApplication >> availableQueries [
+
+	^ OrderedCollection withAll:
+		  ((self itemsFor: FQAbstractQuery) select: #isValid)
+]
+
+{ #category : 'drag and drop support' }
+MiApplication >> beDropFilesHandler [
+
+	dropFileHandlers := { #mse. #json } collect: [ :extension |
+		                    | handler |
+		                    handler := ExternalDropHandler
+			                               type: nil
+			                               extension: extension
+			                               action: [ :fileReference |
+			                               self importModelFromFile:
+				                               fileReference ].
+		                    ExternalDropHandler registerHandler: handler.
+		                    handler ]
+]
+
+{ #category : 'accessing' }
 MiApplication >> browsers [
 	^ self windows collect: #presenter thenSelect: #isMiBrowser
 ]
 
-{ #category : #buses }
+{ #category : 'buses' }
 MiApplication >> busNamed: aName [
-	^ buses
-		detect: [ :b | b name = aName ]
-		ifNone: [ | bus |
-			bus := MiBus named: aName.
-			buses add: bus.
-			self updateOverviewBrowsers.
-			bus ]
+
+	  ^ buses detect: [ :b | b name = aName ] ifNone: [ 
+		    | bus |
+		    bus := MiBus named: aName.
+		    buses add: bus.
+		    self defaultBus: bus.
+		    self updateOverviewBrowsers.
+		    bus ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MiApplication >> buses [
 	^ buses
 ]
 
-{ #category : #brokerage }
+{ #category : 'brokerage' }
 MiApplication >> consumeItem: anItem [
-	
+
 	self consumeItem: anItem from: nil
 ]
 
-{ #category : #brokerage }
+{ #category : 'brokerage' }
 MiApplication >> consumeItem: anItem from: aProducer [
 
 	(self consumersOf: anItem class) do: [ :aConsumer | 
 		aProducer = aConsumer ifFalse: [ aConsumer consume: anItem ] ]
 ]
 
-{ #category : #brokerage }
+{ #category : 'brokerage' }
 MiApplication >> consumeItemsFrom: aProducer ofType: aClass [
 
 	(aProducer itemsFor: aClass) do: [ :anItem | 
 		self consumeItem: anItem ]
 ]
 
-{ #category : #brokerage }
+{ #category : 'brokerage' }
 MiApplication >> consumer: aConsumer requestFor: requestedClass [
 
 	(self producersOf: requestedClass) do: [ :aProducer | 
@@ -89,7 +160,7 @@ MiApplication >> consumer: aConsumer requestFor: requestedClass [
 			aConsumer consume: anItem ] ]
 ]
 
-{ #category : #brokerage }
+{ #category : 'brokerage' }
 MiApplication >> consumersOf: aClass [
 
 	| foundConsumers |
@@ -100,19 +171,55 @@ MiApplication >> consumersOf: aClass [
 	^ foundConsumers
 ]
 
-{ #category : #buses }
+{ #category : 'drag and drop support' }
+MiApplication >> currentModelsBrowser [
+
+	^ currentModelsBrowser
+]
+
+{ #category : 'buses' }
 MiApplication >> defaultBus [
 
 	^ defaultBus
 ]
 
-{ #category : #showing }
-MiApplication >> defaultWindowPresenterClass [
+{ #category : 'buses' }
+MiApplication >> defaultBus: aMiBus [
 
-	^ MiWindowPresenter "SpWindowPresenter"
+	  defaultBus := aMiBus
 ]
 
-{ #category : #buses }
+{ #category : 'queries' }
+MiApplication >> defaultChildrenQuery [
+
+	^ (FQCollectScriptQuery script: [ :each | each containedEntities ])
+		  name: 'All contained entities';
+		  yourself
+]
+
+{ #category : 'queries' }
+MiApplication >> defaultClientsQuery [
+
+	^ (FQCollectScriptQuery script: [ :entity | entity allClients ])
+		  name: 'All clients';
+		  yourself
+]
+
+{ #category : 'queries' }
+MiApplication >> defaultProvidersQuery [
+
+	^ (FQCollectScriptQuery script: [ :entity | entity allClients ])
+		  name: 'All providers';
+		  yourself
+]
+
+{ #category : 'showing' }
+MiApplication >> defaultWindowPresenterClass [
+
+	^ MiWindowPresenter
+]
+
+{ #category : 'buses' }
 MiApplication >> deleteBus: aBus [
 
 	aBus == defaultBus ifTrue: [ ^ self ].
@@ -120,39 +227,132 @@ MiApplication >> deleteBus: aBus [
 	self updateOverviewBrowsers
 ]
 
-{ #category : #buses }
+{ #category : 'buses' }
 MiApplication >> deleteBusNamed: aName [
 	buses
 		detect: [ :bus | bus name = aName ]
 		ifFound: [ :bus | self deleteBus: bus ]
 ]
 
-{ #category : #initialization }
+{ #category : 'accessing' }
+MiApplication >> iconForTag: aTag [
+
+	^ self iconProvider iconForTag: aTag
+]
+
+{ #category : 'drag and drop support' }
+MiApplication >> importModelFromFile: aFileReference [
+
+	self openCurrentModelsBrowser handleDropFile: aFileReference
+]
+
+{ #category : 'initialization' }
 MiApplication >> initialize [
 
 	super initialize.
 
 	buses := OrderedCollection new.
 	defaultBus := self busNamed: self class defaultBusName.
-	
+
 	consumers := Dictionary new.
-	producers  := Dictionary new.
+	producers := Dictionary new.
+
+	mooseModelsTag := Dictionary new: 5.
+
+	self beDropFilesHandler.
+	self registerToModelsAnnouncements
 ]
 
-{ #category : #brokerage }
+{ #category : 'brokerage' }
 MiApplication >> itemsFor: aClass [
+	| setCopy |
 
-	^ (self producersOf: aClass) flatCollect: [ :producer | 
-		  producer itemsFor: aClass ]
+	setCopy := Set new.
+	 (self producersOf: aClass) do: [ :producer | 
+		  (producer itemsFor: aClass ) do: [ :e | setCopy add: e shallowCopy ]].
+	^ setCopy
+	
 ]
 
-{ #category : #'private - factory' }
+{ #category : 'as yet unclassified' }
+MiApplication >> miPropagate: anObject [
+
+	anObject isMooseObject
+		ifTrue: [ self defaultBus globallySelect: anObject ]
+		ifFalse: [ self inform: 'No Moose object to propagate.' ]
+]
+
+{ #category : 'as yet unclassified' }
+MiApplication >> miPropagate: anObject on: aCollectionOfBuses [
+
+	anObject isMooseObject
+		ifTrue: [ aCollectionOfBuses do: [ :bus | bus globallySelect: anObject ] ]
+		ifFalse: [ self inform: 'No Moose object to propagate.' ]
+]
+
+{ #category : 'style' }
+MiApplication >> mooseStyleSheet [
+
+	^ SpStyleVariableSTONReader fromString: '.application [
+	   .titleLabel [
+			Font { 
+				#size: 18,
+				#bold: true
+			},
+			Geometry { #height: Reset }
+		],
+		.title1 [ Font { #size: 12, #bold: true }, Geometry { #height: Reset } ],
+		.hSep [ 
+			Geometry {
+				#height: 1
+			},
+			.vSep [ Geometry { #height: 25, #width: 1 } ],
+			Draw {
+				#color: #0000001F,
+				#backgroundColor: #0000001F
+			}
+		],
+		.itemList [
+			Container { #borderWidth: 1, #borderColor: #00000020 },
+			Draw { #backgroundColor: #00000010 },
+			Geometry { #height: 30 }
+		],
+		.mooseContainer [ Container { #borderColor: #00000020, #borderWidth: 1, #padding: 5 } ],
+		.help [ Geometry { 
+			#height: 225,
+			#width: 250 } ],
+		.smallList [ Geometry { #height: 120, #width: 120 } ],
+		.largeList [ Geometry { #height: 250, #width: 250 } ]
+]'
+]
+
+{ #category : 'private - factory' }
 MiApplication >> newIconProvider [
 
 	^ MiIconProvider new
 ]
 
-{ #category : #brokerage }
+{ #category : 'drag and drop support' }
+MiApplication >> openCurrentModelsBrowser [
+
+	^ currentModelsBrowser
+		  ifNotNil: [ :modelsBrowser |
+			  modelsBrowser
+				  withWindowDo: [ :window |
+					  window
+						  restore;
+						  activate ];
+				  yourself ]
+		  ifNil: [
+		  currentModelsBrowser := MiModelsBrowser instantiateAndOpen ]
+]
+
+{ #category : 'presenters' }
+MiApplication >> openedBrowsers [
+	^self browsers
+]
+
+{ #category : 'brokerage' }
 MiApplication >> produced: producedClass matchConsumed: consumedClass [
 
 	producedClass = consumedClass ifTrue: [ ^ true ].
@@ -161,10 +361,11 @@ MiApplication >> produced: producedClass matchConsumed: consumedClass [
 	^ false
 ]
 
-{ #category : #brokerage }
+{ #category : 'brokerage' }
 MiApplication >> producersOf: aClass [
 
 	| foundProducers |
+	
 	foundProducers := Set new.
 	producers keysDo: [ :producedClass | 
 		(self produced: producedClass matchConsumed: aClass) ifTrue: [ 
@@ -172,7 +373,7 @@ MiApplication >> producersOf: aClass [
 	^ foundProducers
 ]
 
-{ #category : #brokerage }
+{ #category : 'brokerage' }
 MiApplication >> registerConsumer: aConsumer for: aClass [
 
 	"adds a consumer to the list of consumers for given aClass"
@@ -180,7 +381,7 @@ MiApplication >> registerConsumer: aConsumer for: aClass [
 	self add: aConsumer toDictionary: consumers for: aClass
 ]
 
-{ #category : #brokerage }
+{ #category : 'brokerage' }
 MiApplication >> registerProducer: aProducer for: aClass [
 
 	"adds a producer to the list of producers for given aClass"
@@ -188,32 +389,102 @@ MiApplication >> registerProducer: aProducer for: aClass [
 	self add: aProducer toDictionary: producers for: aClass
 ]
 
-{ #category : #private }
+{ #category : 'bindings' }
+MiApplication >> registerToModelsAnnouncements [
+
+	MooseModel root entitiesDo: [ :model |
+		self addBindingForModel: model.
+		self registerToSingleModelAnnouncements: model ].
+
+	MooseModel root announcer
+		when: MooseEntityAdded
+		do: [ :announcement |
+			self addBindingForModel: announcement entity.
+			self registerToSingleModelAnnouncements: announcement entity ]
+		for: self.
+
+	MooseModel root announcer
+		when: MooseEntityRemoved
+		do: [ :announcement |
+		self removeBindingNamed: announcement entity name ]
+		for: self
+]
+
+{ #category : 'bindings' }
+MiApplication >> registerToSingleModelAnnouncements: aModel [
+
+	aModel announcer
+		when: MooseEntityRenamed
+		do: [ :announcement |
+			self removeBindingNamed: announcement oldName.
+			self addBindingForModel: aModel ]
+		for: self
+]
+
+{ #category : 'private' }
 MiApplication >> registerWindow: aWindow [
 
 	super registerWindow: aWindow.
 	self updateOverviewBrowsers
 ]
 
-{ #category : #brokerage }
+{ #category : 'bindings' }
+MiApplication >> removeBindingNamed: aName [
+
+	self sharedBindings removeKey: aName asValidSelector ifAbsent: [  ]
+]
+
+{ #category : 'brokerage' }
 MiApplication >> removeItem: anItem [
 
 	self removeItem: anItem from: nil
 ]
 
-{ #category : #brokerage }
+{ #category : 'brokerage' }
 MiApplication >> removeItem: anItem from: aProducer [
 
 	(self consumersOf: anItem class) do: [ :aConsumer | 
 		aProducer = aConsumer ifFalse: [ aConsumer remove: anItem ] ]
 ]
 
-{ #category : #running }
+{ #category : 'tags' }
+MiApplication >> selectedTag: aTag [
+
+	aTag ifNotNil: [ mooseModelsTag at: aTag mooseModel put: aTag ]
+]
+
+{ #category : 'running' }
 MiApplication >> start [
 	"we will see"
 ]
 
-{ #category : #brokerage }
+{ #category : 'style' }
+MiApplication >> styleSheet [
+
+	^ super styleSheet , self mooseStyleSheet
+]
+
+{ #category : 'tags' }
+MiApplication >> tagListForMooseModel: aMooseModel [
+
+	^ aMooseModel
+		  ifNil: [ #(  ) ]
+		  ifNotNil: [ aMooseModel allTags sorted: #name ascending ]
+]
+
+{ #category : 'tags' }
+MiApplication >> tagSelectedInMooseModel: aMooseModel [
+
+	^ mooseModelsTag at: aMooseModel ifAbsent: [ nil ]
+]
+
+{ #category : 'settings' }
+MiApplication >> toolbarDisplayMode [
+
+	^ StPharoSettings toolbarDisplayMode
+]
+
+{ #category : 'brokerage' }
 MiApplication >> unregisterConsumer: aConsumer [
 
 	"removes aConsumer from all lists of consumers for any class"
@@ -222,7 +493,20 @@ MiApplication >> unregisterConsumer: aConsumer [
 		consumerList remove: aConsumer ifAbsent: [  ] ]
 ]
 
-{ #category : #brokerage }
+{ #category : 'drag and drop support' }
+MiApplication >> unregisterForDropFilesEvent [
+
+	ExternalDropHandler registeredHandlers removeAll: dropFileHandlers.
+	dropFileHandlers := #(  )
+]
+
+{ #category : 'drag and drop support' }
+MiApplication >> unregisterModelsBrowser [
+
+	currentModelsBrowser := nil
+]
+
+{ #category : 'brokerage' }
 MiApplication >> unregisterProducer: aProducer [
 
 	"removes aProducer from all lists of producers for any class"
@@ -231,20 +515,20 @@ MiApplication >> unregisterProducer: aProducer [
 		producerList remove: aProducer ifAbsent: [  ] ]
 ]
 
-{ #category : #brokerage }
+{ #category : 'brokerage' }
 MiApplication >> updateItem: anItem [
 
 	self updateItem: anItem from: nil
 ]
 
-{ #category : #brokerage }
+{ #category : 'brokerage' }
 MiApplication >> updateItem: anItem from: aProducer [
 
 	(self consumersOf: anItem class) do: [ :aConsumer | 
 		aProducer = aConsumer ifFalse: [ aConsumer update: anItem ] ]
 ]
 
-{ #category : #actions }
+{ #category : 'actions' }
 MiApplication >> updateOverviewBrowsers [
 
 	(self windows
@@ -253,7 +537,18 @@ MiApplication >> updateOverviewBrowsers [
 		do: [ :each | each updateBrowsersListItems]
 ]
 
-{ #category : #windows }
+{ #category : 'settings' }
+MiApplication >> visualizationTimeout [
+
+	^ visualizationTimeout
+]
+
+{ #category : 'settings' }
+MiApplication >> visualizationTimeout: anInteger [ 
+	visualizationTimeout := anInteger
+]
+
+{ #category : 'windows' }
 MiApplication >> windowClosed: aWindowPresenter [
 
 	super windowClosed: aWindowPresenter.

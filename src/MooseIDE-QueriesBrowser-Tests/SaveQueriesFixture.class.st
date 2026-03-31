@@ -4,8 +4,8 @@ I am a fixture for MiSaveQueriesCommandTest.
 See https://i.imgur.com/n6dfMHQ.png
 "
 Class {
-	#name : #SaveQueriesFixture,
-	#superclass : #Object,
+	#name : 'SaveQueriesFixture',
+	#superclass : 'Object',
 	#instVars : [
 		'q1',
 		'q2',
@@ -18,26 +18,32 @@ Class {
 		'q9',
 		'q10'
 	],
-	#category : #'MooseIDE-QueriesBrowser-Tests-Commands'
+	#category : 'MooseIDE-QueriesBrowser-Tests-Commands',
+	#package : 'MooseIDE-QueriesBrowser-Tests',
+	#tag : 'Commands'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SaveQueriesFixture >> exampleForCopyingQueries [
 
 	| root firstLevel secondLevel thirdLevel |
+
 	root := FQRootQuery new
-		result: FQTestsHelper current classesAndMethods;
-		yourself.
+		        input: FQTestsHelper new classesAndMethods;
+		        yourself.
 	firstLevel := FQBooleanQuery property: #isStub.
 	firstLevel beChildOf: root.
 	secondLevel := FQBooleanQuery property: #isDead.
 	secondLevel beChildOf: firstLevel.
 	thirdLevel := FQBooleanQuery property: #containsReplicas.
 	thirdLevel beChildOf: secondLevel.
-	^ { firstLevel. secondLevel. thirdLevel }
+	^ {
+		  firstLevel.
+		  secondLevel.
+		  thirdLevel }
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SaveQueriesFixture >> expectedChildrenInPlaceOrder [
 
 	^ {
@@ -47,7 +53,7 @@ SaveQueriesFixture >> expectedChildrenInPlaceOrder [
 		q4. q9 }
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SaveQueriesFixture >> expectedTopologicalOrder [
 
 	^ {
@@ -57,26 +63,35 @@ SaveQueriesFixture >> expectedTopologicalOrder [
 		q9 }					"Level 3"
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 SaveQueriesFixture >> initialize [
 
 	q1 := FQBooleanQuery property: #isDead.
-	q2 := FQTypeQuery types: FamixStClass asOrderedCollection.
+	q2 := FQTypeQuery types: (OrderedCollection with: FamixStClass).
 	q3 := FQComplementQuery queryToNegate: q2.
 	q5 := FQBooleanQuery property: #isStub.
-	q4 := FQIntersectionQuery subqueries: { q3. q1. q5 }.
-	q7	:= FQBooleanQuery property: #containsReplicas.
-	q6 := FQResultSizeQuery innerQuery: q7 comparator: #> valueToCompare: 0.
+	q4 := FQIntersectionQuery subqueries: {
+			      q3.
+			      q1.
+			      q5 }.
+	q7 := FQBooleanQuery property: #containsReplicas.
+	q6 := FQResultSizeQuery
+		      innerQuery: q7
+		      comparator: #>
+		      valueToCompare: 0.
 	q8 := FQBooleanQuery property: #isStub.
 	q9 := FQBooleanQuery property: #isTagged.
-	q10 := FQResultSizeQuery innerQuery: q7 comparator: #> valueToCompare: 1.
+	q10 := FQResultSizeQuery
+		       innerQuery: q7
+		       comparator: #>
+		       valueToCompare: 1.
 
 	q8 beChildOf: q1.
 	q10 beChildOf: q8.
 	q9 beChildOf: q4
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SaveQueriesFixture >> unsortedQueries [
 
 	"Besides the example in the image, we change the order of the children"

@@ -1,53 +1,75 @@
 Class {
-	#name : #MiTypeQueryPresenterTest,
-	#superclass : #MiQueryConfiguratorPresenterTest,
-	#category : #'MooseIDE-QueriesBrowser-Tests-Queries Configuration'
+	#name : 'MiTypeQueryPresenterTest',
+	#superclass : 'MiQueryConfiguratorPresenterTest',
+	#category : 'MooseIDE-QueriesBrowser-Tests-Queries Configuration',
+	#package : 'MooseIDE-QueriesBrowser-Tests',
+	#tag : 'Queries Configuration'
 }
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiTypeQueryPresenterTest >> assertSubpresentersAreConfigured [
 
-	self assertCollection: presenter typesList selectedItems hasSameElements: self createNewQuery types
+	self
+		assertCollection: presenter typesList items
+		includesAll: self createNewQuery types.
+	self
+		assertCollection: presenter typesList selectedItems
+		hasSameElements: self createNewQuery types.
+
+	self assert: presenter typesButton class equals: SpButtonPresenter
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 MiTypeQueryPresenterTest >> classToTest [
 	^ MiTypeQueryPresenter
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiTypeQueryPresenterTest >> createNewQuery [
 
 	| rootQuery |
+
 	rootQuery := FQRootQuery new
-		result: helper classesAndMethods;
-		yourself.
+		             input: helper classesAndMethods;
+		             yourself.
 	^ (FQTypeQuery defaultForParent: rootQuery)
-			types: { FamixStClass . FamixStAttribute };
-			yourself
+		  types: {
+				  FamixStClass.
+				  FamixStAttribute };
+		  yourself
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 MiTypeQueryPresenterTest >> queryClass [
 	^ FQTypeQuery
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiTypeQueryPresenterTest >> testImpossibleQueryInitialization [
 
 	self resetPresenterWithEntities: helper noEntities.
 	self assert: presenter query class identicalTo: self queryClass.
-	"Famix queries changed. Now the type query can be empty and can have no types."
-	self assert: presenter query isValid
+	self deny: presenter query isValid
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
+MiTypeQueryPresenterTest >> testModalSelectionTypes [
+
+	presenter typesList selectItems: { FamixStClass }.
+	presenter selectTypeAction: nil.
+
+	self
+		assertCollection: presenter query types
+		hasSameElements: { FamixStClass }
+]
+
+{ #category : 'tests' }
 MiTypeQueryPresenterTest >> testPresenters [
 
 	self assert: presenter typesButton class equals: SpButtonPresenter
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiTypeQueryPresenterTest >> testPresentersOnImpossibleQuery [
 
 	self resetPresenterWithEntities: helper noEntities.
@@ -56,16 +78,18 @@ MiTypeQueryPresenterTest >> testPresentersOnImpossibleQuery [
 		identicalTo: NoPossibleQueryPresenter
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiTypeQueryPresenterTest >> testQueryValidity [
 
-	self assert: presenter query isValid.
+	"A type query with no types is invalid"
+
+	self deny: presenter query isValid.
 	self resetPresenterWithEntities: helper noEntities.
-	"A type query can be empty and have no types"
-	self assert: presenter query isValid
+
+	self deny: presenter query isValid
 ]
 
-{ #category : #test }
+{ #category : 'test' }
 MiTypeQueryPresenterTest >> testUpdateQueryWithSelectedTypes [
 
 	| typesRemoved |

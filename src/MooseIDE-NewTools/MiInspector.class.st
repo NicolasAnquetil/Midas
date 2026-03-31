@@ -5,25 +5,43 @@ The only difference between my `newInspectorFor:` method implementation and the 
 (See `StInspector>>#newInspectorFor:`)
 "
 Class {
-	#name : #MiInspector,
-	#superclass : #StInspector,
-	#category : #'MooseIDE-NewTools-Inspector'
+	#name : 'MiInspector',
+	#superclass : 'StInspectorPresenter',
+	#category : 'MooseIDE-NewTools-Inspector',
+	#package : 'MooseIDE-NewTools',
+	#tag : 'Inspector'
 }
 
-{ #category : #'private - factory' }
+{ #category : 'inspector compatibility' }
+MiInspector >> defaultObjectInspectorClass [
+
+	^ MiObjectInspectorPresenter
+]
+
+{ #category : 'initialization' }
+MiInspector >> initializePresenters [
+
+	super initializePresenters.
+
+	millerList millerListPresenter whenColumnsChangedDo: [ :page |
+		millerList updatePaginator: page.
+		self owner updateToolbar ]
+]
+
+{ #category : 'private - factory' }
 MiInspector >> newInspectorFor: aModel [
 
 	| newInspector |
 	newInspector := self
 		                instantiate: MiObjectInspectorPresenter
 		                on: aModel asInspectorModel.
-	self class inspectorDiveOnSingleClick ifTrue: [ 
+	self class inspectorDiveOnSingleClick ifTrue: [
 		newInspector activateOnSingleClick ].
 
-	millerList pages ifNotEmpty: [ :pages | 
+	millerList pages ifNotEmpty: [ :pages |
 		newInspector
 			whenClosedDo: [ millerList removeAllFrom: newInspector ];
-			"select last shown page (or default)"trySelectAnyPageWithName: { 
+			"select last shown page (or default)"trySelectAnyPageWithName: {
 					lastPageSelectedTabName.
 					pages last selectedPageName }
 		"prepare to close" ].

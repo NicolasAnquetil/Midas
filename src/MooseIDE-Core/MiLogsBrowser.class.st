@@ -1,44 +1,57 @@
+"
+I am a bus log browser. I display logs of all buses, each one in a notebook.
+
+Accepted entities: Does not apply.
+"
 Class {
-	#name : #MiLogsBrowser,
-	#superclass : #MiAbstractBrowser,
+	#name : 'MiLogsBrowser',
+	#superclass : 'MiAbstractBrowser',
 	#instVars : [
 		'mainPresenter'
 	],
-	#category : #'MooseIDE-Core-Logger'
+	#category : 'MooseIDE-Core-Logger',
+	#package : 'MooseIDE-Core',
+	#tag : 'Logger'
 }
 
-{ #category : #'world menu' }
+{ #category : 'world menu' }
 MiLogsBrowser class >> menuCommandOn: aBuilder [
 
 	<worldMenu>
-	<miBrowsers>
-	(aBuilder item: #Logger)
-		parent: #Moose;
-		label: self title;
-		order: 4;
-		help: self helpMessage;
-		action: [ self open ];
-		withSeparatorAfter
+	<miBrowsersMenu>
+	^ self buildMenuItemIn: aBuilder
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'world menu' }
+MiLogsBrowser class >> menuItem [
+
+	^ #Logger
+]
+
+{ #category : 'world menu' }
+MiLogsBrowser class >> menuPriority [
+
+	^ self menuMetaToolsPriority + 1
+]
+
+{ #category : 'instance creation' }
 MiLogsBrowser class >> open [
 
 	<script>
 	^ (self on: self newModel)
 		  followBuses: self currentApplication buses;
-		  openWithSpec;
+		  open;
 		  updateToolbars;
 		  yourself
 ]
 
-{ #category : #specs }
+{ #category : 'specs' }
 MiLogsBrowser class >> title [
 
 	^ 'Logger'
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 MiLogsBrowser >> canFollowEntity: anObject [
 
 	"Subpresenters are MiBrowsers. They are responsible for entities reception"
@@ -46,36 +59,35 @@ MiLogsBrowser >> canFollowEntity: anObject [
 	^ false
 ]
 
-{ #category : #testing }
-MiLogsBrowser >> canPropagate [
+{ #category : 'testing' }
+MiLogsBrowser >> canTagEntities [
 
-	^ self miSelectedItem isMooseObject and: [ 
-		  self miSelectedItem asMooseGroup isNotEmpty or: [ 
-			  self miSelectedItem isMooseModel ] ]
+	^false
 ]
 
-{ #category : #buses }
+{ #category : 'buses' }
 MiLogsBrowser >> followBus: aBus [
 
-	| busPage |
-	super followBus: aBus.
+	  | busPage |
+	  super followBus: aBus.
 
-	mainPresenter addPage: (busPage := SpNotebookPage
-			            title: aBus name
-			            provider: [ MiBusLogBrowser forBus: aBus ]).
+	  mainPresenter addPage: (busPage := SpNotebookPage
+			              title: aBus name
+			              provider: [ 
+			              MiBusLogBrowser forBus: aBus application: application ]).
 
-	self window ifNotNil: [ mainPresenter selectPage: busPage ].
-	busPage activePresenter ifNotNil: #updateToolbars
+	  self window ifNotNil: [ mainPresenter selectPage: busPage ].
+	  busPage activePresenter ifNotNil: #updateToolbars
 ]
 
-{ #category : #buses }
+{ #category : 'buses' }
 MiLogsBrowser >> followBuses: aCollectionOfBus [
 
 	(aCollectionOfBus sorted: [ :aBus | aBus name ] ascending) do: [ 
 		:aBus | self followBus: aBus ]
 ]
 
-{ #category : #actions }
+{ #category : 'actions' }
 MiLogsBrowser >> followEntity: anEntity [
 
 	"Subpresenters are MiBrowsers. They are responsible for entities reception"
@@ -83,7 +95,19 @@ MiLogsBrowser >> followEntity: anEntity [
 	
 ]
 
-{ #category : #initialization }
+{ #category : 'accessing - private tests' }
+MiLogsBrowser >> getSelectedPage [
+
+	^ mainPresenter selectedPage
+]
+
+{ #category : 'testing' }
+MiLogsBrowser >> hasSettings [
+
+	^ false
+]
+
+{ #category : 'initialization' }
 MiLogsBrowser >> initializePresenters [
 
 	self layout: (SpBoxLayout newTopToBottom
@@ -95,7 +119,7 @@ MiLogsBrowser >> initializePresenters [
 			activePresenter updateToolbars ] ]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiLogsBrowser >> initializeWindow: aMiWindowPresenter [
 
 	super initializeWindow: aMiWindowPresenter.
@@ -106,14 +130,14 @@ MiLogsBrowser >> initializeWindow: aMiWindowPresenter [
 				presenter buses do: [ :bus | bus unregisterBrowser: presenter ] ] ] ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MiLogsBrowser >> miSelectedItem [
 
 	^ mainPresenter selectedPage ifNotNil: [ :page | 
 		  page activePresenter miSelectedItem ]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiLogsBrowser >> updateToolbars [
 
 	self updateToolbar.

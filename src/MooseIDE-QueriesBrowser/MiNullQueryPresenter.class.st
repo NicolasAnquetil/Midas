@@ -2,33 +2,35 @@
 I am an empty presenter that will not do anything. I am only for avoiding checking for nil
 "
 Class {
-	#name : #MiNullQueryPresenter,
-	#superclass : #MiQueryConfiguratorPresenter,
-	#category : #'MooseIDE-QueriesBrowser-Configuration presenters'
+	#name : 'MiNullQueryPresenter',
+	#superclass : 'MiQueryConfiguratorPresenter',
+	#category : 'MooseIDE-QueriesBrowser-Configuration presenters',
+	#package : 'MooseIDE-QueriesBrowser',
+	#tag : 'Configuration presenters'
 }
 
-{ #category : #actions }
-MiNullQueryPresenter >> computeQuery: anObject [
-]
-
-{ #category : #'api - actions' }
+{ #category : 'api - actions' }
 MiNullQueryPresenter >> configureFor: aQuery [
 ]
 
-{ #category : #initialization }
+{ #category : 'actions' }
+MiNullQueryPresenter >> configureQuery: anObject [
+]
+
+{ #category : 'initialization' }
 MiNullQueryPresenter >> initialize [
 
 	super initialize.
 	query := FQNullQuery new
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiNullQueryPresenter >> initializePresenters [
 
 	self initializeLayout
 ]
 
-{ #category : #layout }
+{ #category : 'layout' }
 MiNullQueryPresenter >> newLayout [
 
 	^ SpBoxLayout newTopToBottom

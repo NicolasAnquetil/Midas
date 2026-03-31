@@ -1,87 +1,127 @@
 Class {
-	#name : #MiQueryConfiguratorPresenterTest,
-	#superclass : #TestCase,
+	#name : 'MiQueryConfiguratorPresenterTest',
+	#superclass : 'MiAbstractApplicationTest',
 	#instVars : [
 		'helper',
 		'presenter',
-		'browser'
+		'browser',
+		'queriesListPresenter'
 	],
-	#category : #'MooseIDE-QueriesBrowser-Tests-Queries Configuration'
+	#category : 'MooseIDE-QueriesBrowser-Tests-Queries Configuration',
+	#package : 'MooseIDE-QueriesBrowser-Tests',
+	#tag : 'Queries Configuration'
 }
 
-{ #category : #testing }
+{ #category : 'testing' }
 MiQueryConfiguratorPresenterTest class >> isAbstract [
 	^ self == MiQueryConfiguratorPresenterTest
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiQueryConfiguratorPresenterTest >> assertSubpresentersAreConfigured [
 
 	self subclassResponsibility
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 MiQueryConfiguratorPresenterTest >> classToTest [
 	^ self subclassResponsibility
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiQueryConfiguratorPresenterTest >> createNewQuery [
 
 	self subclassResponsibility
 ]
 
-{ #category : #running }
+{ #category : 'tests' }
+MiQueryConfiguratorPresenterTest >> createNewQueryWithoutInput [
+
+	^ self createNewQuery
+		  parent: FQRootQuery new;
+		  yourself
+]
+
+{ #category : 'running' }
+MiQueryConfiguratorPresenterTest >> createTestHelper [
+	^FQTestsHelper new
+]
+
+{ #category : 'running' }
 MiQueryConfiguratorPresenterTest >> queryClass [
 	^ self subclassResponsibility
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 MiQueryConfiguratorPresenterTest >> resetPresenterWithEntities: aMooseGroup [
 
-	| builder superPresenter |
-	browser := MiQueriesBrowser
-		           newApplication: MiTestApplication current
-		           model: (FQRootQuery new
-				            result: aMooseGroup;
-				            yourself).
-	builder := browser queriesListPresenter.
+	| superPresenter |
+	browser followEntity: aMooseGroup.
+
 	"Add a query presenter"
-	builder addNewFirstLevelQuery.
-	superPresenter := builder componentList items first.
+	queriesListPresenter addNewFirstLevelQuery.
+	superPresenter := queriesListPresenter componentList items first.
 	superPresenter queryTypesDropList selectItem: self queryClass.
 	presenter := superPresenter queryConfiguratorPresenter
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 MiQueryConfiguratorPresenterTest >> setUp [
 
 	super setUp.
-	helper := FQTestsHelper current.
+
+	helper := self createTestHelper.
+	browser := MiQueriesBrowser
+		           newApplication: self application
+		           model: MiQueriesModel new.
+	queriesListPresenter := browser presenterAt: #queriesListPresenter.
 	self resetPresenterWithEntities: helper classesAndMethods
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 MiQueryConfiguratorPresenterTest >> tearDown [
 
-	browser window ifNotNil: [ :window | window close ].
+	browser ifNotNil: [ browser withWindowDo: [ :window | window close ] ].
 	super tearDown
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiQueryConfiguratorPresenterTest >> testConfigureFor [
 
 	| newQuery |
-	browser queriesListPresenter reinitializeQueryPresenters.
+	queriesListPresenter reinitializeQueryPresenters.
+
 	newQuery := self createNewQuery.
-	browser queriesListPresenter addNewFirstLevelQuery.
-	browser queriesListPresenter queryItemsPresenters last configureFor: newQuery.
-	presenter := browser queriesListPresenter queryItemsPresenters last queryConfiguratorPresenter.
+
+	queriesListPresenter addNewFirstLevelQuery.
+	queriesListPresenter queryItemsPresenters last configureFor: newQuery.
+
+	presenter := queriesListPresenter queryItemsPresenters last
+		             queryConfiguratorPresenter.
+
 	self assertSubpresentersAreConfigured.
 	self assert: presenter query equals: newQuery
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
+MiQueryConfiguratorPresenterTest >> testConfigureForWithNoEntities [
+
+	| newQuery |
+	queriesListPresenter reinitializeQueryPresenters.
+
+	newQuery := self createNewQueryWithoutInput.
+
+	queriesListPresenter addNewFirstLevelQuery.
+	queriesListPresenter queryItemsPresenters last configureFor: newQuery.
+
+	presenter := queriesListPresenter queryItemsPresenters last
+		             queryConfiguratorPresenter.
+
+	self assertSubpresentersAreConfigured.
+	self assert: presenter query equals: newQuery
+]
+
+{ #category : 'tests' }
 MiQueryConfiguratorPresenterTest >> testImpossibleQueryInitialization [
 
 	self resetPresenterWithEntities: helper noEntities.
@@ -89,32 +129,33 @@ MiQueryConfiguratorPresenterTest >> testImpossibleQueryInitialization [
 	self deny: presenter query isValid
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiQueryConfiguratorPresenterTest >> testIsQueryUsed [
 
 	self deny: (presenter isQueryUsed: FQBooleanQuery new)
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiQueryConfiguratorPresenterTest >> testNormalQueryInitialization [
 
 	self assert: presenter query class identicalTo: self queryClass.
-	self assert: presenter query isValid
+	self flag: 'Remove this next line: a query now may be invalid'
+	"self assert: presenter query isValid"
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiQueryConfiguratorPresenterTest >> testPresenters [
 
 	self subclassResponsibility
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiQueryConfiguratorPresenterTest >> testPresentersOnImpossibleQuery [
 
 	self subclassResponsibility
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiQueryConfiguratorPresenterTest >> testQueryValidity [
 
 	^ self subclassResponsibility

@@ -1,29 +1,43 @@
 Class {
-	#name : #MiHelpCommand,
-	#superclass : #MiCommand,
-	#category : #'MooseIDE-Core-Command'
+	#name : 'MiHelpCommand',
+	#superclass : 'MiPopupCommand',
+	#category : 'MooseIDE-Core-Command',
+	#package : 'MooseIDE-Core',
+	#tag : 'Command'
 }
 
-{ #category : #default }
+{ #category : 'default' }
 MiHelpCommand class >> defaultDescription [
 
 	^ 'What does this browser do?'
 ]
 
-{ #category : #default }
+{ #category : 'default' }
 MiHelpCommand class >> defaultIconName [
 
 	^ #help
 ]
 
-{ #category : #default }
+{ #category : 'default' }
 MiHelpCommand class >> defaultName [
 
 	^ 'Help'
 ]
 
-{ #category : #executing }
-MiHelpCommand >> execute [
+{ #category : 'executing' }
+MiHelpCommand >> newPopover [
 
-	self context showHelp
+	^ super newPopover
+		  bePositionLeft;
+		  yourself
+]
+
+{ #category : 'converting' }
+MiHelpCommand >> popupContent [
+
+	^ (SpTextPresenter newApplication: self context application)
+		  text: self context helpText;
+		  beNotEditable;
+		  addStyle: 'help';
+		  yourself
 ]

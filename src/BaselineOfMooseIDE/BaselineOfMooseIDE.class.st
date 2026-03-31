@@ -1,94 +1,147 @@
 Class {
-	#name : #BaselineOfMooseIDE,
-	#superclass : #BaselineOf,
-	#category : #BaselineOfMooseIDE
+	#name : 'BaselineOfMooseIDE',
+	#superclass : 'BaselineOf',
+	#category : 'BaselineOfMooseIDE',
+	#package : 'BaselineOfMooseIDE'
 }
 
-{ #category : #baselines }
+{ #category : 'baselines' }
 BaselineOfMooseIDE >> baseline: spec [
 
 	<baseline>
-	spec for: #common do: [ "Dependencies"
-		self tylerDurden: spec.
-		self famixQueries: spec.
-		self telescope: spec.
-		self labelContractor: spec.
-		self hierarchicalVisualizations: spec.
+	spec for: #common do: [
+			self defineDependencies: spec.
+			self definePackages: spec.
+			self defineGroups: spec.
 
-		"Packages"
-		self definePackages: spec.
+			spec for: #NoFamix do: [
+					self defineMooseDependencies: spec.
+					self definePackagesWhenNoFamix: spec ].
 
-		"If Moose is not already present"
-		spec for: #NeedsMoose do: [ 
-			self famix: spec.
-			self famixTagging: spec.
-			spec
-				package: 'MooseIDE-Core' with: [ spec requires: #( 'Famix' ) ];
-				package: 'MooseIDE-Meta'
-				with: [ spec requires: #( 'MooseIDE-Core' ) ];
-				package: 'MooseIDE-Tagging'
-				with: [ spec requires: #( 'FamixTagging' ) ] ].
-
-		"Register custom tools"
-		spec
-			postLoadDoIt: #registerCustomTools;
-			postLoadDoIt: #resetMiApplications ]
+			spec postLoadDoIt: #registerCustomTools ]
 ]
 
-{ #category : #accessing }
+{ #category : 'dependencies' }
+BaselineOfMooseIDE >> classBlueprint: spec [
+
+	spec
+		baseline: 'ClassBlueprint'
+		with: [
+		spec repository: 'github://moosetechnology/ClassBlueprint/src' ]
+]
+
+{ #category : 'accessing' }
 BaselineOfMooseIDE >> customProjectAttributes [
 
-	^ RPackageOrganizer default packages
-		  detect: [ :package | package name = 'BaselineOfFamix' ]
-		  ifFound: [ #(  ) ]
-		  ifNone: [ #( #NeedsMoose ) ]
+	'BaselineOfFamix' asPackageIfAbsent: [ ^ #( #NoFamix ) ].
+	^ #( #WithFamix )
+
 ]
 
-{ #category : #baselines }
+{ #category : 'dependencies' }
+BaselineOfMooseIDE >> defineDependencies: spec [
+
+	self labelContractor: spec.
+	self roassalExporters: spec.
+	self hierarchicalVisualizations: spec.
+	self pharoAIHierachicalClustering: spec.
+	self interactiveNotebook: spec.
+	self classBlueprint: spec.
+
+	spec for: #WithFamix do: [ self famixQueries: spec ]
+]
+
+{ #category : 'groups' }
+BaselineOfMooseIDE >> defineGroups: spec [
+
+	spec
+		group: 'CriticBrowser-Metamodel'
+		with:
+			#( 'Famix-CriticBrowser-Entities' 'Famix-CriticBrowser-ManualEntities'
+			   'Famix-CriticBrowser-Generator' 'Famix-CriticBrowser-Tests' ) ;
+		group: 'bulkedit'
+		with: #( 'MooseIDE-BulkEditor' )
+]
+
+{ #category : 'packages' }
+BaselineOfMooseIDE >> defineMooseCriticsPackages: spec [
+
+	spec
+		package: 'MooseIDE-CriticBrowser' with: [ spec requires: #( 'MooseIDE-Core' 'Famix-CriticBrowser-Entities' ) ];
+		package: 'MooseIDE-CriticBrowser-Tests' with: [ spec requires: #( 'MooseIDE-Tests' 'MooseIDE-CriticBrowser' ) ];
+		
+		package: 'Famix-CriticBrowser-ManualEntities' with: [ spec requires: #( 'FamixQueries' ) ];
+		package: 'Famix-CriticBrowser-Entities' with: [ spec requires: #('Famix-CriticBrowser-ManualEntities') ];
+		package: 'Famix-CriticBrowser-Generator';
+		
+		package: 'Famix-CriticBrowser-Tests' with: [ spec requires: 'Famix-CriticBrowser-Entities' ]
+]
+
+{ #category : 'dependencies' }
+BaselineOfMooseIDE >> defineMooseDependencies: spec [
+
+	self famix: spec.
+	self famixTagging: spec.
+	self famixReplication: spec.
+	self famixQueries: spec
+]
+
+{ #category : 'packages' }
 BaselineOfMooseIDE >> definePackages: spec [
 
 	spec
-		package: 'MooseIDE-Core'
-		with: [ spec requires: #( 'LabelContractor' ) ];
-		package: 'MooseIDE-Visualization' with: [ 
-			spec requires:
-					#( 'TelescopeRoassal3' 'HierarchicalVisualizations' ) ];
-		package: 'MooseIDE-Meta'
-		with: [ spec requires: #( 'MooseIDE-Core' ) ];
-		package: 'MooseIDE-Tests'
-		with: [ spec requires: #( 'MooseIDE-Core' 'MooseIDE-Tagging' ) ];
-		package: 'MooseIDE-Dependency'
-		with: [ 
-			spec requires: #( 'MooseIDE-Core' 'MooseIDE-Visualization' ) ];
-		package: 'MooseIDE-Famix'
-		with: [ 
-			spec requires: #( 'MooseIDE-Core' 'MooseIDE-Visualization' ) ];
-		package: 'MooseIDE-Tagging'
-		with: [ 
-			spec requires: #( 'MooseIDE-Core' 'MooseIDE-Visualization' ) ];
-		package: 'MooseIDE-Telescope'
-		with: [ 
-			spec requires: #( 'MooseIDE-Core' 'MooseIDE-Visualization' ) ];
-		package: 'MooseIDE-QueriesBrowser'
-		with: [ spec requires: #( 'MooseIDE-Core' 'FamixQueries' ) ];
-		package: 'MooseIDE-QueriesBrowser-Tests'
-		with: [ 
-			spec requires: #( 'MooseIDE-QueriesBrowser'
-				   'MooseIDE-Tests' ) ];
-		package: 'MooseIDE-NewTools'
-		with: [ 
-			spec requires: #( 'MooseIDE-Meta' 'MooseIDE-Core' 'FamixQueries' ) ];
-		package: 'MooseIDE-NewTools-Tests'
-		with: [ spec requires: #( 'MooseIDE-NewTools' 'MooseIDE-Tests' ) ];
-		package: 'MooseIDE-Export'
-		with: [ spec requires: #( 'MooseIDE-Core' ) ];
-		package: 'MooseIDE-ColorPalette';
-		package: 'MooseIDE-ColorPalette-Tests'
-		with: [ spec requires: #( 'MooseIDE-ColorPalette' ) ];
-		package: 'MooseIDE-Durden' with: [ spec requires: #( 'Durden' ) ]
+		package: 'MooseIDE-Core' with: [ spec requires: #( 'LabelContractor' 'RoassalExporters' ) ];
+		package: 'MooseIDE-WelcomeBrowser'
+		with: [ spec requires: #( 'MooseIDE-Core' 'MooseIDE-Meta' 'MooseIDE-CoUsageMap' 'MooseIDE-NewTools' 'MooseIDE-QueriesBrowser' ) ];
+		package: 'MooseIDE-Visualization' with: [ spec requires: #( 'MooseIDE-Core' 'HierarchicalVisualizations' ) ];
+		package: 'MooseIDE-Meta' with: [ spec requires: #( 'MooseIDE-Core' 'MooseIDE-Famix' ) ];
+		package: 'MooseIDE-ArchitecturalMap' with: [ spec requires: #( 'MooseIDE-Visualization' ) ];
+		package: 'MooseIDE-ArchitecturalMap-Tests' with: [ spec requires: #( 'MooseIDE-ArchitecturalMap' 'MooseIDE-Tests' ) ];
+		package: 'MooseIDE-DeadCode' with: [ spec requires: #( 'MooseIDE-Core' ) ];
+		package: 'MooseIDE-DeadCode-Tests' with: [ spec requires: #( 'MooseIDE-DeadCode' 'MooseIDE-Tests' ) ];		
+		package: 'MooseIDE-DSM' with: [ spec requires: #( 'MooseIDE-Visualization' 'AIHierarchicalClustering' ) ];
+		package: 'MooseIDE-DistributionMap' with: [ spec requires: #( 'MooseIDE-Visualization' 'AIHierarchicalClustering' ) ];
+		package: 'MooseIDE-Tests' with: [ spec requires: #( 'MooseIDE-Visualization' ) ];
+		package: 'MooseIDE-AttributedText';
+		package: 'MooseIDE-Famix' with: [ spec requires: #( 'MooseIDE-Visualization' 'MooseIDE-AttributedText' ) ];
+		package: 'MooseIDE-QueriesBrowser' with: [ spec requires: #( 'MooseIDE-Core' 'FamixQueries' ) ];
+		package: 'MooseIDE-QueriesBrowser-Tests' with: [ spec requires: #( 'MooseIDE-QueriesBrowser' 'MooseIDE-Tests' ) ];
+		package: 'MooseIDE-Tagging' with: [ spec requires: #( 'MooseIDE-Core' 'MooseIDE-Visualization' ) ];
+		package: 'MooseIDE-Tagging-Tests' with: [ spec requires: #( 'MooseIDE-Tagging' 'MooseIDE-Tests' ) ];
+		package: 'MooseIDE-CoUsageMap' with: [ spec requires: #( 'MooseIDE-Core' 'MooseIDE-Visualization' ) ];
+		package: 'MooseIDE-CoUsageMap-Tests' with: [ spec requires: #( 'MooseIDE-CoUsageMap' 'MooseIDE-Tests' ) ];
+		package: 'MooseIDE-NewTools' with: [ spec requires: #( 'MooseIDE-Meta' 'MooseIDE-Core' 'FamixQueries' ) ];
+		package: 'MooseIDE-NewTools-Tests' with: [ spec requires: #( 'MooseIDE-NewTools' 'MooseIDE-Tests' ) ];
+		package: 'MooseIDE-Export' with: [ spec requires: #( 'MooseIDE-Core' 'InteractiveNotebook' ) ];
+		package: 'MooseIDE-Duplication' with: [ spec requires: #( 'MooseIDE-Core' ) ];
+		package: 'MooseIDE-ButterflyMap' with: [ spec requires: #( 'MooseIDE-Core' 'MooseIDE-Visualization' ) ];
+		package: 'MooseIDE-ButterflyMap-Tests' with: [ spec requires: #( 'MooseIDE-ButterflyMap' ) ];
+		package: 'MooseIDE-QueriesDashboard' with: [ spec requires: #( 'MooseIDE-Core' ) ];
+		package: 'MooseIDE-LayerVisualization' with: [ spec requires: #( 'MooseIDE-Core' 'MooseIDE-Visualization' 'MooseIDE-QueriesDashboard' ) ];
+		package: 'MooseIDE-ClassBlueprint' with: [ spec requires: #( 'MooseIDE-Visualization' 'ClassBlueprint' ) ];
+		package: 'MooseIDE-ClassBlueprint-Tests' with: [ spec requires: #( 'MooseIDE-ClassBlueprint' ) ];
+		package: 'MooseIDE-Spotter';
+		package: 'MooseIDE-Core-Reporter' with: [ spec requires: #( 'MooseIDE-Core' ) ];
+		package: 'MooseIDE-Spotter-Tests' with: [ spec requires: #( 'MooseIDE-Spotter' ) ];
+		package: 'MooseIDE-BulkEditor'.
+
+	self defineMooseCriticsPackages: spec
 ]
 
-{ #category : #dependencies }
+{ #category : 'packages' }
+BaselineOfMooseIDE >> definePackagesWhenNoFamix: spec [
+
+	spec
+		package: 'MooseIDE-Core' with: [ spec requires: #( 'Famix' 'FamixTagging' ) ];
+		package: 'MooseIDE-Tagging' with: [ spec requires: #( 'FamixTagging' ) ];
+		package: 'MooseIDE-CoUsageMap' with: [ spec requires: #( 'FamixTagging' ) ];
+		package: 'MooseIDE-Duplication' with: [ spec requires: #( 'FamixReplication' ) ];
+		
+		package: 'Famix-CriticBrowser-Entities' with: [ spec requires: #( 'Famix') ];
+		package: 'Famix-CriticBrowser-Generator' with: [ spec requires: 'Famix' ]
+]
+
+{ #category : 'dependencies' }
 BaselineOfMooseIDE >> famix: spec [
 
 	spec
@@ -97,32 +150,50 @@ BaselineOfMooseIDE >> famix: spec [
 		spec repository: 'github://moosetechnology/Famix:development/src' ]
 ]
 
-{ #category : #dependencies }
+{ #category : 'dependencies' }
 BaselineOfMooseIDE >> famixQueries: spec [
+
 	spec
 		baseline: 'FamixQueries'
 		with: [ spec repository: 'github://moosetechnology/FamixQueries' ]
 ]
 
-{ #category : #dependencies }
+{ #category : 'dependencies' }
+BaselineOfMooseIDE >> famixReplication: spec [
+
+	spec
+		baseline: 'FamixReplication'
+		with: [ 
+		spec repository: 'github://moosetechnology/FamixReplication' ]
+]
+
+{ #category : 'dependencies' }
 BaselineOfMooseIDE >> famixTagging: spec [
 
 	spec
 		baseline: 'FamixTagging'
-		with: [ 
-		spec repository: 'github://moosetechnology/FamixTagging:v1.x.x/src' ]
+		with: [
+		spec repository: 'github://moosetechnology/FamixTagging:development/src' ]
 ]
 
-{ #category : #dependencies }
+{ #category : 'dependencies' }
 BaselineOfMooseIDE >> hierarchicalVisualizations: spec [
 
-	spec
-		baseline: 'HierarchicalVisualizations'
-		with: [ 
-		spec repository: 'github://ObjectProfile/HierarchicalVisualizations:main/src' ]
+	spec baseline: 'HierarchicalVisualizations' with: [
+		spec repository:
+			'github://moosetechnology/HierarchicalVisualizations:main/src' ]
 ]
 
-{ #category : #dependencies }
+{ #category : 'dependencies' }
+BaselineOfMooseIDE >> interactiveNotebook: spec [
+
+	spec
+		baseline: 'InteractiveNotebook'
+		with: [ 
+		spec repository: 'github://moosetechnology/InteractiveNotebook/src' ]
+]
+
+{ #category : 'dependencies' }
 BaselineOfMooseIDE >> labelContractor: spec [
 
 	spec
@@ -131,29 +202,53 @@ BaselineOfMooseIDE >> labelContractor: spec [
 		spec repository: 'github://moosetechnology/LabelContractor/src' ]
 ]
 
-{ #category : #actions }
+{ #category : 'dependencies' }
+BaselineOfMooseIDE >> microdown: spec [
+
+	spec for: #( #'pharo11.x' #'pharo10.x' ) do: [
+		spec
+			baseline: 'Microdown'
+			with: [
+			spec repository: 'github://pillar-markup/Microdown:master/src' ] ].
+
+	spec for: #( #'pharo12.x' ) do: [
+		spec
+			baseline: 'Microdown'
+			with: [
+			spec repository: 'github://pillar-markup/Microdown:Pharo12/src' ] ]
+]
+
+{ #category : 'dependencies' }
+BaselineOfMooseIDE >> pharoAIHierachicalClustering: spec [
+
+	spec
+		baseline: 'AIHierarchicalClustering'
+		with: [ 
+		spec repository: 'github://pharo-ai/hierarchical-clustering/src' ]
+]
+
+{ #category : 'actions' }
 BaselineOfMooseIDE >> registerCustomTools [
 
-	(Smalltalk classNamed: #MiPlayground) register
+	self registerShortcuts. "MiPlayground could be absent if we load only a group"
+	(Smalltalk classNamed: #MiPlaygroundBrowser) ifNotNil: [ :miPlayground | miPlayground register ].
+
+	Smalltalk at: #MooseIDEWelcomeBrowser ifPresent: [ :mooseWelcome | mooseWelcome register ]
 ]
 
-{ #category : #actions }
-BaselineOfMooseIDE >> resetMiApplications [
+{ #category : 'actions' }
+BaselineOfMooseIDE >> registerShortcuts [
 
-	(Smalltalk classNamed: #MiApplication) reset.
-	(Smalltalk classNamed: #MiTestApplication) reset
+	(Smalltalk classNamed: #MiShortcutsCategory) ifNotNil: [
+		:miShortcutsCategory |
+		miShortcutsCategory new installAsGlobalCategory ]
 ]
 
-{ #category : #dependencies }
-BaselineOfMooseIDE >> telescope: spec [
+{ #category : 'dependencies' }
+BaselineOfMooseIDE >> roassalExporters: spec [
+
 	spec
-		baseline: 'TelescopeRoassal3'
-		with: [ spec repository: 'github://TelescopeSt/TelescopeRoassal3' ]
-]
-
-{ #category : #dependencies }
-BaselineOfMooseIDE >> tylerDurden: spec [
-	spec
-		package: 'Durden'
-		with: [ spec repository: 'github://pharo-contributions/Durden' ]
+		baseline: 'RoassalExporters'
+		with: [ 
+		spec repository: 'github://pharo-graphics/RoassalExporters:v1.02/src' ]
 ]

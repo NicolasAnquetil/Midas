@@ -10,24 +10,24 @@ You can also use class side method `#asCommandGroupForSpecContext:` to build a S
 Your presenter should implement `#updateForNewModel:` to define behavior when a new model is installed successfully
 "
 Class {
-	#name : #MiImportCommand,
-	#superclass : #MiCommand,
-	#category : #'MooseIDE-Meta-Import'
+	#name : 'MiImportCommand',
+	#superclass : 'MiCommand',
+	#category : 'MooseIDE-Meta-Import',
+	#package : 'MooseIDE-Meta',
+	#tag : 'Import'
 }
 
-{ #category : #converting }
+{ #category : 'converting' }
 MiImportCommand class >> addToSpCommandGroup: aSpCommandGroup forSpecContext: aPresenter [
 
-	{ 
-		MiImportFromFileCommand.
-		MiImportFromSTCommand } do: [ :cmd | 
+	self allSubclasses do: [ :cmd |
 		aSpCommandGroup register: ((cmd forSpecContext: aPresenter)
 				 iconName: cmd defaultIconName;
 				 yourself) ].
 	^ aSpCommandGroup
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 MiImportCommand class >> asCommandGroupForSpecContext: aPresenter [
 
 	^ self
@@ -35,19 +35,19 @@ MiImportCommand class >> asCommandGroupForSpecContext: aPresenter [
 		  forSpecContext: aPresenter
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MiImportCommand class >> importForm [
 
 	self subclassResponsibility
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 MiImportCommand class >> isAbstract [
 	^ self = MiImportCommand
 ]
 
-{ #category : #hooks }
+{ #category : 'executing' }
 MiImportCommand >> execute [
 
-	(self class importForm on: self context) openDialogWithSpec
+	^ self class importForm new openDialog
 ]

@@ -1,24 +1,25 @@
 Class {
-	#name : #MiBrokerageTest,
-	#superclass : #TestCase,
+	#name : 'MiBrokerageTest',
+	#superclass : 'MiAbstractApplicationTest',
 	#instVars : [
-		'application',
 		'mockProducer',
 		'mockConsumer',
 		'mockProducerConsumer'
 	],
-	#category : #'MooseIDE-Tests-Application'
+	#category : 'MooseIDE-Tests-Application',
+	#package : 'MooseIDE-Tests',
+	#tag : 'Application'
 }
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiBrokerageTest >> setUp [
-	application := MiTestApplication new.
+	super setUp.
 	mockConsumer := Mock named: 'consumer'.
 	mockProducer := Mock named: 'producer'.
 	mockProducerConsumer := Mock named: 'producerConsomer'
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiBrokerageTest >> testConsumeItemFromProducerConsumerShouldNotConsumeItsOwnItem [
 
 	application registerProducer: mockProducerConsumer for: Integer.
@@ -28,13 +29,13 @@ MiBrokerageTest >> testConsumeItemFromProducerConsumerShouldNotConsumeItsOwnItem
 	mockConsumer should not receive consume: 42
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiBrokerageTest >> testConsumeItemNoConsumer [
 	application consumeItem: #blah.
 	mockConsumer should not receive consume: Any.
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiBrokerageTest >> testConsumeItemWithConsumer [
 	application registerConsumer: mockConsumer for: Integer. 
 	application consumeItem: 42.
@@ -42,13 +43,13 @@ MiBrokerageTest >> testConsumeItemWithConsumer [
 	mockConsumer should receive consume: 42.
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiBrokerageTest >> testItemsForNoProducers [
 	self assertCollection: (application itemsFor: Integer) hasSameElements: #()
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiBrokerageTest >> testItemsForOneProducer [
 	(mockProducer stub itemsFor: Integer) willReturn: #(42 25).
 	application registerProducer: mockProducer for: Integer.
@@ -56,7 +57,7 @@ MiBrokerageTest >> testItemsForOneProducer [
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiBrokerageTest >> testItemsForTwoProducers [
 	| otherProducer |
 	(mockProducer stub itemsFor: Integer) willReturn: #(42).
@@ -70,43 +71,46 @@ MiBrokerageTest >> testItemsForTwoProducers [
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiBrokerageTest >> testProducedDoesNotMatchConsumeSuperClass [
 	self deny: (application produced: Integer matchConsumed: LargeNegativeInteger)
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiBrokerageTest >> testProducedItemNoConsumer [
 	application consumeItem: #blah.
 	mockConsumer should not receive consume: Any.
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiBrokerageTest >> testProducedMatchConsumeClassUseTrait [
-	self assert: (application produced: FAMIXSourcedEntity matchConsumed: FamixTWithComments)
 
+	self assert:
+		(application
+			 produced: FamixStMethod
+			 matchConsumed: FamixTWithComments)
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiBrokerageTest >> testProducedMatchConsumeSameClass [
 	self assert: (application produced: Integer matchConsumed: Integer)
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiBrokerageTest >> testProducedMatchConsumeSubclass [
 	self assert: (application produced: LargeNegativeInteger matchConsumed: Integer)
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiBrokerageTest >> testProducedMatchConsumeTraitUseTrait [
 	self assert: (application produced: FamixTClass matchConsumed: FamixTWithComments)
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiBrokerageTest >> testRegisterConsumer [
 	self assert: (application consumersOf: Integer) size equals: 0.
 
@@ -116,7 +120,7 @@ MiBrokerageTest >> testRegisterConsumer [
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiBrokerageTest >> testRegisterConsumerForSiblingClass [
 	self assert: (application consumersOf: LargeNegativeInteger) size equals: 0.
 
@@ -126,7 +130,7 @@ MiBrokerageTest >> testRegisterConsumerForSiblingClass [
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiBrokerageTest >> testRegisterConsumerForSuperClass [
 	self assert: (application consumersOf: LargeNegativeInteger) size equals: 0.
 
@@ -136,7 +140,7 @@ MiBrokerageTest >> testRegisterConsumerForSuperClass [
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiBrokerageTest >> testRegisterProducer [
 	self assert: (application producersOf: Integer) size equals: 0.
 
@@ -146,7 +150,7 @@ MiBrokerageTest >> testRegisterProducer [
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiBrokerageTest >> testRemoveItemFromProducerConsumerShouldNotRemoveItsOwnItem [
 
 	application registerProducer: mockProducerConsumer for: Integer.
@@ -156,13 +160,13 @@ MiBrokerageTest >> testRemoveItemFromProducerConsumerShouldNotRemoveItsOwnItem [
 	mockConsumer should not receive remove: 42
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiBrokerageTest >> testRemoveItemNoConsumer [
 	application removeItem: #blah.
 	mockConsumer should not receive remove: Any.
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiBrokerageTest >> testRemoveItemWithConsumer [
 	application registerConsumer: mockConsumer for: Integer. 
 	application removeItem: 42.
@@ -170,7 +174,7 @@ MiBrokerageTest >> testRemoveItemWithConsumer [
 	mockConsumer should receive remove: 42.
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiBrokerageTest >> testUnregisterConsumer [
 	application registerConsumer: mockConsumer for: Integer.
 	self assert: (application consumersOf: Integer) size equals: 1.
@@ -180,7 +184,7 @@ MiBrokerageTest >> testUnregisterConsumer [
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiBrokerageTest >> testUnregisterProducer [
 	application registerProducer: mockProducer for: Integer.
 	self assert: (application producersOf: Integer) size equals: 1.
@@ -190,7 +194,7 @@ MiBrokerageTest >> testUnregisterProducer [
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiBrokerageTest >> testUpdateItemFromProducerConsumerShouldNotUpdateItsOwnItem [
 
 	application registerProducer: mockProducerConsumer for: Integer.
@@ -200,13 +204,13 @@ MiBrokerageTest >> testUpdateItemFromProducerConsumerShouldNotUpdateItsOwnItem [
 	mockConsumer should not receive update: 42
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiBrokerageTest >> testUpdateItemNoConsumer [
 	application updateItem: #blah.
 	mockConsumer should not receive update: Any.
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiBrokerageTest >> testUpdateItemWithConsumer [
 	application registerConsumer: mockConsumer for: Integer. 
 	application updateItem: 42.

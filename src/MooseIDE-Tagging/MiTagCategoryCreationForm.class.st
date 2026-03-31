@@ -1,23 +1,31 @@
 Class {
-	#name : #MiTagCategoryCreationForm,
-	#superclass : #MiPresenter,
+	#name : 'MiTagCategoryCreationForm',
+	#superclass : 'MiPresenter',
 	#instVars : [
 		'nameField',
 		'cancelButton',
 		'submitButton',
 		'tagModel'
 	],
-	#category : #'MooseIDE-Tagging-Browser'
+	#category : 'MooseIDE-Tagging-Browser',
+	#package : 'MooseIDE-Tagging',
+	#tag : 'Browser'
 }
 
-{ #category : #initialization }
+{ #category : 'accessing' }
+MiTagCategoryCreationForm >> cancelButton [
+
+	^ cancelButton
+]
+
+{ #category : 'initialization' }
 MiTagCategoryCreationForm >> connectPresenters [
 
 	submitButton action: [ self submit ].
 	cancelButton action: [ self owner closeCategoryCreationForm ]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiTagCategoryCreationForm >> initializeLayout [
 
 	self layout: (SpBoxLayout newLeftToRight
@@ -31,7 +39,7 @@ MiTagCategoryCreationForm >> initializeLayout [
 			 yourself)
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiTagCategoryCreationForm >> initializePresenters [
 
 	nameField := self newTextInput placeholder: 'Enter name'.
@@ -40,19 +48,19 @@ MiTagCategoryCreationForm >> initializePresenters [
 	self initializeLayout
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiTagCategoryCreationForm >> reset [
 
 	nameField text: ''
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiTagCategoryCreationForm >> setModelBeforeInitialization: aTagModel [
 
 	tagModel := aTagModel
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiTagCategoryCreationForm >> submit [
 
 	nameField text ifEmpty: [ ^ self ].

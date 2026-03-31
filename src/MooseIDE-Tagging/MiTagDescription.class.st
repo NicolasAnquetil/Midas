@@ -1,17 +1,20 @@
 Class {
-	#name : #MiTagDescription,
-	#superclass : #MiPresenter,
+	#name : 'MiTagDescription',
+	#superclass : 'MiPresenter',
 	#instVars : [
 		'tagFormPresenter',
 		'tagNameLabel',
 		'tagDescriptionText',
 		'tagDescriptionButton',
-		'tagModel'
+		'tagModel',
+		'tagMenu'
 	],
-	#category : #'MooseIDE-Tagging-Browser'
+	#category : 'MooseIDE-Tagging-Browser',
+	#package : 'MooseIDE-Tagging',
+	#tag : 'Browser'
 }
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiTagDescription >> initializeLayout [
 
 	| sep |
@@ -38,16 +41,29 @@ MiTagDescription >> initializeLayout [
 			 yourself)
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiTagDescription >> initializePresenters [
 
 	tagNameLabel := self newLabel.
 	tagDescriptionText := self newText beNotEditable.
+	tagMenu := self newMenu.
+	tagMenu addItem: [ :item | 
+		item
+			name: 'Edit tag';
+			icon: (self iconNamed: #edit);
+			action: [ self owner editCurrentTag ] ].
+	tagMenu addItem: [ :item | 
+		item
+			name: 'Delete tag';
+			icon: (self iconNamed: #glamorousClose);
+			action: [ self owner deleteCurrentTag ] ].
 	tagDescriptionButton := self newToolbar
 		                        beIcons;
 		                        addItem: (self newToolbarPopoverButton
 				                         content: (SpPresenter new
-						                          layout: (SpBoxLayout newLeftToRight
+						                          layout: (SpBoxLayout newTopToBottom
+								                           add: 'Description:' asPresenter
+								                           expand: false;
 								                           add: tagDescriptionText
 								                           withConstraints: [ :const | 
 									                           const
@@ -58,40 +74,37 @@ MiTagDescription >> initializePresenters [
 				                         icon: (self iconNamed: #help);
 				                         yourself);
 		                        addItem: (self newToolbarButton
-				                         icon: (self iconNamed: #smallCogState3);
-				                         help: 'Edit tag';
-				                         action: [ self owner editCurrentTag ];
-				                         yourself);
-		                        addItem: (self newToolbarButton
-				                         icon: (self iconNamed: #delete);
-				                         help: 'Delete Tag';
-				                         action: [ self owner deleteCurrentTag ];
+				                         help: 'Tag menu';
+				                         icon: (self iconNamed: #arrowDown);
+				                         action: [ 
+					                         tagMenu openWithSpecAt:
+							                         self currentHand position ];
 				                         yourself);
 		                        yourself.
 	tagFormPresenter := self newImage.
 	self initializeLayout
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiTagDescription >> refresh [
 
 	self setTag: tagModel currentTag
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiTagDescription >> setModelBeforeInitialization: aTagModel [
 
 	tagModel := aTagModel
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiTagDescription >> setTag: aTag [
 
-	aTag ifNil: [ ^self ].
+	aTag ifNil: [ ^ self ].
 	tagNameLabel label: aTag name.
 	tagDescriptionText text: (aTag description
 			 ifNotNil: [ :text | text ]
 			 ifNil: [ 'No description on this tag.' ]).
-	tagFormPresenter image: (tagModel iconForTag: aTag).
+	tagFormPresenter image: (self application iconForTag: aTag).
 	self update
 ]

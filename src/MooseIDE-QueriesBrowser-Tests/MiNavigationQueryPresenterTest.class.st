@@ -1,42 +1,56 @@
 Class {
-	#name : #MiNavigationQueryPresenterTest,
-	#superclass : #MiQueryConfiguratorPresenterTest,
-	#category : #'MooseIDE-QueriesBrowser-Tests-Queries Configuration'
+	#name : 'MiNavigationQueryPresenterTest',
+	#superclass : 'MiQueryConfiguratorPresenterTest',
+	#category : 'MooseIDE-QueriesBrowser-Tests-Queries Configuration',
+	#package : 'MooseIDE-QueriesBrowser-Tests',
+	#tag : 'Queries Configuration'
 }
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiNavigationQueryPresenterTest >> assertSubpresentersAreConfigured [
 
-	self assert: presenter directionDropList selectedItem equals: self createNewQuery directionStrategy.
+	self
+		assert: presenter directionDropList selectedItem
+		equals: self createNewQuery directionStrategy.
+
+
+	self
+		assertCollection: presenter associationsList items
+		includesAll: self createNewQuery associations.
 	self
 		assertCollection: presenter associationsList selectedItems
-		hasSameElements: self createNewQuery associations
+		hasSameElements: self createNewQuery associations.
+
+	self
+		assert: presenter associationsButton class
+		equals: SpButtonPresenter
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 MiNavigationQueryPresenterTest >> classToTest [
 	^ MiNavigationQueryPresenter
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiNavigationQueryPresenterTest >> createNewQuery [
 
 	| rootQuery |
+
 	rootQuery := FQRootQuery new
-		result: helper classesAndMethods;
-		yourself.
+		             input: helper classesAndMethods;
+		             yourself.
 	^ (FQNavigationQuery defaultForParent: rootQuery)
-			resetAndChangeDirection: FQIncomingNavigation;
-			association: FamixStInvocation;
-			yourself
+		  resetAndChangeDirection: FQIncomingNavigation;
+		  association: FamixStInvocation;
+		  yourself
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 MiNavigationQueryPresenterTest >> queryClass [
 	^ FQNavigationQuery
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiNavigationQueryPresenterTest >> testPresenters [
 
 	self
@@ -45,12 +59,14 @@ MiNavigationQueryPresenterTest >> testPresenters [
 	self
 		assertCollection: presenter directionDropList items
 		hasSameElements: presenter query class directionStrategies.
+
+	(presenter presenterAt: #directionDropList) selectIndex: 2.
 	self
 		assert: presenter associationsButton class
 		equals: SpButtonPresenter
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiNavigationQueryPresenterTest >> testPresentersOnImpossibleQuery [
 
 	self resetPresenterWithEntities: helper noEntities.
@@ -63,21 +79,31 @@ MiNavigationQueryPresenterTest >> testPresentersOnImpossibleQuery [
 		identicalTo: NoPossibleQueryPresenter
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiNavigationQueryPresenterTest >> testQueryValidity [
 
+	self deny: presenter query isValid.
+
+	(presenter presenterAt: #directionDropList) selectIndex: 1.
+	self deny: presenter query isValid.
+
+	(presenter presenterAt: #associationsList) activateItem:
+		presenter query availableAssociations anyOne.
 	self assert: presenter query isValid.
+
 	self resetPresenterWithEntities:
 		helper entitiesWithNoIncomingAssociations.
 	self deny: presenter query isValid.
+
 	self resetPresenterWithEntities: helper noEntities.
 	self deny: presenter query isValid
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiNavigationQueryPresenterTest >> testUpdateQueryWithSelectedAssociations [
 
 	| associationsRemoved |
+	presenter query beDefaultForParent.
 	associationsRemoved := presenter query availableAssociations 
 		                       removeFirst: 2.
 	presenter updateQueryWithSelectedAssociations: associationsRemoved.

@@ -2,75 +2,95 @@
 A query configuration presenter for the `FQNavigationQuery`
 "
 Class {
-	#name : #MiNavigationQueryPresenter,
-	#superclass : #MiQueryConfiguratorPresenter,
+	#name : 'MiNavigationQueryPresenter',
+	#superclass : 'MiQueryConfiguratorPresenter',
 	#instVars : [
 		'directionDropList',
 		'associationsButton',
 		'associationsList',
 		'selectedAssociationsLabel'
 	],
-	#category : #'MooseIDE-QueriesBrowser-Configuration presenters'
+	#category : 'MooseIDE-QueriesBrowser-Configuration presenters',
+	#package : 'MooseIDE-QueriesBrowser',
+	#tag : 'Configuration presenters'
 }
 
-{ #category : #specs }
+{ #category : 'specs' }
 MiNavigationQueryPresenter class >> title [
 	^ 'Navigation Query'
 ]
 
-{ #category : #actions }
-MiNavigationQueryPresenter >> computeQuery: association [
+{ #category : 'api - actions' }
+MiNavigationQueryPresenter >> configureFor: aQuery [
+
+	| queryAssociations |
+	query := aQuery.
+	queryAssociations := aQuery associations.
+
+	directionDropList selectItem: aQuery directionStrategy.
+
+	associationsButton := self newAssociationsButton.
+
+	associationsList items: associationsList items | queryAssociations.
+
+	queryAssociations do: [ :assoc | 
+		associationsList activateItem: assoc ]
+]
+
+{ #category : 'actions' }
+MiNavigationQueryPresenter >> configureQuery: association [
 
 	self updateQueryWithSelectedAssociations:
 		associationsList selectedItems
 ]
 
-{ #category : #'api - actions' }
-MiNavigationQueryPresenter >> configureFor: aQuery [
-
-	directionDropList selectItem: aQuery directionStrategy.
-	associationsList selectItems: aQuery associations.
-	query := aQuery
-]
-
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiNavigationQueryPresenter >> initializeAssociationsButton [
 
-	associationsButton := self newAssociationsButton
+	associationsButton := self query availableAssociations
+		                      ifEmpty: [ 
+		                      self noParameterMessage: 'association' ]
+		                      ifNotEmpty: [ self newAssociationsButton ]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiNavigationQueryPresenter >> initializeAssociationsList [
 
-	associationsList := self newSelectableListForPopoverExtent: 120 @ 120.
+	associationsList := self instantiate: SpFilteringSelectableListPresenter.
+	associationsList addStyle: 'smallList'.
 	associationsList
 		display: [ :item | item mooseDescription name asString ];
 		items: self query availableAssociations;
 		selectItems: self query associations;
-		onActivation: [ :association | self selectAssociationAction: association ];
-		onDeactivation: [ :association | self selectAssociationAction: association ]
+		onActivation: [ :association | 
+			self selectAssociationAction: association ];
+		onDeactivation: [ :association | 
+			self selectAssociationAction: association ].
+
+	self query associations do: [ :assoc | 
+		associationsList activateItem: assoc ]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiNavigationQueryPresenter >> initializeDirectionsDropList [
 
 	directionDropList := self newDropList.
 	directionDropList
 		startWithoutSelection;
 		items: self query class directionStrategies;
-		display: #label;
+		display: [ :each | each label];
 		whenSelectedItemChangedDo: [ :selectedDirection | 
 			self updateDirection: selectedDirection ]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiNavigationQueryPresenter >> initializeLabel [
 
 	selectedAssociationsLabel := self newLabel.
 	self updateLabel
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiNavigationQueryPresenter >> initializePresenters [
 
 	self initializeDirectionsDropList.
@@ -80,19 +100,16 @@ MiNavigationQueryPresenter >> initializePresenters [
 	self initializeLayout
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiNavigationQueryPresenter >> newAssociationsButton [
 
-	^  self query availableAssociations
-			ifEmpty: [ self noParameterMessage: 'association' ]
-			ifNotEmpty: [ 
-				self newButton
-					label: 'Select Associations';
-					action: [ self showAssociationsPopover ];
-				yourself ]
+	^ self newButton
+		  label: 'Select Associations';
+		  action: [ self showAssociationsPopover ];
+		  yourself
 ]
 
-{ #category : #layout }
+{ #category : 'layout' }
 MiNavigationQueryPresenter >> newLayout [
 
 	| padding |
@@ -110,17 +127,16 @@ MiNavigationQueryPresenter >> newLayout [
 		yourself
 ]
 
-{ #category : #actions }
+{ #category : 'actions' }
 MiNavigationQueryPresenter >> selectAssociationAction: association [
 
 	self updateLabel.
 	self computeQueryAction: association
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiNavigationQueryPresenter >> showAssociationsPopover [
-			
-	associationsList items: self query availableAssociations.
+
 	self newPopover
 		relativeTo: associationsButton;
 		presenter: associationsList;
@@ -128,18 +144,19 @@ MiNavigationQueryPresenter >> showAssociationsPopover [
 		popup
 ]
 
-{ #category : #actions }
+{ #category : 'actions' }
 MiNavigationQueryPresenter >> updateDirection: selectedDirection [
 
 	self query resetAndChangeDirection: selectedDirection.
 
-	associationsButton := self newAssociationsButton.
+	self initializeAssociationsList.
+	self initializeAssociationsButton.
 	self initializeLayout.
 
 	self notifyQueryChanged
 ]
 
-{ #category : #actions }
+{ #category : 'actions' }
 MiNavigationQueryPresenter >> updateLabel [
 	
 	| selectedAssociationsString names reducedNames |
@@ -158,7 +175,7 @@ MiNavigationQueryPresenter >> updateLabel [
 	selectedAssociationsLabel label: selectedAssociationsString
 ]
 
-{ #category : #actions }
+{ #category : 'actions' }
 MiNavigationQueryPresenter >> updateQueryWithSelectedAssociations: selectedAssociations [
 
 	| nonSelectedAssociations |

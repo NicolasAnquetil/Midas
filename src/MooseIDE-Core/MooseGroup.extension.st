@@ -1,6 +1,6 @@
-Extension { #name : #MooseGroup }
+Extension { #name : 'MooseGroup' }
 
-{ #category : #'*MooseIDE-Core' }
-MooseGroup >> midasIcon [
+{ #category : '*MooseIDE-Core' }
+MooseGroup >> mooseIcon [
 	^ self iconNamed: #mooseMetamodelGroup
 ]

@@ -2,63 +2,76 @@
 Root folder explorer.
 Allows to explore the root folder of a model (left panel) and shows the entities contained in each file (right panel).
 
-- Follow: Receives a MooseModel that has a root folder
+- Accepted entities: a MooseModel that has a root folder
 - Highlight: <TODO>
   Entities if present and visible.
   Could highlight the file owning a received entity.
 - Propagate: <TODO>
 "
 Class {
-	#name : #MiFilesBrowser,
-	#superclass : #MiAbstractFamixBrowser,
+	#name : 'MiFilesBrowser',
+	#superclass : 'MiAbstractBrowser',
 	#instVars : [
 		'tree',
 		'treeEntity'
 	],
-	#category : #'MooseIDE-Famix-FilesBrowser'
+	#category : 'MooseIDE-Famix-FilesBrowser',
+	#package : 'MooseIDE-Famix',
+	#tag : 'FilesBrowser'
 }
 
-{ #category : #specs }
-MiFilesBrowser class >> defaultSpec [
-	^ super defaultSpec
-		add:
-			(SpBoxLayout newHorizontal
-				add: #tree;
-				add: #treeEntity;
-				yourself);
-		yourself
-]
-
-{ #category : #'world menu' }
+{ #category : 'world menu' }
 MiFilesBrowser class >> menuCommandOn: aBuilder [
+
 	<worldMenu>
-	<miBrowsers>
-	(aBuilder item: #FilesBrowser)
-		parent: (self toolbarFamixName);
-		label: (self title);
-		icon: (self iconNamed: #mooseFolder);
-		help: (self helpMessage);
-		order: 3;
-		action: [ self open ]
+	<miBrowsersMenu>
+	^ self buildMenuItemIn: aBuilder
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'world menu' }
+MiFilesBrowser class >> menuIconName [
+
+	^ #mooseFolder
+]
+
+{ #category : 'world menu' }
+MiFilesBrowser class >> menuItem [
+
+	^ #FilesBrowser
+]
+
+{ #category : 'world menu' }
+MiFilesBrowser class >> menuParent [
+
+	^ self oldBrowserMenuRoot
+]
+
+{ #category : 'world menu' }
+MiFilesBrowser class >> menuPriority [
+
+	^ self menuOldBrowsersPriority + 3
+]
+
+{ #category : 'instance creation' }
 MiFilesBrowser class >> newModel [
+
 	^ MiFilesModel new
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 MiFilesBrowser class >> open [
+
 	<script>
 	^ super open
 ]
 
-{ #category : #specs }
+{ #category : 'specs' }
 MiFilesBrowser class >> title [
+
 	^ 'Files'
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 MiFilesBrowser >> canFollowEntity: anObject [
 
 	^ anObject isMooseObject and: [ 
@@ -67,16 +80,26 @@ MiFilesBrowser >> canFollowEntity: anObject [
 				  anObject rootFolder asFileReference exists ] ] ]
 ]
 
-{ #category : #initialization }
+{ #category : 'testing' }
+MiFilesBrowser >> canTagEntities [ 
+	self flag: 'Remove browser ? (issue #810)'.
+	^false
+]
+
+{ #category : 'initialization' }
 MiFilesBrowser >> computeItemsInFileReference: aFileReference [
 	"isChildOf: can bug see issue https://github.com/pharo-project/pharo/issues/5720"
 
-	^ (self model mooseModel allUsing: FamixTFileAnchor)
-		select: [ :anchor | anchor element isClass and: [ anchor element isAnonymousClass not and: [ anchor fileReference canonicalize isChildOf: self model fileReference ] ] ]
-		thenCollect: [ :anchor | anchor element ]
+	^ (self specModel mooseModel allUsing: FamixTFileAnchor)
+		  select: [ :anchor |
+				  anchor element isClass and: [
+						  anchor element isAnonymousClass not and: [
+							  anchor fileReference canonicalize isChildOf:
+								  self specModel fileReference ] ] ]
+		  thenCollect: [ :anchor | anchor element ]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiFilesBrowser >> connectPresenters [
 	super connectPresenters.
 	tree whenSelectionChangedDo: [ :selected |
@@ -84,46 +107,48 @@ MiFilesBrowser >> connectPresenters [
 		[ selected selectedItem hasChildren] ) 
 			ifTrue: [
 				self selectFileReference: selected selectedItem.
-				treeEntity roots: (self computeItemsInFileReference: self model fileReference) ] ] 
+				treeEntity roots: (self computeItemsInFileReference: self specModel fileReference) ] ] 
 ]
 
-{ #category : #actions }
+{ #category : 'layout' }
+MiFilesBrowser >> defaultLayout [
+
+	^ self newBoxLayoutLeftToRight
+		  add: tree;
+		  add: treeEntity;
+		  yourself
+]
+
+{ #category : 'actions' }
 MiFilesBrowser >> followEntity: anEntity [
 
-	self model mooseModel: anEntity.
+	self specModel mooseModel: anEntity.
 	self selectFileReference: anEntity rootFolder asFileReference.
 	self updateWindowTitle
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiFilesBrowser >> initializePresenters [
 
 	self initializeTreeTable.
 	treeEntity := self newTreeTable.
 	treeEntity
 		addColumn: (SpCompositeTableColumn new
-				 addColumn: ((SpImageTableColumn evaluated: #midasIcon)
+				 addColumn: ((SpImageTableColumn evaluated: #mooseIcon)
 						  width: 20;
 						  yourself);
 				 addColumn: (SpStringTableColumn evaluated: #name);
 				 yourself);
-		children: [ :aClass | aClass children asOrderedCollection ];
+		children: [ :aClass | aClass containedEntities asOrderedCollection ];
 		beMultipleSelection;
 		beResizable.
-	treeEntity whenSelectionChangedDo: [ :selected | 
-		selected selectedItems ifNotEmpty: [ 
-			self freezeDuring: [ 
-				selected selectedItems size = 1
-					ifTrue: [ 
-					self buses do: [ :bus | 
-						bus globallySelect: selected selectedItem ] ]
-					ifFalse: [ 
-						| mooseGroup |
-						mooseGroup := MooseGroup withAll: selected selectedItems.
-						self buses do: [ :bus | bus globallySelect: mooseGroup ] ] ] ] ]
+
+	treeEntity whenSelectionChangedDo: [ :selected |
+			selected selectedItems ifNotEmpty: [
+				self freezeDuring: [ selected selectedItem mooseInterestingEntity miPropagateOn: self buses ] ] ]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiFilesBrowser >> initializeTreeTable [
 	tree := self newTable.
 	tree
@@ -131,36 +156,38 @@ MiFilesBrowser >> initializeTreeTable [
 			(SpCompositeTableColumn new
 				addColumn:
 					(SpStringTableColumn evaluated: [ :fileRef |
-						(fileRef isChildOf: self model fileReference)
+						(fileRef isChildOf: self specModel fileReference)
 							ifTrue: [ fileRef basename ] ifFalse: [ '..' ] ]);
 				yourself);
 		beResizable
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MiFilesBrowser >> miSelectedItem [
 
-	^ model mooseModel
+	^ specModel mooseModel
 ]
 
-{ #category : #refreshing }
+{ #category : 'refreshing' }
 MiFilesBrowser >> refresh [
 
-	tree items: { self model fileReference parent }
-		, self model fileReference directories
-		, self model fileReference files
+	tree items: { self specModel fileReference parent }
+		, self specModel fileReference directories
+		, self specModel fileReference files
 ]
 
-{ #category : #actions }
+{ #category : 'actions' }
 MiFilesBrowser >> selectFileReference: aFileReference [
-	self model fileReference: aFileReference.
+
+	self specModel fileReference: aFileReference.
 	self refresh
 ]
 
-{ #category : #refreshing }
+{ #category : 'refreshing' }
 MiFilesBrowser >> updateWindowTitle [
-	self
-		withWindowDo: [ :window | 
-			window
-				title: self class title , ' of ' , self model mooseModel name , ' model' ]
+
+	self withWindowDo: [ :window |
+			window title:
+				self class title , ' of ' , self specModel mooseModel name
+				, ' model' ]
 ]

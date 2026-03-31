@@ -1,68 +1,70 @@
 Class {
-	#name : #MiBusLogBrowserTest,
-	#superclass : #MiAbstractBrowserTest,
+	#name : 'MiBusLogBrowserTest',
+	#superclass : 'MiAbstractBrowserTest',
 	#instVars : [
-		'newBrowser',
-		'entityToSelect'
+		'newBrowser'
 	],
-	#category : #'MooseIDE-Tests-Browsers'
+	#category : 'MooseIDE-Tests-Browsers',
+	#package : 'MooseIDE-Tests',
+	#tag : 'Browsers'
 }
 
-{ #category : #running }
+{ #category : 'running' }
 MiBusLogBrowserTest >> browserClass [
 
 	^ MiBusLogBrowser
 ]
 
-{ #category : #initialization }
-MiBusLogBrowserTest >> setUp [
+{ #category : 'running' }
+MiBusLogBrowserTest >> receiveEntityToSelect [
 
-	super setUp.
-	entityToSelect := FamixStClass named: 'TestClass'
+	self application miPropagate: entityToSelect
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 MiBusLogBrowserTest >> tearDown [
 
 	newBrowser ifNotNil: [ newBrowser window close ].
 	super tearDown
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiBusLogBrowserTest >> testActivateActionButtons [
+	" checks that top toolbar are inactive by default because there is no default selection"
 
 	browser actionButtons do: [ :button | self deny: button isEnabled ].
 
-	self bus globallySelect: entityToSelect.
-	browser actionButtons do: [ :button | self assert: button isEnabled ]
+	self receiveEntityToSelect.
+
+	browser actionButtons do: [ :button | self deny: button isEnabled ]
 ]
 
-{ #category : #tests }
-MiBusLogBrowserTest >> testActivateLocalActionButtons [
-
-	browser localActionButtons do: [ :button | self deny: button isEnabled ].
-	
-	self bus globallySelect: entityToSelect.
-	browser localActionButtons do: [ :button | self assert: button isEnabled ]
+{ #category : 'tests' }
+MiBusLogBrowserTest >> testCanTagEntities [
+	self deny: browser canTagEntities 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiBusLogBrowserTest >> testMiSelectedItem [
+	" test that by default there are no selected items"
 
-	self assert: browser miSelectedItem isNil.
+	self assert: browser miSelectedItem isEmpty.
 
-	self bus globallySelect: entityToSelect.
+	self receiveEntityToSelect.
 
-	self assert: browser miSelectedItem equals: entityToSelect
+	self assert: browser miSelectedItem isEmpty
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 MiBusLogBrowserTest >> testOpenOnLatestEntity [
+	"test that new browser opens on the last selected entity"
 
-	self assert: browser miSelectedItem isNil.
+	self assert: browser miSelectedItem isEmpty.
 
-	self bus globallySelect: entityToSelect.
+	self receiveEntityToSelect.
 
-	newBrowser := self browserClass openForTests.
-	self assert: newBrowser miSelectedItem equals: entityToSelect
+	newBrowser := self browserClass openForTests: self application.
+	newBrowser getDisplayedList clickAtIndex: 1.
+
+	self assertCollection: newBrowser miSelectedItem hasSameElements: {  entityToSelect } 
 ]

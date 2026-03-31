@@ -1,39 +1,33 @@
 Class {
-	#name : #MiFilesBrowserTest,
-	#superclass : #MiAbstractBrowserTest,
-	#instVars : [
-		'entityToSelect'
-	],
-	#category : #'MooseIDE-Tests-Browsers'
+	#name : 'MiFilesBrowserTest',
+	#superclass : 'MiAbstractBrowserTest',
+	#category : 'MooseIDE-Tests-Browsers',
+	#package : 'MooseIDE-Tests',
+	#tag : 'Browsers'
 }
 
-{ #category : #running }
+{ #category : 'running' }
 MiFilesBrowserTest >> browserClass [
 	^ MiFilesBrowser
 ]
 
-{ #category : #initialization }
-MiFilesBrowserTest >> setUp [
+{ #category : 'running' }
+MiFilesBrowserTest >> defaultEntityToSelect [
 
-	super setUp.
-	entityToSelect := MooseModel new
-		                  rootFolder: FileSystem workingDirectory;
-		                  add: MooseEntity new;
-		                  yourself
+	^ MooseModel new
+		  rootFolder: FileSystem workingDirectory;
+		  add: MooseEntity new;
+		  yourself
 ]
 
-{ #category : #tests }
-MiFilesBrowserTest >> testActivateActionButtons [
-
-	browser actionButtons do: [ :button | self deny: button isEnabled ].
-
-	browser receiveEntity: entityToSelect.
-	browser actionButtons do: [ :button | self assert: button isEnabled ]
+{ #category : 'tests' }
+MiFilesBrowserTest >> testCanTagEntities [
+	self deny: browser canTagEntities 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 MiFilesBrowserTest >> testMiSelectedItem [
 
-	browser receiveEntity: entityToSelect.
+	self receiveEntityToSelect.
 	self assert: browser miSelectedItem equals: entityToSelect
 ]

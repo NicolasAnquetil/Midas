@@ -1,61 +1,52 @@
 Class {
-	#name : #MiBrowserPresenter,
-	#superclass : #MiMidasItemPresenter,
+	#name : 'MiBrowserPresenter',
+	#superclass : 'MiOverviewItemPresenter',
 	#instVars : [
 		'closeButton',
 		'topButton'
 	],
-	#category : #'MooseIDE-Core-Overview'
+	#category : 'MooseIDE-Core-Overview',
+	#package : 'MooseIDE-Core',
+	#tag : 'Overview'
 }
 
-{ #category : #actions }
-MiBrowserPresenter >> activateItem: aBus [
-	model followBus: aBus
+{ #category : 'layout' }
+MiBrowserPresenter >> defaultLayout [
+
+	^ SpBoxLayout newHorizontal
+		  add: nameLabel;
+		  add: topButton expand: false;
+		  add: closeButton expand: false;
+		  yourself
 ]
 
-{ #category : #actions }
-MiBrowserPresenter >> deactivateItem: aBus [
-	model unfollowBus: aBus
-]
-
-{ #category : #actions }
+{ #category : 'actions' }
 MiBrowserPresenter >> highlightWindow [
+
 	model window beep
 ]
 
-{ #category : #initialization }
-MiBrowserPresenter >> initializeLayout [
-
-	self layout: (SpBoxLayout newHorizontal
-		add: nameLabel;
-		add: SpNullPresenter new;
-		add: topButton expand: false;
-		add: closeButton expand: false;
-		yourself)
-]
-
-{ #category : #initialization }
+{ #category : 'initialization' }
 MiBrowserPresenter >> initializePresenters [
 
 	super initializePresenters.
 	topButton := self newButton
 		             iconName: #window;
 		             label: 'Put on top';
-		             action: [ 
-			             model window window
-				             expand;
-				             activate ];
+		             action: [
+			             model withWindowDo: [ :window |
+					             window
+						             restore;
+						             activate ] ];
 		             yourself.
 	closeButton := self newButton
 		               iconName: #delete;
 		               label: 'Close';
-		               action: [ model window close ];
-		               yourself.
-		
-	self initializeLayout
+		               action: [ model withWindowDo: #close ];
+		               yourself
 ]
 
-{ #category : #settings }
+{ #category : 'settings' }
 MiBrowserPresenter >> toolbarLabel [
 	^ model title
 ]

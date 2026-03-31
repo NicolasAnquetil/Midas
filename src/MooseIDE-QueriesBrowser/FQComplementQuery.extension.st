@@ -1,13 +1,13 @@
-Extension { #name : #FQComplementQuery }
+Extension { #name : 'FQComplementQuery' }
 
-{ #category : #'*MooseIDE-QueriesBrowser' }
-FQComplementQuery class >> isAvailableForQueriesSize: numberOfQueriesInPresenter [
-
-	^ numberOfQueriesInPresenter > 0
-]
-
-{ #category : #'*MooseIDE-QueriesBrowser' }
+{ #category : '*MooseIDE-QueriesBrowser' }
 FQComplementQuery class >> miPresenterClass [
 
 	^ MiNegationQueryPresenter
+]
+
+{ #category : '*MooseIDE-QueriesBrowser' }
+FQComplementQuery class >> minimumQueriesSize [
+
+	^ 1
 ]

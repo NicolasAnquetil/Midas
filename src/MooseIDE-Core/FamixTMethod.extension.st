@@ -1,6 +1,6 @@
-Extension { #name : #FamixTMethod }
+Extension { #name : 'FamixTMethod' }
 
-{ #category : #'*MooseIDE-Core' }
-FamixTMethod >> midasIcon [
-	^ self iconNamed: #mooseFamixMethod
+{ #category : '*MooseIDE-Core' }
+FamixTMethod >> mooseIcon [
+	^ self iconNamed: #famixMethod
 ]

@@ -1,47 +1,62 @@
 Class {
-	#name : #MiPresenter,
-	#superclass : #SpPresenter,
-	#category : #'MooseIDE-Core-Browser'
+	#name : 'MiPresenter',
+	#superclass : 'SpPresenter',
+	#category : 'MooseIDE-Core-Browser',
+	#package : 'MooseIDE-Core',
+	#tag : 'Browser'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MiPresenter class >> currentApplication [
 
 	^ MiApplication current
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MiPresenter class >> iconNamed: aName [
 
 	^ self currentApplication iconNamed: aName
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 MiPresenter class >> new [
 
 	^ self newApplication: self currentApplication
 ]
 
-{ #category : #specs }
+{ #category : 'specs' }
 MiPresenter class >> tableLineHeight [
 	^ self labelHeight + 5
 ]
 
-{ #category : #testing }
+{ #category : 'actions' }
+MiPresenter >> helpText [
+	"Override when necessary"
+
+	^ self class comment
+]
+
+{ #category : 'testing' }
 MiPresenter >> isMiBrowser [
 	^ false
 ]
 
-{ #category : #'scripting - widgets' }
-MiPresenter >> newSelectableListForPopoverExtent: aPoint [
+{ #category : 'scripting - widgets' }
+MiPresenter >> newMooseGroupsTreeTable [
 
-	^ SpFilteringSelectableListPresenter new
-		  layout: (self newBoxLayoutTopToBottom
-				   add: SpFilteringSelectableListPresenter defaultSpec
-				   withConstraints: [ :c | 
-					   c
-						   height: aPoint x;
-						   width: aPoint y ];
-				   yourself);
-		  yourself
+	^ self instantiate: MiMooseGroupsTreeTablePresenter
+]
+
+{ #category : 'accessing' }
+MiPresenter >> rootBrowser [
+
+	^ self isMiBrowser
+		  ifTrue: [ self ]
+		  ifFalse: [ self owner rootBrowser ]
+]
+
+{ #category : 'accessing' }
+MiPresenter >> windowIcon [
+
+	^ self iconNamed: #mooseIcon
 ]
