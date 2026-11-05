@@ -293,6 +293,15 @@ MiArchitecturalMapModel >> entities: aCollection [
 	self recomputeDefaultSettings
 ]
 
+{ #category : 'accessing' }
+MiArchitecturalMapModel >> getDependenciesFor: anEntity [
+
+	^associationTypes flatCollect: [ :associationType |
+		(anEntity queryLocal: #in with: associationType)
+			reject: [ :dependency |
+				self shouldHideDependency: dependency ] ]
+]
+
 { #category : 'testing' }
 MiArchitecturalMapModel >> hasSettings [
 

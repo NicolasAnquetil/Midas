@@ -413,10 +413,8 @@ MiArchitecturalMapBuilder >> setDependenciesForEntity: anEntity [
 
 	anEntity isQueryable ifFalse: [ ^ self ].
 
-	mapModel associationTypes do: [ :associationType |
-			(anEntity queryLocal: #in with: associationType) do: [ :dependency |
-					(mapModel shouldHideDependency: dependency) ifFalse: [
-						self setDependency: dependency forEntity: anEntity ] ] ]
+	(mapModel getDependenciesFor: anEntity) do: [ :dependency |
+		self setDependency: dependency forEntity: anEntity ]
 ]
 
 { #category : 'building' }
