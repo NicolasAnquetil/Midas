@@ -1,8 +1,8 @@
 "
-I turn a MiStandaloneArchitecturalMapModel into a GModel: a node per root entity (positioned and sized by the Roassal layout of MiArchitecturalMapBuilder) and one edge per ordered pair of roots having a dependency between their descendants.
+I draw a MiArchitecturalMapModel for a GLSP client, as MiArchitecturalMapVisualization draws it in Roassal for a MiArchitecturalMapBrowser: from the GLSPArchitecturalMapBrowser of the session, I build a GModel (I am the GLSP model factory of GLSPArchitecturalMapDiagramModule): a node per root entity (positioned and sized by the Roassal layout of MiArchitecturalMapBuilder) and one edge per ordered pair of roots having a dependency between their descendants.
 "
 Class {
-	#name : 'GLSPArchitecturalMapGModelFactory',
+	#name : 'GLSPArchitecturalMapVisualization',
 	#superclass : 'GLSPGModelFactory',
 	#category : 'MooseIDE-ArchitecturalMap-GLSP',
 	#package : 'MooseIDE-ArchitecturalMap',
@@ -10,7 +10,7 @@ Class {
 }
 
 { #category : 'building' }
-GLSPArchitecturalMapGModelFactory >> circleRadiusFor: aCollectionOfShapes [
+GLSPArchitecturalMapVisualization >> circleRadiusFor: aCollectionOfShapes [
 	"A radius large enough for two neighbours on the circle not to overlap:
 	the chord between them (2 r sin(pi / n)) is at least the widest shape plus the gap.
 	0 lets RSCircleLayout compute its own radius (fine for a single shape)"
@@ -22,10 +22,11 @@ GLSPArchitecturalMapGModelFactory >> circleRadiusFor: aCollectionOfShapes [
 ]
 
 { #category : 'creation' }
-GLSPArchitecturalMapGModelFactory >> createGModel: aModelState [
+GLSPArchitecturalMapVisualization >> createGModel: aModelState [
 
 	| mapModel shapes origin root nodeIds |
-	mapModel := aModelState sourceModel.
+	mapModel := aModelState sourceModel ifNotNil: [ :browser | browser mapModel ].
+	mapModel ifNil: [ ^ GLSPGModelRoot new id: 'archmap'; type: 'graph'; yourself ].
 	shapes := self rootShapesFor: mapModel.
 	root := GLSPGModelRoot new
 		        id: 'archmap';
@@ -46,7 +47,7 @@ GLSPArchitecturalMapGModelFactory >> createGModel: aModelState [
 ]
 
 { #category : 'building' }
-GLSPArchitecturalMapGModelFactory >> edgesFor: aMapModel nodeIds: aDictionary [
+GLSPArchitecturalMapVisualization >> edgesFor: aMapModel nodeIds: aDictionary [
 	"One edge per ordered pair of roots, from the root of the dependent entity to the root of the entity it depends on"
 
 	| rootOf pairs edges |
@@ -74,31 +75,31 @@ GLSPArchitecturalMapGModelFactory >> edgesFor: aMapModel nodeIds: aDictionary [
 ]
 
 { #category : 'building' }
-GLSPArchitecturalMapGModelFactory >> gapSize [
+GLSPArchitecturalMapVisualization >> gapSize [
 
 	^ 40
 ]
 
 { #category : 'building' }
-GLSPArchitecturalMapGModelFactory >> idFor: anEntity [
+GLSPArchitecturalMapVisualization >> idFor: anEntity [
 
 	^ 'n' , anEntity mooseID printString
 ]
 
 { #category : 'building' }
-GLSPArchitecturalMapGModelFactory >> margin [
+GLSPArchitecturalMapVisualization >> margin [
 
 	^ 20 @ 20
 ]
 
 { #category : 'building' }
-GLSPArchitecturalMapGModelFactory >> maxWidth [
+GLSPArchitecturalMapVisualization >> maxWidth [
 
 	^ 1000
 ]
 
 { #category : 'building' }
-GLSPArchitecturalMapGModelFactory >> nodeFor: aShape origin: aPoint [
+GLSPArchitecturalMapVisualization >> nodeFor: aShape origin: aPoint [
 
 	| entity rectangle id node |
 	entity := aShape model rawModel.
@@ -118,7 +119,7 @@ GLSPArchitecturalMapGModelFactory >> nodeFor: aShape origin: aPoint [
 ]
 
 { #category : 'building' }
-GLSPArchitecturalMapGModelFactory >> rootShapesFor: aMapModel [
+GLSPArchitecturalMapVisualization >> rootShapesFor: aMapModel [
 	"The shapes of the (collapsed) root nodes, laid out by Roassal.
 	The default flow and circle layouts of the map are very tight: spread them a bit"
 
@@ -140,7 +141,7 @@ GLSPArchitecturalMapGModelFactory >> rootShapesFor: aMapModel [
 ]
 
 { #category : 'building' }
-GLSPArchitecturalMapGModelFactory >> withAllDescendantsOf: anEntity in: aMapModel [
+GLSPArchitecturalMapVisualization >> withAllDescendantsOf: anEntity in: aMapModel [
 
 	| result todo |
 	result := IdentitySet new.

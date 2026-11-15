@@ -1,8 +1,8 @@
 "
-Stands for a GLSPServer in GLSPDSMBrowserTest: keeps the actions sent to the client; once closed, fails as a closed connection does.
+Stands for a GLSPServer in the tests of the GLSP browsers of MooseIDE (GLSPDSMBrowserTest, GLSPArchitecturalMapBrowserTest): keeps the actions sent to the client; once closed, fails as a closed connection does.
 "
 Class {
-	#name : 'GLSPDSMTestServer',
+	#name : 'GLSPTestServer',
 	#superclass : 'Object',
 	#instVars : [
 		'sentActions',
@@ -14,20 +14,20 @@ Class {
 }
 
 { #category : 'accessing' }
-GLSPDSMTestServer >> close [
+GLSPTestServer >> close [
 
 	closed := true
 ]
 
 { #category : 'accessing' }
-GLSPDSMTestServer >> sendAction: anAction toClient: aClientId [
+GLSPTestServer >> sendAction: anAction toClient: aClientId [
 
 	closed == true ifTrue: [ ConnectionClosed signal: 'connection closed while sending data' ].
 	self sentActions add: anAction
 ]
 
 { #category : 'accessing' }
-GLSPDSMTestServer >> sentActions [
+GLSPTestServer >> sentActions [
 
 	^ sentActions ifNil: [ sentActions := OrderedCollection new ]
 ]

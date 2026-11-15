@@ -70,7 +70,7 @@ GLSPDSMBrowserTest >> setUp [
 			       class2.
 			       class3 }.
 	visualization := GLSPDSMVisualization new.
-	server := GLSPDSMTestServer new.
+	server := GLSPTestServer new.
 	session := (GLSPDSMDiagramModule new
 		            dsmModel: dsm;
 		            yourself) createClientSession: 'test' server: server clientActionKinds: #(  ).

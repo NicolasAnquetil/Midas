@@ -4,22 +4,22 @@ I build the same GModel as my superclass, but the root nodes are placed by a Blo
 Roassal still builds the shapes (their size and label); I give each one a plain BlElement of the same extent in a headless grid parent, let Bloc lay them out, and move each shape to the bounds Bloc computed.
 "
 Class {
-	#name : 'GLSPArchitecturalMapBlocGModelFactory',
-	#superclass : 'GLSPArchitecturalMapGModelFactory',
+	#name : 'GLSPArchitecturalMapBlocVisualization',
+	#superclass : 'GLSPArchitecturalMapVisualization',
 	#category : 'MooseIDE-ArchitecturalMap-GLSP',
 	#package : 'MooseIDE-ArchitecturalMap',
 	#tag : 'GLSP'
 }
 
 { #category : 'building' }
-GLSPArchitecturalMapBlocGModelFactory >> columnCountFor: aNumberOfNodes [
+GLSPArchitecturalMapBlocVisualization >> columnCountFor: aNumberOfNodes [
 	"As many columns as rows (or one more)"
 
 	^ aNumberOfNodes sqrt ceiling max: 1
 ]
 
 { #category : 'building' }
-GLSPArchitecturalMapBlocGModelFactory >> gridFor: aNumberOfNodes [
+GLSPArchitecturalMapBlocVisualization >> gridFor: aNumberOfNodes [
 	"A headless element, fitting its content, with a roughly square grid of aNumberOfNodes cells"
 
 	^ BlElement new
@@ -34,7 +34,7 @@ GLSPArchitecturalMapBlocGModelFactory >> gridFor: aNumberOfNodes [
 ]
 
 { #category : 'building' }
-GLSPArchitecturalMapBlocGModelFactory >> rootShapesFor: aMapModel [
+GLSPArchitecturalMapBlocVisualization >> rootShapesFor: aMapModel [
 	"The Roassal shapes of the root nodes, moved to the cells of a Bloc grid"
 
 	| shapes elements |

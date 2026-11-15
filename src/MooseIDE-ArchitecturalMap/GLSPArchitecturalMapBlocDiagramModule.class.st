@@ -1,8 +1,8 @@
 "
-The architectural map diagram, with its root nodes laid out by Bloc (BlGridLayout) instead of Roassal: see GLSPArchitecturalMapBlocGModelFactory.
+The architectural map diagram, with its root nodes laid out by Bloc (BlGridLayout) instead of Roassal: see GLSPArchitecturalMapBlocVisualization.
 
 Same diagram type as my superclass, so the same clients work:
-	GLSPArchitecturalMapBlocDiagramModule serve: aMapModel onPort: 5007
+	GLSPArchitecturalMapBlocDiagramModule serve: aMooseGroup onPort: 5007
 "
 Class {
 	#name : 'GLSPArchitecturalMapBlocDiagramModule',
@@ -15,5 +15,5 @@ Class {
 { #category : 'accessing' }
 GLSPArchitecturalMapBlocDiagramModule >> gmodelFactory [
 
-	^ GLSPArchitecturalMapBlocGModelFactory new
+	^ GLSPArchitecturalMapBlocVisualization new
 ]

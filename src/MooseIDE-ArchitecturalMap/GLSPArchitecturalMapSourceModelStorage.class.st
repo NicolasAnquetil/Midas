@@ -1,5 +1,5 @@
 "
-I install a given MiStandaloneArchitecturalMapModel as the source model, ignoring the sourceUri. Saving is not supported.
+The source model of a session is its GLSPArchitecturalMapBrowser (see GLSPArchitecturalMapDiagramModule>>createClientSession:server:clientActionKinds:), not read from the sourceUri. Saving is not supported.
 "
 Class {
 	#name : 'GLSPArchitecturalMapSourceModelStorage',
@@ -12,10 +12,14 @@ Class {
 	#tag : 'GLSP'
 }
 
-{ #category : 'persistence' }
+{ #category : 'accessing' }
 GLSPArchitecturalMapSourceModelStorage >> loadSourceModel: aModelState [
+	"The source model is the browser of the session (see GLSPArchitecturalMapDiagramModule>>createClientSession:server:clientActionKinds:)"
 
-	aModelState sourceModel: mapModel
+	aModelState sourceModel ifNil: [
+			aModelState sourceModel: (GLSPArchitecturalMapBrowser new
+					 mapModel: mapModel;
+					 yourself) ]
 ]
 
 { #category : 'accessing' }
