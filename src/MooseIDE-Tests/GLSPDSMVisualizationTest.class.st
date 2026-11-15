@@ -1,8 +1,8 @@
 "
-I test GLSPDSMGModelFactory: the GModel of a DSM, a matrix of cells with row and column headers.
+Tests of GLSPDSMVisualization: the matrix sent to a GLSP client for a DSM.
 "
 Class {
-	#name : 'GLSPDSMGModelFactoryTest',
+	#name : 'GLSPDSMVisualizationTest',
 	#superclass : 'TestCase',
 	#instVars : [
 		'famixModel',
@@ -10,8 +10,8 @@ Class {
 		'class2',
 		'class3',
 		'dsm',
-		'factory',
-		'gmodel'
+		'gmodel',
+		'visualization'
 	],
 	#category : 'MooseIDE-Tests-Browsers',
 	#package : 'MooseIDE-Tests',
@@ -19,17 +19,17 @@ Class {
 }
 
 { #category : 'running' }
-GLSPDSMGModelFactoryTest >> cellFrom: anEntity to: anotherEntity [
-	^ gmodel children detect: [ :each | each id = (factory cellIdFrom: anEntity to: anotherEntity) ]
+GLSPDSMVisualizationTest >> cellFrom: anEntity to: anotherEntity [
+	^ gmodel children detect: [ :each | each id = (visualization cellIdFrom: anEntity to: anotherEntity) ]
 ]
 
 { #category : 'running' }
-GLSPDSMGModelFactoryTest >> elementsOfType: aType [
+GLSPDSMVisualizationTest >> elementsOfType: aType [
 	^ gmodel children select: [ :each | each type = aType ]
 ]
 
 { #category : 'running' }
-GLSPDSMGModelFactoryTest >> setUp [
+GLSPDSMVisualizationTest >> setUp [
 	"Class1 depends on Class2 (mth1 invokes mth2); Class3 depends on nothing"
 
 	| mth1 mth2 |
@@ -47,19 +47,19 @@ GLSPDSMGModelFactoryTest >> setUp [
 			       class1.
 			       class2.
 			       class3 }.
-	factory := GLSPDSMGModelFactory new.
-	gmodel := factory createGModel: (GLSPModelState new
+	visualization := GLSPDSMVisualization new.
+	gmodel := visualization createGModel: (GLSPModelState new
 			           sourceModel: dsm browser;
 			           yourself)
 ]
 
 { #category : 'tests' }
-GLSPDSMGModelFactoryTest >> testACellTellsWhatItIsInItsTooltip [
+GLSPDSMVisualizationTest >> testACellTellsWhatItIsInItsTooltip [
 	self assert: (((self cellFrom: class1 to: class2) args at: 'title') includesSubstring: 'Class1 -> Class2')
 ]
 
 { #category : 'tests' }
-GLSPDSMGModelFactoryTest >> testADependencyCellShowsItsWeightAndColor [
+GLSPDSMVisualizationTest >> testADependencyCellShowsItsWeightAndColor [
 	| cell |
 	cell := self cellFrom: class1 to: class2.
 	self assert: (self textOf: cell) equals: '1'.
@@ -68,7 +68,7 @@ GLSPDSMGModelFactoryTest >> testADependencyCellShowsItsWeightAndColor [
 ]
 
 { #category : 'tests' }
-GLSPDSMGModelFactoryTest >> testCellsAreLaidOutAsAMatrix [
+GLSPDSMVisualizationTest >> testCellsAreLaidOutAsAMatrix [
 	| a b c |
 	a := self cellFrom: class1 to: class2.
 	b := self cellFrom: class3 to: class2.
@@ -76,12 +76,12 @@ GLSPDSMGModelFactoryTest >> testCellsAreLaidOutAsAMatrix [
 	"Same row: same y; same column: same x"
 	self assert: a position y equals: b position y.
 	self assert: a position x equals: c position x.
-	self assert: a size equals: factory cellSize.
-	self assert: (a position x - b position x) abs \\ factory cellSize x equals: 0
+	self assert: a size equals: visualization cellSize.
+	self assert: (a position x - b position x) abs \\ visualization cellSize x equals: 0
 ]
 
 { #category : 'tests' }
-GLSPDSMGModelFactoryTest >> testEmptyAndDiagonalCells [
+GLSPDSMVisualizationTest >> testEmptyAndDiagonalCells [
 	| empty diagonal |
 	empty := self cellFrom: class2 to: class1.
 	self assert: (self textOf: empty) equals: ''.
@@ -91,7 +91,7 @@ GLSPDSMGModelFactoryTest >> testEmptyAndDiagonalCells [
 ]
 
 { #category : 'tests' }
-GLSPDSMGModelFactoryTest >> testHeadersNameTheEntitiesInTheOrderOfTheModel [
+GLSPDSMVisualizationTest >> testHeadersNameTheEntitiesInTheOrderOfTheModel [
 	self
 		assert: ((self elementsOfType: 'dsm-column-header') collect: [ :each | self textOf: each ]) asArray
 		equals: (dsm orderedNodesX collect: [ :each | each model name ]) asArray.
@@ -101,13 +101,13 @@ GLSPDSMGModelFactoryTest >> testHeadersNameTheEntitiesInTheOrderOfTheModel [
 ]
 
 { #category : 'tests' }
-GLSPDSMGModelFactoryTest >> testOneCellPerPairAndOneHeaderPerEntity [
+GLSPDSMVisualizationTest >> testOneCellPerPairAndOneHeaderPerEntity [
 	self assert: (self elementsOfType: 'dsm-cell') size equals: 9.
 	self assert: (self elementsOfType: 'dsm-column-header') size equals: 3.
 	self assert: (self elementsOfType: 'dsm-row-header') size equals: 3
 ]
 
 { #category : 'running' }
-GLSPDSMGModelFactoryTest >> textOf: anElement [
+GLSPDSMVisualizationTest >> textOf: anElement [
 	^ anElement children first text
 ]

@@ -3,7 +3,7 @@ The browser of a DSM shown by a GLSP client (one per client session), as MiDSMBr
 
 It is the browser of its DSM model (MiDSMBrowserModel>>browser:), which calls it back: #buildDSM sends the matrix again to the client. It also holds the callbacks from the client: #hoverCellWithId: (the cell under the mouse, see GLSPDSMHoverCellAction) shows the SCC of that cell red instead of pink (#showSCC:).
 
-It is also the source model of its session: GLSPDSMGModelFactory builds the matrix from it.
+It is also the source model of its session: GLSPDSMVisualization builds the matrix from it.
 "
 Class {
 	#name : 'GLSPDSMBrowser',
@@ -129,12 +129,12 @@ GLSPDSMBrowser >> title [
 
 { #category : 'accessing' }
 GLSPDSMBrowser >> tupleWithCellId: aString [
-	"The tuple (column node -> row node) shown by the cell with this id (see GLSPDSMGModelFactory>>cellIdFrom:to:), nil if none"
+	"The tuple (column node -> row node) shown by the cell with this id (see GLSPDSMVisualization>>cellIdFrom:to:), nil if none"
 
 	aString ifNil: [ ^ nil ].
 	dsmModel orderedNodesX do: [ :column |
 			dsmModel orderedNodesY do: [ :row |
-				(GLSPDSMGModelFactory new cellIdFrom: column model to: row model) = aString ifTrue: [ ^ column -> row ] ] ].
+				(GLSPDSMVisualization new cellIdFrom: column model to: row model) = aString ifTrue: [ ^ column -> row ] ] ].
 	^ nil
 ]
 

@@ -11,8 +11,8 @@ Class {
 		'class3',
 		'dsm',
 		'session',
-		'factory',
-		'server'
+		'server',
+		'visualization'
 	],
 	#category : 'MooseIDE-Tests-Browsers',
 	#package : 'MooseIDE-Tests',
@@ -22,7 +22,7 @@ Class {
 { #category : 'running' }
 GLSPDSMBrowserTest >> fillFrom: anEntity to: anotherEntity [
 
-	^ (session modelState root children detect: [ :each | each id = (factory cellIdFrom: anEntity to: anotherEntity) ]) args at:
+	^ (session modelState root children detect: [ :each | each id = (visualization cellIdFrom: anEntity to: anotherEntity) ]) args at:
 		  'fill'
 ]
 
@@ -69,7 +69,7 @@ GLSPDSMBrowserTest >> setUp [
 			       class1.
 			       class2.
 			       class3 }.
-	factory := GLSPDSMGModelFactory new.
+	visualization := GLSPDSMVisualization new.
 	server := GLSPDSMTestServer new.
 	session := (GLSPDSMDiagramModule new
 		            dsmModel: dsm;
@@ -115,7 +115,7 @@ GLSPDSMBrowserTest >> testCellsOfAnSCCArePinkWhenNotHovered [
 GLSPDSMBrowserTest >> testHoveringACellOfAnSCCMakesAllItsCellsRed [
 
 	| actions |
-	actions := self hover: (factory cellIdFrom: class1 to: class2).
+	actions := self hover: (visualization cellIdFrom: class1 to: class2).
 	self assert: actions size equals: 1.
 	self assert: actions first kind equals: 'updateModel'.
 	self assert: (self fillFrom: class1 to: class2) equals: (self hex: dsm showSCCColor).
@@ -127,22 +127,22 @@ GLSPDSMBrowserTest >> testHoveringACellOfAnSCCMakesAllItsCellsRed [
 { #category : 'tests' }
 GLSPDSMBrowserTest >> testHoveringACellOutsideAnSCCChangesNothing [
 
-	self assert: (self hover: (factory cellIdFrom: class3 to: class1)) isEmpty.
-	self assert: (self hover: (factory cellIdFrom: class3 to: class3)) isEmpty.
+	self assert: (self hover: (visualization cellIdFrom: class3 to: class1)) isEmpty.
+	self assert: (self hover: (visualization cellIdFrom: class3 to: class3)) isEmpty.
 	self assert: (self fillFrom: class1 to: class2) equals: (self hex: dsm sccColor)
 ]
 
 { #category : 'tests' }
 GLSPDSMBrowserTest >> testHoveringAnotherCellOfTheSameSCCSendsNothing [
 
-	self hover: (factory cellIdFrom: class1 to: class2).
-	self assert: (self hover: (factory cellIdFrom: class2 to: class1)) isEmpty
+	self hover: (visualization cellIdFrom: class1 to: class2).
+	self assert: (self hover: (visualization cellIdFrom: class2 to: class1)) isEmpty
 ]
 
 { #category : 'tests' }
 GLSPDSMBrowserTest >> testLeavingTheCellMakesThemPinkAgain [
 
-	self hover: (factory cellIdFrom: class1 to: class2).
+	self hover: (visualization cellIdFrom: class1 to: class2).
 	self assert: (self hover: nil) size equals: 1.
 	self assert: (self fillFrom: class1 to: class2) equals: (self hex: dsm sccColor)
 ]
@@ -171,8 +171,8 @@ GLSPDSMBrowserTest >> testTheHoverIsHandledByTheBrowser [
 
 	| browser |
 	browser := session modelState sourceModel.
-	self hover: (factory cellIdFrom: class1 to: class2).
-	self assert: (browser isHighlighted: (browser tupleWithCellId: (factory cellIdFrom: class2 to: class1)))
+	self hover: (visualization cellIdFrom: class1 to: class2).
+	self assert: (browser isHighlighted: (browser tupleWithCellId: (visualization cellIdFrom: class2 to: class1)))
 ]
 
 { #category : 'tests' }

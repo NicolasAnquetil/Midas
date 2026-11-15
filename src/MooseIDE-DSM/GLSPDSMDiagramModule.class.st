@@ -1,5 +1,5 @@
 "
-Experimental: a read-only GLSP diagram ('dsm-diagram') showing a MiDSMBrowserModel as a matrix (see GLSPDSMGModelFactory).
+Experimental: a read-only GLSP diagram ('dsm-diagram') showing a MiDSMBrowserModel as a matrix (see GLSPDSMVisualization).
 When the mouse is over a cell of an SCC, the browser client sends a custom action (GLSPDSMHoverCellAction) and the cells of that SCC are shown red instead of pink (GLSPDSMHoverCellActionHandler). Each client session has its own GLSPDSMBrowser, set as the browser of the DSM model.
 
 	launcher := GLSPDSMDiagramModule serve: aMooseGroup onPort: 5008.
@@ -90,7 +90,7 @@ GLSPDSMDiagramModule >> dsmModel: aDSMModel [
 { #category : 'accessing' }
 GLSPDSMDiagramModule >> gmodelFactory [
 
-	^ GLSPDSMGModelFactory new
+	^ GLSPDSMVisualization new
 ]
 
 { #category : 'accessing' }

@@ -1,5 +1,5 @@
 "
-I turn a MiDSMBrowserModel (through the GLSPDSMBrowser of the session) into a GModel: a matrix with one column per entity of orderedNodesX and one row per entity of orderedNodesY.
+I draw a MiDSMBrowserModel for a GLSP client, as MiDSMVisualization draws it in Roassal for a MiDSMBrowser: from the GLSPDSMBrowser of the session, I build a GModel (I am the GLSP model factory of GLSPDSMDiagramModule), a matrix with one column per entity of orderedNodesX and one row per entity of orderedNodesY.
 
 - a 'dsm-column-header' and a 'dsm-row-header' node per entity, with its name as label ('dsm-column-label', 'dsm-row-label');
 - a 'dsm-cell' node per (column, row) pair: the dependencies of the column entity towards the row entity. Its label ('dsm-weight') is their number (empty when 0); its css class tells its kind (dsm-diagonal, dsm-empty, dsm-cycle, dsm-dependency); its args give its color as the DSM model computes it ('fill') and a tooltip ('title').
@@ -7,7 +7,7 @@ I turn a MiDSMBrowserModel (through the GLSPDSMBrowser of the session) into a GM
 The server does no text layout: the sizes come from the length of the names.
 "
 Class {
-	#name : 'GLSPDSMGModelFactory',
+	#name : 'GLSPDSMVisualization',
 	#superclass : 'GLSPGModelFactory',
 	#category : 'MooseIDE-DSM-GLSP',
 	#package : 'MooseIDE-DSM',
@@ -15,7 +15,7 @@ Class {
 }
 
 { #category : 'building' }
-GLSPDSMGModelFactory >> cellFor: aTuple of: aSourceModel at: aPoint [
+GLSPDSMVisualization >> cellFor: aTuple of: aSourceModel at: aPoint [
 	"The dependencies of the column entity (key) towards the row entity (value). The cells of the SCC under the mouse are red instead of pink"
 
 	| aDSMModel weight cell highlighted |
@@ -41,27 +41,27 @@ GLSPDSMGModelFactory >> cellFor: aTuple of: aSourceModel at: aPoint [
 ]
 
 { #category : 'building' }
-GLSPDSMGModelFactory >> cellIdFrom: aColumnEntity to: aRowEntity [
+GLSPDSMVisualization >> cellIdFrom: aColumnEntity to: aRowEntity [
 
 	^ 'c' , aColumnEntity mooseID printString , '_' , aRowEntity mooseID printString
 ]
 
 { #category : 'layout' }
-GLSPDSMGModelFactory >> cellSize [
+GLSPDSMVisualization >> cellSize [
 	"Room for a 4 digit weight"
 
 	^ 48 @ 30
 ]
 
 { #category : 'layout' }
-GLSPDSMGModelFactory >> charWidth [
+GLSPDSMVisualization >> charWidth [
 	"Average width of a character of the labels (13px font): the server does no text layout"
 
 	^ 7.5
 ]
 
 { #category : 'building' }
-GLSPDSMGModelFactory >> columnHeaderFor: aNode at: aPoint height: aNumber [
+GLSPDSMVisualization >> columnHeaderFor: aNode at: aPoint height: aNumber [
 
 	^ self
 		  node: 'x' , aNode model mooseID printString
@@ -73,7 +73,7 @@ GLSPDSMGModelFactory >> columnHeaderFor: aNode at: aPoint height: aNumber [
 ]
 
 { #category : 'building' }
-GLSPDSMGModelFactory >> createGModel: aModelState [
+GLSPDSMVisualization >> createGModel: aModelState [
 
 	| source dsm columns rows root cellOrigin |
 	source := aModelState sourceModel.
@@ -104,7 +104,7 @@ GLSPDSMGModelFactory >> createGModel: aModelState [
 ]
 
 { #category : 'layout' }
-GLSPDSMGModelFactory >> headerBreadthFor: aCollectionOfNodes [
+GLSPDSMVisualization >> headerBreadthFor: aCollectionOfNodes [
 	"Room for the longest name"
 
 	| longest |
@@ -113,7 +113,7 @@ GLSPDSMGModelFactory >> headerBreadthFor: aCollectionOfNodes [
 ]
 
 { #category : 'building' }
-GLSPDSMGModelFactory >> kindOf: aTuple in: aDSMModel [
+GLSPDSMVisualization >> kindOf: aTuple in: aDSMModel [
 	"As MiDSMBrowserModel>>colorForTuple: decides"
 
 	(aDSMModel isDiagonal: aTuple) ifTrue: [ ^ 'diagonal' ].
@@ -123,13 +123,13 @@ GLSPDSMGModelFactory >> kindOf: aTuple in: aDSMModel [
 ]
 
 { #category : 'layout' }
-GLSPDSMGModelFactory >> margin [
+GLSPDSMVisualization >> margin [
 
 	^ 20 @ 20
 ]
 
 { #category : 'building' }
-GLSPDSMGModelFactory >> node: anId type: aType at: aPoint size: aSize label: aString labelType: aLabelType [
+GLSPDSMVisualization >> node: anId type: aType at: aPoint size: aSize label: aString labelType: aLabelType [
 
 	^ GLSPGNode new
 		  id: anId;
@@ -145,7 +145,7 @@ GLSPDSMGModelFactory >> node: anId type: aType at: aPoint size: aSize label: aSt
 ]
 
 { #category : 'building' }
-GLSPDSMGModelFactory >> rowHeaderFor: aNode at: aPoint width: aNumber [
+GLSPDSMVisualization >> rowHeaderFor: aNode at: aPoint width: aNumber [
 
 	^ self
 		  node: 'y' , aNode model mooseID printString
@@ -157,7 +157,7 @@ GLSPDSMGModelFactory >> rowHeaderFor: aNode at: aPoint width: aNumber [
 ]
 
 { #category : 'building' }
-GLSPDSMGModelFactory >> titleOf: aTuple weight: aNumber in: aDSMModel [
+GLSPDSMVisualization >> titleOf: aTuple weight: aNumber in: aDSMModel [
 
 	^ String streamContents: [ :s |
 			  s << aTuple key model name << ' -> ' << aTuple value model name << ': ' << aNumber printString << ' dependenc'
