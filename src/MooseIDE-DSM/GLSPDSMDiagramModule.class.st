@@ -1,9 +1,11 @@
 "
-Experimental: a read-only GLSP diagram ('dsm-diagram') showing a MiStandaloneDSMModel as a matrix (see GLSPDSMGModelFactory).
+Experimental: a read-only GLSP diagram ('dsm-diagram') showing a MiDSMBrowserModel as a matrix (see GLSPDSMGModelFactory).
 When the mouse is over a cell of an SCC, the browser client sends a custom action (GLSPDSMHoverCellAction) and the cells of that SCC are shown red instead of pink (GLSPDSMHoverCellActionHandler). Each client session has its own GLSPDSMBrowser, set as the browser of the DSM model.
 
-	launcher := GLSPDSMDiagramModule serve: (MiStandaloneDSMModel on: aMooseGroup) onPort: 5008.
+	launcher := GLSPDSMDiagramModule serve: aMooseGroup onPort: 5008.
 	launcher stop
+
+or, to keep the model: model := GLSPDSMBrowser dsmModelOn: aMooseGroup, then GLSPDSMDiagramModule serveModel: model onPort: 5008.
 "
 Class {
 	#name : 'GLSPDSMDiagramModule',
@@ -16,24 +18,31 @@ Class {
 	#tag : 'GLSP'
 }
 
-{ #category : 'examples' }
+{ #category : 'serving' }
 GLSPDSMDiagramModule class >> exampleServe [
 	"Serve the DSM of the packages of the first Moose model on port 5008; inspect the launcher and send it #stop when done"
 
 	<example>
-	^ (self serve: (MiStandaloneDSMModel on: MooseModel root allModels first allModelPackages) onPort: 5008) inspect
+	^ (self serve: MooseModel root allModels first allModelPackages onPort: 5008) inspect
 ]
 
 { #category : 'serving' }
-GLSPDSMDiagramModule class >> serve: aDSMModel onPort: aPortNumber [
-	"Serve aDSMModel to external GLSP clients over TCP. Answer the launcher (send it #stop when done)"
+GLSPDSMDiagramModule class >> serve: aCollection onPort: aPortNumber [
+	"Serve the DSM of the entities of aCollection to external GLSP clients over TCP. Answer the launcher (send it #stop when done)"
+
+	^ self serveModel: (GLSPDSMBrowser dsmModelOn: aCollection) onPort: aPortNumber
+]
+
+{ #category : 'serving' }
+GLSPDSMDiagramModule class >> serveModel: aDSMModel onPort: aPortNumber [
+	"Serve aDSMModel (a MiDSMBrowserModel, see GLSPDSMBrowser class>>dsmModelOn:) to external GLSP clients over TCP; each client gets its GLSPDSMBrowser. Answer the launcher (send it #stop when done)"
 
 	^ (GLSPSocketLauncher serverFactory: [
-			   GLSPServer new
-				   registerDiagramModule: (self new
-						    dsmModel: aDSMModel;
-						    yourself);
-				   yourself ])
+				   GLSPServer new
+					   registerDiagramModule: (self new
+							    dsmModel: aDSMModel;
+							    yourself);
+					   yourself ])
 		  startOnPort: aPortNumber;
 		  yourself
 ]

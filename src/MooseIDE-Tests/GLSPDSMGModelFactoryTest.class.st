@@ -43,15 +43,13 @@ GLSPDSMGModelFactoryTest >> setUp [
 	famixModel newInvocation
 		sender: mth1;
 		candidates: { mth2 }.
-	dsm := MiStandaloneDSMModel on: {
+	dsm := GLSPDSMBrowser dsmModelOn: {
 			       class1.
 			       class2.
 			       class3 }.
 	factory := GLSPDSMGModelFactory new.
 	gmodel := factory createGModel: (GLSPModelState new
-			           sourceModel: (GLSPDSMBrowser new
-					            dsmModel: dsm;
-					            yourself);
+			           sourceModel: dsm browser;
 			           yourself)
 ]
 

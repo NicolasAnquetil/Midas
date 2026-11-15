@@ -1,5 +1,5 @@
 "
-I turn a MiStandaloneDSMModel into a GModel: a matrix with one column per entity of orderedNodesX and one row per entity of orderedNodesY.
+I turn a MiDSMBrowserModel (through the GLSPDSMBrowser of the session) into a GModel: a matrix with one column per entity of orderedNodesX and one row per entity of orderedNodesY.
 
 - a 'dsm-column-header' and a 'dsm-row-header' node per entity, with its name as label ('dsm-column-label', 'dsm-row-label');
 - a 'dsm-cell' node per (column, row) pair: the dependencies of the column entity towards the row entity. Its label ('dsm-weight') is their number (empty when 0); its css class tells its kind (dsm-diagonal, dsm-empty, dsm-cycle, dsm-dependency); its args give its color as the DSM model computes it ('fill') and a tooltip ('title').

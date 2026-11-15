@@ -18,6 +18,17 @@ Class {
 	#tag : 'GLSP'
 }
 
+{ #category : 'instance creation' }
+GLSPDSMBrowser class >> dsmModelOn: aCollection [
+	"A DSM model of the dependencies between the entities of aCollection, with a browser without client: it can be served (GLSPDSMDiagramModule class>>serve:onPort:), each client then has its browser"
+
+	| model |
+	model := MiDSMBrowserModel new.
+	self new dsmModel: model.
+	model followEntity: aCollection.
+	^ model
+]
+
 { #category : 'callbacks from the model' }
 GLSPDSMBrowser >> buildDSM [
 	"The matrix changed (MiDSMBrowserModel>>followEntity:, withX:withY:, settings): send it again to the client. If the client has gone, I am no longer the browser of the model"
@@ -33,8 +44,9 @@ GLSPDSMBrowser >> buildDSM [
 
 { #category : 'callbacks from the model' }
 GLSPDSMBrowser >> detachFromModel [
+	"My client has gone: the model gets a browser without client (MiDSMBrowserModel needs one)"
 
-	(dsmModel notNil and: [ dsmModel browser == self ]) ifTrue: [ dsmModel browser: nil ]
+	(dsmModel notNil and: [ dsmModel browser == self ]) ifTrue: [ self class new dsmModel: dsmModel ]
 ]
 
 { #category : 'accessing' }

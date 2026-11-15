@@ -1,5 +1,5 @@
 "
-I install a given MiStandaloneDSMModel as the source model, ignoring the sourceUri. Saving is not supported.
+The source model of a session is its GLSPDSMBrowser (see GLSPDSMDiagramModule>>createClientSession:server:clientActionKinds:), not read from the sourceUri. Saving is not supported.
 "
 Class {
 	#name : 'GLSPDSMSourceModelStorage',
