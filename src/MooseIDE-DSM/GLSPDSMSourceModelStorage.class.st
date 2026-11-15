@@ -20,8 +20,11 @@ GLSPDSMSourceModelStorage >> dsmModel: aDSMModel [
 
 { #category : 'accessing' }
 GLSPDSMSourceModelStorage >> loadSourceModel: aModelState [
+	"Each client session has its own source model: what it highlights is its own"
 
-	aModelState sourceModel: dsmModel
+	aModelState sourceModel: (GLSPDSMSourceModel new
+			 dsmModel: dsmModel;
+			 yourself)
 ]
 
 { #category : 'accessing' }

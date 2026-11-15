@@ -15,10 +15,11 @@ Class {
 }
 
 { #category : 'building' }
-GLSPDSMGModelFactory >> cellFor: aTuple of: aDSMModel at: aPoint [
-	"The dependencies of the column entity (key) towards the row entity (value)"
+GLSPDSMGModelFactory >> cellFor: aTuple of: aSourceModel at: aPoint [
+	"The dependencies of the column entity (key) towards the row entity (value). The cells of the SCC under the mouse are red instead of pink"
 
-	| weight cell |
+	| aDSMModel weight cell highlighted |
+	aDSMModel := aSourceModel dsmModel.
 	weight := aDSMModel getTupleDependencyWeight: aTuple.
 	cell := self
 		        node: (self cellIdFrom: aTuple key model to: aTuple value model)
@@ -30,7 +31,11 @@ GLSPDSMGModelFactory >> cellFor: aTuple of: aDSMModel at: aPoint [
 				         ifFalse: [ '' ])
 		        labelType: 'dsm-weight'.
 	cell addCssClass: 'dsm-' , (self kindOf: aTuple in: aDSMModel).
-	cell argsAt: 'fill' put: '#' , (aDSMModel colorForTuple: aTuple) asHexString.
+	highlighted := aSourceModel isHighlighted: aTuple.
+	highlighted ifTrue: [ cell addCssClass: 'dsm-highlighted' ].
+	cell argsAt: 'fill' put: '#' , (highlighted
+			 ifTrue: [ aDSMModel showSCCColorForTuple: aTuple ]
+			 ifFalse: [ aDSMModel colorForTuple: aTuple ]) asHexString.
 	cell argsAt: 'title' put: (self titleOf: aTuple weight: weight in: aDSMModel).
 	^ cell
 ]
@@ -70,8 +75,9 @@ GLSPDSMGModelFactory >> columnHeaderFor: aNode at: aPoint height: aNumber [
 { #category : 'building' }
 GLSPDSMGModelFactory >> createGModel: aModelState [
 
-	| dsm columns rows root cellOrigin |
-	dsm := aModelState sourceModel.
+	| source dsm columns rows root cellOrigin |
+	source := aModelState sourceModel.
+	dsm := source ifNotNil: [ source dsmModel ].
 	root := GLSPGModelRoot new
 		        id: 'dsm';
 		        type: 'graph';
@@ -93,7 +99,7 @@ GLSPDSMGModelFactory >> createGModel: aModelState [
 				(self rowHeaderFor: row at: self margin x @ (cellOrigin y + (j - 1 * self cellSize y)) width: cellOrigin x - self margin x) ].
 	rows doWithIndex: [ :row :j |
 			columns doWithIndex: [ :column :i |
-				root add: (self cellFor: column -> row of: dsm at: cellOrigin + (i - 1 @ (j - 1) * self cellSize)) ] ].
+				root add: (self cellFor: column -> row of: source at: cellOrigin + (i - 1 @ (j - 1) * self cellSize)) ] ].
 	^ root
 ]
 
