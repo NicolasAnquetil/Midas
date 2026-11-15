@@ -20,11 +20,12 @@ GLSPDSMSourceModelStorage >> dsmModel: aDSMModel [
 
 { #category : 'accessing' }
 GLSPDSMSourceModelStorage >> loadSourceModel: aModelState [
-	"Each client session has its own source model: what it highlights is its own"
+	"The source model is the browser of the session (see GLSPDSMDiagramModule>>createClientSession:server:clientActionKinds:)"
 
-	aModelState sourceModel: (GLSPDSMSourceModel new
-			 dsmModel: dsmModel;
-			 yourself)
+	aModelState sourceModel ifNil: [
+			aModelState sourceModel: (GLSPDSMBrowser new
+					 dsmModel: dsmModel;
+					 yourself) ]
 ]
 
 { #category : 'accessing' }

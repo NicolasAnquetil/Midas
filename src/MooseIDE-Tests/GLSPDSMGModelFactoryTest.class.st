@@ -49,7 +49,7 @@ GLSPDSMGModelFactoryTest >> setUp [
 			       class3 }.
 	factory := GLSPDSMGModelFactory new.
 	gmodel := factory createGModel: (GLSPModelState new
-			           sourceModel: (GLSPDSMSourceModel new
+			           sourceModel: (GLSPDSMBrowser new
 					            dsmModel: dsm;
 					            yourself);
 			           yourself)

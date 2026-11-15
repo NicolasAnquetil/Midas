@@ -1,6 +1,6 @@
 "
 Experimental: a read-only GLSP diagram ('dsm-diagram') showing a MiStandaloneDSMModel as a matrix (see GLSPDSMGModelFactory).
-When the mouse is over a cell of an SCC, the browser client sends a custom action (GLSPDSMHoverCellAction) and the cells of that SCC are shown red instead of pink (GLSPDSMHoverCellActionHandler). Each client session has its own GLSPDSMSourceModel.
+When the mouse is over a cell of an SCC, the browser client sends a custom action (GLSPDSMHoverCellAction) and the cells of that SCC are shown red instead of pink (GLSPDSMHoverCellActionHandler). Each client session has its own GLSPDSMBrowser, set as the browser of the DSM model.
 
 	launcher := GLSPDSMDiagramModule serve: (MiStandaloneDSMModel on: aMooseGroup) onPort: 5008.
 	launcher stop
@@ -45,6 +45,19 @@ GLSPDSMDiagramModule >> createActionHandlers [
 	^ super createActionHandlers
 		  add: GLSPDSMHoverCellActionHandler new;
 		  yourself
+]
+
+{ #category : 'accessing' }
+GLSPDSMDiagramModule >> createClientSession: anId server: aServer clientActionKinds: aCollection [
+	"Each client session has its browser, set in the DSM model"
+
+	| session |
+	session := super createClientSession: anId server: aServer clientActionKinds: aCollection.
+	session modelState sourceModel: (GLSPDSMBrowser new
+			 session: session;
+			 dsmModel: dsmModel;
+			 yourself).
+	^ session
 ]
 
 { #category : 'accessing' }

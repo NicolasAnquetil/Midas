@@ -11,15 +11,9 @@ Class {
 
 { #category : 'executing' }
 GLSPDSMHoverCellActionHandler >> execute: aHoverAction in: aClientSession [
-	"Highlight the SCC of the cell under the mouse; send the model again only if the highlighted cells changed"
+	"The browser of the session handles it"
 
-	| source tuples |
-	source := aClientSession modelState sourceModel.
-	tuples := (source sccTuplesOf: (source tupleWithCellId: aHoverAction cellId)) asSet.
-	tuples = source highlightedTuples ifTrue: [ ^ #(  ) ].
-	source highlightedTuples: tuples.
-	aClientSession updateGModel.
-	^ { (GLSPUpdateModelAction newRoot: aClientSession modelState root) }
+	^ aClientSession modelState sourceModel hoverCellWithId: aHoverAction cellId
 ]
 
 { #category : 'executing' }
