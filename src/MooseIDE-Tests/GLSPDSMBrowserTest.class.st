@@ -65,14 +65,14 @@ GLSPDSMBrowserTest >> setUp [
 	self invocationFrom: class1 to: class2.
 	self invocationFrom: class2 to: class1.
 	self invocationFrom: class3 to: class1.
-	dsm := GLSPDSMBrowser dsmModelOn: {
+	dsm := GLSPDSMBrowser modelOn: {
 			       class1.
 			       class2.
 			       class3 }.
 	visualization := GLSPDSMVisualization new.
 	server := GLSPTestServer new.
 	session := (GLSPDSMDiagramModule new
-		            dsmModel: dsm;
+		            model: dsm;
 		            yourself) createClientSession: 'test' server: server clientActionKinds: #(  ).
 	GLSPRequestModelActionHandler new execute: GLSPRequestModelAction new in: session
 ]
@@ -94,7 +94,7 @@ GLSPDSMBrowserTest >> testAChangeOfTheMatrixIsSentToTheClient [
 GLSPDSMBrowserTest >> testAModelIsBuiltWithABrowserWithoutClient [
 
 	| model |
-	model := GLSPDSMBrowser dsmModelOn: {
+	model := GLSPDSMBrowser modelOn: {
 			         class1.
 			         class2.
 			         class3 }.

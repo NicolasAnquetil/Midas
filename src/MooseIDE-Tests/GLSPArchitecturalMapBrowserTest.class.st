@@ -41,10 +41,10 @@ GLSPArchitecturalMapBrowserTest >> setUp [
 	famixModel newInvocation
 		sender: ((famixModel newMethodNamed: 'a') parentType: class1);
 		candidates: { ((famixModel newMethodNamed: 'b') parentType: class2) }.
-	mapModel := GLSPArchitecturalMapBrowser mapModelOn: famixModel allModelPackages.
+	mapModel := GLSPArchitecturalMapBrowser modelOn: famixModel allModelPackages.
 	server := GLSPTestServer new.
 	session := (GLSPArchitecturalMapDiagramModule new
-		            mapModel: mapModel;
+		            model: mapModel;
 		            yourself) createClientSession: 'test' server: server clientActionKinds: #(  ).
 	GLSPRequestModelActionHandler new execute: GLSPRequestModelAction new in: session
 ]
@@ -62,7 +62,7 @@ GLSPArchitecturalMapBrowserTest >> testAChangeOfTheMapIsSentToTheClient [
 GLSPArchitecturalMapBrowserTest >> testAModelIsBuiltWithABrowserWithoutClient [
 
 	| model |
-	model := GLSPArchitecturalMapBrowser mapModelOn: famixModel allModelPackages.
+	model := GLSPArchitecturalMapBrowser modelOn: famixModel allModelPackages.
 	self assert: model class equals: MiArchitecturalMapModel.
 	self assert: model browser class equals: GLSPArchitecturalMapBrowser.
 	self assert: model browser session isNil.
@@ -74,7 +74,7 @@ GLSPArchitecturalMapBrowserTest >> testTheBlocModuleUsesTheSameBrowser [
 
 	| blocSession |
 	blocSession := (GLSPArchitecturalMapBlocDiagramModule new
-		                mapModel: mapModel;
+		                model: mapModel;
 		                yourself) createClientSession: 'bloc' server: nil clientActionKinds: #(  ).
 	GLSPRequestModelActionHandler new execute: GLSPRequestModelAction new in: blocSession.
 	self assert: blocSession modelState sourceModel class equals: GLSPArchitecturalMapBrowser.

@@ -1,18 +1,15 @@
 "
-Experimental: a read-only GLSP diagram ('archmap-diagram') showing the root nodes of a MiArchitecturalMapModel, laid out by Roassal, with their aggregated dependencies (see GLSPArchitecturalMapVisualization). Each client session has its own GLSPArchitecturalMapBrowser, set as the browser of the map model.
+Experimental: a read-only GLSP diagram ('archmap-diagram') showing the root nodes of a MiArchitecturalMapModel, laid out by Roassal, with their aggregated dependencies (see GLSPArchitecturalMapVisualization); each client session has its GLSPArchitecturalMapBrowser (see GLSPMooseDiagramModule).
 
 	launcher := GLSPArchitecturalMapDiagramModule serve: aMooseGroup onPort: 5007.
 	launcher stop.
 	GLSPArchitecturalMapDiagramModule openOn: aMooseGroup.    ""a Bloc editor in this image""
 
-or, to keep the model: model := GLSPArchitecturalMapBrowser mapModelOn: aMooseGroup, then serveModel:onPort: or openOnModel:.
+With the DSM on the same port: GLSPMooseDiagramModule serveAll: { GLSPArchitecturalMapDiagramModule on: aMooseGroup. GLSPDSMDiagramModule on: aMooseGroup } onPort: 5007.
 "
 Class {
 	#name : 'GLSPArchitecturalMapDiagramModule',
-	#superclass : 'GLSPDiagramModule',
-	#instVars : [
-		'mapModel'
-	],
+	#superclass : 'GLSPMooseDiagramModule',
 	#category : 'MooseIDE-ArchitecturalMap-GLSP',
 	#package : 'MooseIDE-ArchitecturalMap',
 	#tag : 'GLSP'
@@ -33,62 +30,41 @@ GLSPArchitecturalMapDiagramModule class >> exampleServe [
 	^ (self serve: MooseModel root allModels first allModelPackages onPort: 5007) inspect
 ]
 
-{ #category : 'serving' }
+{ #category : 'opening' }
 GLSPArchitecturalMapDiagramModule class >> openOn: aCollection [
 	"Open a Bloc editor on the architectural map of aCollection (a MooseGroup)"
 
-	^ self openOnModel: (GLSPArchitecturalMapBrowser mapModelOn: aCollection)
+	^ self openOnModule: (self on: aCollection)
 ]
 
-{ #category : 'serving' }
+{ #category : 'opening' }
 GLSPArchitecturalMapDiagramModule class >> openOnModel: aMapModel [
-	"Serve aMapModel from a GLSP server of this image and open a Bloc editor on it.
+	"Open a Bloc editor on aMapModel (see GLSPMooseBrowser class>>modelOn:)"
+
+	^ self openOnModule: (self new
+			   model: aMapModel;
+			   yourself)
+]
+
+{ #category : 'opening' }
+GLSPArchitecturalMapDiagramModule class >> openOnModule: aDiagramModule [
+	"Serve aDiagramModule from a GLSP server of this image and open a Bloc editor on it.
 	The sourceUri is ignored by the server, but GLSPBlocEditor derives its title from a file:// URL"
 
 	| server client diagram |
 	server := GLSPServer new
-		          registerDiagramModule: (self new
-				           mapModel: aMapModel;
-				           yourself);
+		          registerDiagramModule: aDiagramModule;
 		          yourself.
 	client := GLSPClient loopbackOn: server.
-	diagram := client openDiagram: self new diagramType.
+	diagram := client openDiagram: aDiagramModule diagramType.
 	diagram requestModel: 'file:///Architectural-Map'.
 	^ GLSPBlocEditor openOn: diagram
 ]
 
-{ #category : 'serving' }
-GLSPArchitecturalMapDiagramModule class >> serve: aCollection onPort: aPortNumber [
-	"Serve the architectural map of aCollection (a MooseGroup) to external GLSP clients over TCP. Answer the launcher (send it #stop when done)"
-
-	^ self serveModel: (GLSPArchitecturalMapBrowser mapModelOn: aCollection) onPort: aPortNumber
-]
-
-{ #category : 'serving' }
-GLSPArchitecturalMapDiagramModule class >> serveModel: aMapModel onPort: aPortNumber [
-	"Serve aMapModel (a MiArchitecturalMapModel, see GLSPArchitecturalMapBrowser class>>mapModelOn:) to external GLSP clients over TCP; each client gets its GLSPArchitecturalMapBrowser. Answer the launcher (send it #stop when done)"
-
-	^ (GLSPSocketLauncher serverFactory: [
-				   GLSPServer new
-					   registerDiagramModule: (self new
-							    mapModel: aMapModel;
-							    yourself);
-					   yourself ])
-		  startOnPort: aPortNumber;
-		  yourself
-]
-
 { #category : 'accessing' }
-GLSPArchitecturalMapDiagramModule >> createClientSession: anId server: aServer clientActionKinds: aCollection [
-	"Each client session has its browser, set in the map model"
+GLSPArchitecturalMapDiagramModule >> browserClass [
 
-	| session |
-	session := super createClientSession: anId server: aServer clientActionKinds: aCollection.
-	session modelState sourceModel: (GLSPArchitecturalMapBrowser new
-			 session: session;
-			 mapModel: mapModel;
-			 yourself).
-	^ session
+	^ GLSPArchitecturalMapBrowser
 ]
 
 { #category : 'accessing' }
@@ -101,24 +77,4 @@ GLSPArchitecturalMapDiagramModule >> diagramType [
 GLSPArchitecturalMapDiagramModule >> gmodelFactory [
 
 	^ GLSPArchitecturalMapVisualization new
-]
-
-{ #category : 'accessing' }
-GLSPArchitecturalMapDiagramModule >> mapModel [
-
-	^ mapModel
-]
-
-{ #category : 'accessing' }
-GLSPArchitecturalMapDiagramModule >> mapModel: aMapModel [
-
-	mapModel := aMapModel
-]
-
-{ #category : 'accessing' }
-GLSPArchitecturalMapDiagramModule >> sourceModelStorage [
-
-	^ GLSPArchitecturalMapSourceModelStorage new
-		  mapModel: mapModel;
-		  yourself
 ]

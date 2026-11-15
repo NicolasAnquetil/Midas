@@ -43,7 +43,7 @@ GLSPDSMVisualizationTest >> setUp [
 	famixModel newInvocation
 		sender: mth1;
 		candidates: { mth2 }.
-	dsm := GLSPDSMBrowser dsmModelOn: {
+	dsm := GLSPDSMBrowser modelOn: {
 			       class1.
 			       class2.
 			       class3 }.
