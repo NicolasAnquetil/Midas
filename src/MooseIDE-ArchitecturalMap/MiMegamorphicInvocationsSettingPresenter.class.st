@@ -7,8 +7,9 @@ Class {
 		'tresholdLabel',
 		'invocationsLabel'
 	],
-	#category : 'MooseIDE-ArchitecturalMap',
-	#package : 'MooseIDE-ArchitecturalMap'
+	#category : 'MooseIDE-ArchitecturalMap-browser',
+	#package : 'MooseIDE-ArchitecturalMap',
+	#tag : 'browser'
 }
 
 { #category : 'layout' }

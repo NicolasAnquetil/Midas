@@ -1,8 +1,9 @@
 Class {
 	#name : 'MiDoubleClickSettingPresenter',
 	#superclass : 'MiAbstractRadioButtonSettingPresenter',
-	#category : 'MooseIDE-ArchitecturalMap',
-	#package : 'MooseIDE-ArchitecturalMap'
+	#category : 'MooseIDE-ArchitecturalMap-browser',
+	#package : 'MooseIDE-ArchitecturalMap',
+	#tag : 'browser'
 }
 
 { #category : 'accessing' }
