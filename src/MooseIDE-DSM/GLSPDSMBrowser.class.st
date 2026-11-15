@@ -46,12 +46,6 @@ GLSPDSMBrowser >> highlightedTuples [
 	^ highlightedTuples ifNil: [ highlightedTuples := Set new ]
 ]
 
-{ #category : 'accessing' }
-GLSPDSMBrowser >> highlightedTuples: aCollection [
-
-	highlightedTuples := aCollection asSet
-]
-
 { #category : 'callbacks from the client' }
 GLSPDSMBrowser >> hoverCellWithId: aString [
 	"The mouse is over the cell with this id (nil: over no cell). Answer the actions to send back to the client: the model again, if the cells to show red changed"
@@ -83,7 +77,7 @@ GLSPDSMBrowser >> sccTuplesOf: aTuple [
 GLSPDSMBrowser >> showSCC: aCollection [
 	"Show the cells (tuples) of aCollection red instead of pink, as MiDSMBrowser>>showSCC:"
 
-	self highlightedTuples: aCollection
+	highlightedTuples := aCollection asSet
 ]
 
 { #category : 'accessing' }

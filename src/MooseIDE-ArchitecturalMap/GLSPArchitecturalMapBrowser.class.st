@@ -37,13 +37,6 @@ GLSPArchitecturalMapBrowser >> runVisualization [
 	self sendModelToClient
 ]
 
-{ #category : 'callbacks from the model' }
-GLSPArchitecturalMapBrowser >> selectRelatedTo: anEntity [
-	"Nothing is selected in a GLSP client from Pharo"
-
-	
-]
-
 { #category : 'accessing' }
 GLSPArchitecturalMapBrowser >> title [
 
