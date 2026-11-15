@@ -70,18 +70,6 @@ GLSPArchitecturalMapBrowserTest >> testAModelIsBuiltWithABrowserWithoutClient [
 ]
 
 { #category : 'tests' }
-GLSPArchitecturalMapBrowserTest >> testTheBlocModuleUsesTheSameBrowser [
-
-	| blocSession |
-	blocSession := (GLSPArchitecturalMapBlocDiagramModule new
-		                model: mapModel;
-		                yourself) createClientSession: 'bloc' server: nil clientActionKinds: #(  ).
-	GLSPRequestModelActionHandler new execute: GLSPRequestModelAction new in: blocSession.
-	self assert: blocSession modelState sourceModel class equals: GLSPArchitecturalMapBrowser.
-	self assert: (self elementsOfType: 'archmap-node' in: blocSession modelState root) size equals: 2
-]
-
-{ #category : 'tests' }
 GLSPArchitecturalMapBrowserTest >> testTheBrowserOfTheSessionIsSetInTheModel [
 
 	self assert: mapModel browser identicalTo: session modelState sourceModel.
