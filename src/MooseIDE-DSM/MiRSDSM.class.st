@@ -5,8 +5,9 @@ Class {
 		'owner',
 		'menuInteraction'
 	],
-	#category : 'MooseIDE-DSM',
-	#package : 'MooseIDE-DSM'
+	#category : 'MooseIDE-DSM-browser',
+	#package : 'MooseIDE-DSM',
+	#tag : 'browser'
 }
 
 { #category : 'hooks' }

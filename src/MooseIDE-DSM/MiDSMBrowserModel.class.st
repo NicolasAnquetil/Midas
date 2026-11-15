@@ -13,8 +13,9 @@ Class {
 		'dependencies',
 		'shouldShowSelfDependencies'
 	],
-	#category : 'MooseIDE-DSM',
-	#package : 'MooseIDE-DSM'
+	#category : 'MooseIDE-DSM-model',
+	#package : 'MooseIDE-DSM',
+	#tag : 'model'
 }
 
 { #category : 'settings management' }

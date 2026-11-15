@@ -4,8 +4,9 @@ This is a modified version of the `RSComposite` to accomodate our new DSM
 Class {
 	#name : 'MiRSDSMShape',
 	#superclass : 'RSComposite',
-	#category : 'MooseIDE-DSM',
-	#package : 'MooseIDE-DSM'
+	#category : 'MooseIDE-DSM-browser',
+	#package : 'MooseIDE-DSM',
+	#tag : 'browser'
 }
 
 { #category : 'accessing' }
