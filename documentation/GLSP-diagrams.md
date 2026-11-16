@@ -31,12 +31,12 @@ The organisation mirrors the one of MooseIDE, where a Spec browser (`MiDSMBrowse
 
 | Role | MooseIDE (Spec, Roassal) | GLSP: common | GLSP: architectural map | GLSP: DSM |
 |---|---|---|---|---|
-| model | `MiArchitecturalMapModel`, `MiDSMBrowserModel` | (unchanged) | | |
-| browser: the model's `browser`, receives its callbacks and the client's | `MiArchitecturalMapBrowser`, `MiDSMBrowser` | `GLSPMooseBrowser` | `GLSPArchitecturalMapBrowser` | `GLSPDSMBrowser` |
-| visualization: draws the model (the GLSP *GModel factory*) | `MiArchitecturalMapVisualization`, `MiDSMVisualization` | (`GLSPGModelFactory`) | `GLSPArchitecturalMapVisualization` | `GLSPDSMVisualization` |
-| diagram module: defines a diagram type for the GLSP server | — | `GLSPMooseDiagramModule` | `GLSPArchitecturalMapDiagramModule` | `GLSPDSMDiagramModule` |
-| storage: required by GLSP, reads nothing, refuses to save | — | `GLSPMooseSourceModelStorage` | | |
-| custom action sent by the client, and its handler | — | | | `GLSPDSMHoverCellAction`, `GLSPDSMHoverCellActionHandler` |
+| model | MiArchitecturalMap-Model, MiDSMBrowserModel | (unchanged) | | |
+| browser: the model's `browser`, receives its callbacks and the client's | MiArchitecturalMap-Browser, MiDSMBrowser | GLSPMooseBrowser | GLSPArchitecturalMap-Browser | GLSPDSMBrowser |
+| visualization: draws the model (the GLSP *GModel factory*) | MiArchitecturalMap-Visualization, MiDSMVisualization | (GLSPGModelFactory) | GLSPArchitecturalMap-Visualization | GLSPDSMVisualization |
+| diagram module: defines a diagram type for the GLSP server | — | GLSPMooseDiagramModule | GLSPArchitecturalMap-DiagramModule | GLSPDSMDiagramModule |
+| storage: required by GLSP, reads nothing, refuses to save | — | GLSPMooseSourceModel-Storage | | |
+| custom action sent by the client, and its handler | — | | | GLSPDSMHoverCellAction, GLSPDSMHoverCellAction-Handler |
 
 What each part does:
 
