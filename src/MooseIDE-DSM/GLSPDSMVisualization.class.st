@@ -15,10 +15,28 @@ Class {
 }
 
 { #category : 'building' }
-GLSPDSMVisualization >> cellFor: aTuple of: aSourceModel at: aPoint [
-	"The dependencies of the column entity (key) towards the row entity (value). The cells of the SCC under the mouse are red instead of pink"
+GLSPDSMVisualization >> addOutlinesOf: aTuple columns: columns rows: rows from: cellOrigin to: root [
+	"A thick border around the column and the row of the cell of aTuple (column node -> row node)"
 
-	| aDSMModel weight cell highlighted |
+	| i j |
+	i := columns indexOf: aTuple key.
+	j := rows indexOf: aTuple value.
+	(i = 0 or: [ j = 0 ]) ifTrue: [ ^ self ].
+	root add: (self
+			 outline: 'dsm-hovered-column'
+			 at: cellOrigin + (i - 1 * self cellSize x @ 0)
+			 size: self cellSize x @ (rows size * self cellSize y)).
+	root add: (self
+			 outline: 'dsm-hovered-row'
+			 at: cellOrigin + (0 @ (j - 1 * self cellSize y))
+			 size: columns size * self cellSize x @ self cellSize y)
+]
+
+{ #category : 'building' }
+GLSPDSMVisualization >> cellFor: aTuple of: aSourceModel at: aPoint [
+	"The dependencies of the column entity (key) towards the row entity (value). Its CSS classes say what it is, from which the client gives its color, as MiDSMBrowserModel>>colorForTuple: and showSCCColorForTuple: (dsm-highlighted: in the SCC under the mouse)"
+
+	| aDSMModel weight cell |
 	aDSMModel := aSourceModel dsmModel.
 	weight := aDSMModel getTupleDependencyWeight: aTuple.
 	cell := self
@@ -31,11 +49,7 @@ GLSPDSMVisualization >> cellFor: aTuple of: aSourceModel at: aPoint [
 				         ifFalse: [ '' ])
 		        labelType: 'dsm-weight'.
 	cell addCssClass: 'dsm-' , (self kindOf: aTuple in: aDSMModel).
-	highlighted := aSourceModel isHighlighted: aTuple.
-	highlighted ifTrue: [ cell addCssClass: 'dsm-highlighted' ].
-	cell argsAt: 'fill' put: '#' , (highlighted
-			 ifTrue: [ aDSMModel showSCCColorForTuple: aTuple ]
-			 ifFalse: [ aDSMModel colorForTuple: aTuple ]) asHexString.
+	(aSourceModel isHighlighted: aTuple) ifTrue: [ cell addCssClass: 'dsm-highlighted' ].
 	cell argsAt: 'title' put: (self titleOf: aTuple weight: weight in: aDSMModel).
 	^ cell
 ]
@@ -100,6 +114,14 @@ GLSPDSMVisualization >> createGModel: aModelState [
 	rows doWithIndex: [ :row :j |
 			columns doWithIndex: [ :column :i |
 				root add: (self cellFor: column -> row of: source at: cellOrigin + (i - 1 @ (j - 1) * self cellSize)) ] ].
+	"Last, to be drawn over the cells"
+	source hoveredTuple ifNotNil: [ :tuple |
+			self
+				addOutlinesOf: tuple
+				columns: columns
+				rows: rows
+				from: cellOrigin
+				to: root ].
 	^ root
 ]
 
@@ -141,6 +163,19 @@ GLSPDSMVisualization >> node: anId type: aType at: aPoint size: aSize label: aSt
 				   type: aLabelType;
 				   text: aString;
 				   yourself);
+		  yourself
+]
+
+{ #category : 'building' }
+GLSPDSMVisualization >> outline: anId at: aPoint size: aSize [
+	"A standard GLSP rectangle with no label: each client draws it its own way from its CSS class (the browser client: a thick border letting the mouse through to the cells below)"
+
+	^ GLSPGNode new
+		  id: anId;
+		  type: 'node:rectangle';
+		  position: aPoint;
+		  size: aSize;
+		  addCssClass: 'dsm-hovered-line';
 		  yourself
 ]
 

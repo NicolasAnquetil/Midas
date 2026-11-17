@@ -20,19 +20,6 @@ Class {
 }
 
 { #category : 'running' }
-GLSPDSMBrowserTest >> fillFrom: anEntity to: anotherEntity [
-
-	^ (session modelState root children detect: [ :each | each id = (visualization cellIdFrom: anEntity to: anotherEntity) ]) args at:
-		  'fill'
-]
-
-{ #category : 'running' }
-GLSPDSMBrowserTest >> hex: aColor [
-
-	^ '#' , aColor asHexString
-]
-
-{ #category : 'running' }
 GLSPDSMBrowserTest >> hover: aCellId [
 
 	^ GLSPDSMHoverCellActionHandler new
@@ -51,6 +38,20 @@ GLSPDSMBrowserTest >> invocationFrom: aClass to: anotherClass [
 	famixModel newInvocation
 		sender: sender;
 		candidates: { receiver }
+]
+
+{ #category : 'tests' }
+GLSPDSMBrowserTest >> isHighlightedFrom: anEntity to: anotherEntity [
+	"Shown red by the client: the cell has the class dsm-highlighted"
+
+	^ (session modelState root children detect: [ :each | each id = (visualization cellIdFrom: anEntity to: anotherEntity) ])
+		  cssClasses includes: 'dsm-highlighted'
+]
+
+{ #category : 'tests' }
+GLSPDSMBrowserTest >> outlines [
+
+	^ session modelState root children select: [ :each | each cssClasses includes: 'dsm-hovered-line' ]
 ]
 
 { #category : 'running' }
@@ -107,8 +108,8 @@ GLSPDSMBrowserTest >> testAModelIsBuiltWithABrowserWithoutClient [
 { #category : 'tests' }
 GLSPDSMBrowserTest >> testCellsOfAnSCCArePinkWhenNotHovered [
 
-	self assert: (self fillFrom: class1 to: class2) equals: (self hex: dsm sccColor).
-	self assert: (self fillFrom: class2 to: class1) equals: (self hex: dsm sccColor)
+	self deny: (self isHighlightedFrom: class1 to: class2).
+	self deny: (self isHighlightedFrom: class2 to: class1)
 ]
 
 { #category : 'tests' }
@@ -118,25 +119,39 @@ GLSPDSMBrowserTest >> testHoveringACellOfAnSCCMakesAllItsCellsRed [
 	actions := self hover: (visualization cellIdFrom: class1 to: class2).
 	self assert: actions size equals: 1.
 	self assert: actions first kind equals: 'updateModel'.
-	self assert: (self fillFrom: class1 to: class2) equals: (self hex: dsm showSCCColor).
-	self assert: (self fillFrom: class2 to: class1) equals: (self hex: dsm showSCCColor).
+	self assert: (self isHighlightedFrom: class1 to: class2).
+	self assert: (self isHighlightedFrom: class2 to: class1).
 	"Outside the SCC"
-	self assert: (self fillFrom: class3 to: class1) equals: (self hex: dsm dependencyColor)
+	self deny: (self isHighlightedFrom: class3 to: class1)
 ]
 
 { #category : 'tests' }
-GLSPDSMBrowserTest >> testHoveringACellOutsideAnSCCChangesNothing [
+GLSPDSMBrowserTest >> testHoveringACellOutlinesItsRowAndColumn [
 
-	self assert: (self hover: (visualization cellIdFrom: class3 to: class1)) isEmpty.
-	self assert: (self hover: (visualization cellIdFrom: class3 to: class3)) isEmpty.
-	self assert: (self fillFrom: class1 to: class2) equals: (self hex: dsm sccColor)
+	self hover: (visualization cellIdFrom: class3 to: class1).
+	self assert: (self outlines collect: [ :each | each id ]) asSet equals: #( 'dsm-hovered-column' 'dsm-hovered-row' ) asSet
 ]
 
 { #category : 'tests' }
-GLSPDSMBrowserTest >> testHoveringAnotherCellOfTheSameSCCSendsNothing [
+GLSPDSMBrowserTest >> testHoveringACellOutsideAnSCCKeepsTheSCCPink [
+
+	self assert: (self hover: (visualization cellIdFrom: class3 to: class1)) size equals: 1.
+	self deny: (self isHighlightedFrom: class1 to: class2)
+]
+
+{ #category : 'tests' }
+GLSPDSMBrowserTest >> testHoveringAnotherCellOfTheSameSCCMovesTheOutlines [
 
 	self hover: (visualization cellIdFrom: class1 to: class2).
-	self assert: (self hover: (visualization cellIdFrom: class2 to: class1)) isEmpty
+	self assert: (self hover: (visualization cellIdFrom: class2 to: class1)) size equals: 1.
+	self assert: (self isHighlightedFrom: class1 to: class2)
+]
+
+{ #category : 'tests' }
+GLSPDSMBrowserTest >> testHoveringTheSameCellAgainSendsNothing [
+
+	self hover: (visualization cellIdFrom: class1 to: class2).
+	self assert: (self hover: (visualization cellIdFrom: class1 to: class2)) isEmpty
 ]
 
 { #category : 'tests' }
@@ -144,7 +159,15 @@ GLSPDSMBrowserTest >> testLeavingTheCellMakesThemPinkAgain [
 
 	self hover: (visualization cellIdFrom: class1 to: class2).
 	self assert: (self hover: nil) size equals: 1.
-	self assert: (self fillFrom: class1 to: class2) equals: (self hex: dsm sccColor)
+	self deny: (self isHighlightedFrom: class1 to: class2)
+]
+
+{ #category : 'tests' }
+GLSPDSMBrowserTest >> testLeavingTheMatrixRemovesTheOutlines [
+
+	self hover: (visualization cellIdFrom: class3 to: class1).
+	self assert: (self hover: nil) size equals: 1.
+	self assert: self outlines isEmpty
 ]
 
 { #category : 'tests' }
@@ -173,6 +196,13 @@ GLSPDSMBrowserTest >> testTheHoverIsHandledByTheBrowser [
 	browser := session modelState sourceModel.
 	self hover: (visualization cellIdFrom: class1 to: class2).
 	self assert: (browser isHighlighted: (browser tupleWithCellId: (visualization cellIdFrom: class2 to: class1)))
+]
+
+{ #category : 'tests' }
+GLSPDSMBrowserTest >> testTheOutlinesAreNotAnimated [
+	"Without animate: false, the client slides the outlines from the previous cell to the new one"
+
+	self deny: (self hover: (visualization cellIdFrom: class3 to: class1)) first animate
 ]
 
 { #category : 'tests' }

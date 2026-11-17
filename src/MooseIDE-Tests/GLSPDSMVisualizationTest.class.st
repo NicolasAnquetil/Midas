@@ -59,12 +59,14 @@ GLSPDSMVisualizationTest >> testACellTellsWhatItIsInItsTooltip [
 ]
 
 { #category : 'tests' }
-GLSPDSMVisualizationTest >> testADependencyCellShowsItsWeightAndColor [
+GLSPDSMVisualizationTest >> testADependencyCellShowsItsWeightAndKind [
+	"The client gives the color from the kind (CSS class), the server sends no color"
+
 	| cell |
 	cell := self cellFrom: class1 to: class2.
 	self assert: (self textOf: cell) equals: '1'.
 	self assert: (cell cssClasses includes: 'dsm-dependency').
-	self assert: (cell args at: 'fill') equals: '#' , dsm dependencyColor asHexString
+	self deny: (cell args includesKey: 'fill')
 ]
 
 { #category : 'tests' }
@@ -101,10 +103,48 @@ GLSPDSMVisualizationTest >> testHeadersNameTheEntitiesInTheOrderOfTheModel [
 ]
 
 { #category : 'tests' }
+GLSPDSMVisualizationTest >> testNoOutlineWhenNoCellIsHovered [
+
+	self assert: (gmodel children noneSatisfy: [ :each | each cssClasses includes: 'dsm-hovered-line' ])
+]
+
+{ #category : 'tests' }
 GLSPDSMVisualizationTest >> testOneCellPerPairAndOneHeaderPerEntity [
 	self assert: (self elementsOfType: 'dsm-cell') size equals: 9.
 	self assert: (self elementsOfType: 'dsm-column-header') size equals: 3.
 	self assert: (self elementsOfType: 'dsm-row-header') size equals: 3
+]
+
+{ #category : 'tests' }
+GLSPDSMVisualizationTest >> testTheHoveredCellOutlinesItsColumnAndRow [
+
+	| cell column row |
+	dsm browser hover: (dsm browser tupleWithCellId: (visualization cellIdFrom: class2 to: class3)).
+	gmodel := visualization createGModel: (GLSPModelState new
+			           sourceModel: dsm browser;
+			           yourself).
+	cell := self cellFrom: class2 to: class3.
+	column := gmodel children detect: [ :each | each id = 'dsm-hovered-column' ].
+	row := gmodel children detect: [ :each | each id = 'dsm-hovered-row' ].
+	"The column: as wide as a cell, from the top of the first row to the bottom of the last one"
+	self assert: column position equals: cell position x @ (self cellFrom: class2 to: class1) position y.
+	self assert: column size equals: visualization cellSize x @ (visualization cellSize y * 3).
+	"The row: as high as a cell, from the left of the first column to the right of the last one"
+	self assert: row position equals: (self cellFrom: class1 to: class3) position x @ cell position y.
+	self assert: row size equals: visualization cellSize x * 3 @ visualization cellSize y.
+	"Drawn over the cells"
+	self assert: (gmodel children indexOf: row) > (gmodel children indexOf: cell)
+]
+
+{ #category : 'tests' }
+GLSPDSMVisualizationTest >> testTheOutlinesAreStandardRectangles [
+	"Each client draws them its own way (a thick border in the browser client's CSS)"
+
+	| outline |
+	outline := visualization outline: 'x' at: 0 @ 0 size: 48 @ 90.
+	self assert: outline type equals: 'node:rectangle'.
+	self assert: (outline cssClasses includes: 'dsm-hovered-line').
+	self assert: outline children isEmpty
 ]
 
 { #category : 'running' }

@@ -4,8 +4,9 @@ Two MooseIDE visualizations are served by the Pharo GLSP server of [Pharo-GLSP](
 its [`browser-client/`](https://github.com/NicolasAnquetil/Pharo-GLSP/tree/main/browser-client) in a web browser:
 
 - the **architectural map** (`archmap-diagram`): the root packages of a model, with the dependencies between them;
-- the **DSM** (`dsm-diagram`): the dependency structure matrix of these packages; hovering a cell of a cycle
-  shows its whole strongly connected component (SCC) in red.
+- the **DSM** (`dsm-diagram`): the dependency structure matrix of these packages; hovering a cell outlines its
+  column and its row with a thick border, and for a cell of a cycle shows its whole strongly connected component
+  (SCC) in red.
 
 Both are read-only, and both use the MooseIDE models unchanged (`MiArchitecturalMapModel`, `MiDSMBrowserModel`):
 on the GLSP side, a *GLSP browser* takes the place of the Spec browser of MooseIDE.
@@ -22,7 +23,7 @@ on the GLSP side, a *GLSP browser* takes the place of the Spec browser of MooseI
 | — DSM | package `MooseIDE-DSM`, tag `GLSP` |
 | — tests | package `MooseIDE-Tests`, tag `Browsers`: `GLSPMooseDiagramModuleTest`, `GLSPArchitecturalMapBrowserTest`, `GLSPDSMBrowserTest`, `GLSPDSMVisualizationTest` (with `GLSPTestServer`, a fake server keeping what is sent to the client) |
 
-The MooseIDE baseline does not declare GLSP: load Pharo-GLSP before the MooseIDE GLSP classes.
+The MooseIDE baseline declares Pharo-GLSP as the project `GLSP`, loaded by the group `glsp`.
 
 ## The classes
 
@@ -49,8 +50,8 @@ What each part does:
     `updateToolbar`, `application`); after a change of the model it sends the model again to its client
     (`sendModelToClient`);
   - the **source model of its session**: the visualization draws the model from it (`dsmModel`, `mapModel`);
-  - the receiver of the **client's callbacks**: `GLSPDSMBrowser>>hoverCellWithId:`, which shows an SCC (`showSCC:`,
-    as `MiDSMBrowser`) and keeps the highlighted cells of its client.
+  - the receiver of the **client's callbacks**: `GLSPDSMBrowser>>hoverCellWithId:`, which keeps the hovered cell
+    of its client (its column and row are outlined) and shows its SCC (`showSCC:`, as `MiDSMBrowser`).
 - **A browser without client**: MooseIDE models need a browser. `GLSPMooseBrowser class>>modelOn:` builds the model
   with a browser that has no session (its callbacks do nothing), and when a client has gone, its browser gives the
   model a new browser without client (`detachFromModel`).
@@ -137,14 +138,15 @@ sequenceDiagram
     Session->>Handler: execute:in:
     Handler->>Browser: hoverCellWithId: cellId
     Browser->>Model: isCycle:, sccTuplesForTuple:
-    alt the cells to highlight did not change
+    alt neither the hovered cell nor the cells to highlight changed
         Browser-->>Handler: no action
-    else they changed
-        Browser->>Browser: showSCC: tuples
+    else one of them changed
+        Browser->>Browser: hover: tuple (hoveredTuple, showSCC: tuples)
         Browser->>Session: updateGModel
         Session->>Vis: createGModel:
         Vis->>Browser: isHighlighted: tuple (for each cell)
-        Vis->>Model: showSCCColorForTuple: (red) or colorForTuple:
+        Vis->>Model: kindOf:in: (CSS classes dsm-cycle..., dsm-highlighted: the client colors the cells)
+        Vis->>Browser: hoveredTuple (two node:rectangle outlines, class dsm-hovered-line, over the cells)
         Browser-->>Handler: { updateModel }
         Handler-->>Session: { updateModel }
         Session-->>Listener: updateModel (the client redraws)
@@ -176,6 +178,10 @@ sequenceDiagram
 ```
 
 ## Notes for maintenance
+
+- The server sends what the elements are, not how they look (native GLSP): types and CSS classes, no colors. The
+  DSM colors (those of `MiDSMBrowserModel>>initializeColors`) and the outlines of the hovered column and row are in
+  the client (`browser-client/index.html` of Pharo-GLSP).
 
 - MooseIDE changes are committed to the `development` branch of the Midas fork (`git push midas development`).
   Its test workflow runs on pull requests only.

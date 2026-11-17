@@ -7,7 +7,8 @@ Class {
 	#name : 'GLSPDSMBrowser',
 	#superclass : 'GLSPMooseBrowser',
 	#instVars : [
-		'highlightedTuples'
+		'highlightedTuples',
+		'hoveredTuple'
 	],
 	#category : 'MooseIDE-DSM-GLSP',
 	#package : 'MooseIDE-DSM',
@@ -46,16 +47,32 @@ GLSPDSMBrowser >> highlightedTuples [
 	^ highlightedTuples ifNil: [ highlightedTuples := Set new ]
 ]
 
-{ #category : 'callbacks from the client' }
-GLSPDSMBrowser >> hoverCellWithId: aString [
-	"The mouse is over the cell with this id (nil: over no cell). Answer the actions to send back to the client: the model again, if the cells to show red changed"
+{ #category : 'hovering' }
+GLSPDSMBrowser >> hover: aTuple [
+	"The mouse is over the cell of aTuple (nil: over no cell). Outline its column and row, show its SCC red. Answer whether that changed what is shown"
 
 	| tuples |
-	tuples := (self sccTuplesOf: (self tupleWithCellId: aString)) asSet.
-	tuples = self highlightedTuples ifTrue: [ ^ #(  ) ].
+	tuples := (self sccTuplesOf: aTuple) asSet.
+	(aTuple = hoveredTuple and: [ tuples = self highlightedTuples ]) ifTrue: [ ^ false ].
+	hoveredTuple := aTuple.
 	self showSCC: tuples.
+	^ true
+]
+
+{ #category : 'hovering' }
+GLSPDSMBrowser >> hoverCellWithId: aString [
+	"The mouse is over the cell with this id (nil: over no cell). Answer the actions to send back to the client: the model again, if what is shown changed (the outlined column and row, the cells shown red)"
+
+	(self hover: (self tupleWithCellId: aString)) ifFalse: [ ^ #(  ) ].
 	session updateGModel.
 	^ { self updateModelAction }
+]
+
+{ #category : 'hovering' }
+GLSPDSMBrowser >> hoveredTuple [
+	"The tuple of the cell under the mouse, nil if none: its column and its row are outlined"
+
+	^ hoveredTuple
 ]
 
 { #category : 'accessing' }
@@ -95,6 +112,15 @@ GLSPDSMBrowser >> tupleWithCellId: aString [
 			model orderedNodesY do: [ :row |
 				(GLSPDSMVisualization new cellIdFrom: column model to: row model) = aString ifTrue: [ ^ column -> row ] ] ].
 	^ nil
+]
+
+{ #category : 'updating' }
+GLSPDSMBrowser >> updateModelAction [
+	"Not animated: the client would slide the outlines of the hovered column and row (same ids) from the previous cell to the new one"
+
+	^ super updateModelAction
+		  animate: false;
+		  yourself
 ]
 
 { #category : 'callbacks from the model' }
