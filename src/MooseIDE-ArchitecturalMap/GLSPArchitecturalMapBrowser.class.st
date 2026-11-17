@@ -6,6 +6,9 @@ The MiArchitecturalMapModel calls it back: #runVisualization sends the map again
 Class {
 	#name : 'GLSPArchitecturalMapBrowser',
 	#superclass : 'GLSPMooseBrowser',
+	#instVars : [
+		'movedPositions'
+	],
 	#category : 'MooseIDE-ArchitecturalMap-GLSP',
 	#package : 'MooseIDE-ArchitecturalMap',
 	#tag : 'GLSP'
@@ -30,10 +33,31 @@ GLSPArchitecturalMapBrowser >> mapModel [
 	^ model
 ]
 
-{ #category : 'callbacks from the model' }
-GLSPArchitecturalMapBrowser >> runVisualization [
-	"The map changed (MiArchitecturalMapModel>>updateFromConfiguration:)"
+{ #category : 'moving' }
+GLSPArchitecturalMapBrowser >> moveNodeWithId: anId to: aPoint [
 
+	self movedPositions at: anId put: aPoint
+]
+
+{ #category : 'moving' }
+GLSPArchitecturalMapBrowser >> movedPositions [
+	"The positions where the user put nodes, by node id: they win over the layout of the map"
+
+	^ movedPositions ifNil: [ movedPositions := Dictionary new ]
+]
+
+{ #category : 'moving' }
+GLSPArchitecturalMapBrowser >> positionOfNodeWithId: anId ifNone: aBlock [
+	"Where the user put this node, the value of aBlock if it was not moved"
+
+	^ self movedPositions at: anId ifAbsent: aBlock
+]
+
+{ #category : 'updating' }
+GLSPArchitecturalMapBrowser >> runVisualization [
+	"The map changed (MiArchitecturalMapModel>>updateFromConfiguration:): laid out again, as in Roassal, the moved nodes too"
+
+	movedPositions := nil.
 	self sendModelToClient
 ]
 

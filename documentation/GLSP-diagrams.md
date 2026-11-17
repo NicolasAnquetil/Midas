@@ -8,7 +8,7 @@ its [`browser-client/`](https://github.com/NicolasAnquetil/Pharo-GLSP/tree/main/
   column and its row with a thick border, and for a cell of a cycle shows its whole strongly connected component
   (SCC) in red.
 
-Both are read-only, and both use the MooseIDE models unchanged (`MiArchitecturalMapModel`, `MiDSMBrowserModel`):
+Both are read-only, except that the nodes of the architectural map can be moved (as in Roassal), and both use the MooseIDE models unchanged (`MiArchitecturalMapModel`, `MiDSMBrowserModel`):
 on the GLSP side, a *GLSP browser* takes the place of the Spec browser of MooseIDE.
 
 ## Where the code is
@@ -37,14 +37,15 @@ The organisation mirrors the one of MooseIDE, where a Spec browser (`MiDSMBrowse
 | visualization: draws the model (the GLSP *GModel factory*) | MiArchitecturalMap-Visualization, MiDSMVisualization | (GLSPGModelFactory) | GLSPArchitecturalMap-Visualization | GLSPDSMVisualization |
 | diagram module: defines a diagram type for the GLSP server | — | GLSPMooseDiagramModule | GLSPArchitecturalMap-DiagramModule | GLSPDSMDiagramModule |
 | storage: required by GLSP, reads nothing, refuses to save | — | GLSPMooseSourceModel-Storage | | |
-| custom action sent by the client, and its handler | — | | | GLSPDSMHoverCellAction, GLSPDSMHoverCellAction-Handler |
+| action sent by the client, and its handler | — | | GLSPArchitecturalMap-ChangeBoundsHandler (standard changeBounds) | GLSPDSMHoverCellAction (custom), GLSPDSMHoverCellAction-Handler |
 
 What each part does:
 
 - **`GLSPMooseDiagramModule`** holds the model, shared by all the clients. For each client session it creates a
   browser (`browserClass`) and sets it as the browser of the model. Its subclasses only say `diagramType`,
   `gmodelFactory` (the visualization) and `browserClass`; the DSM adds its hover handler (`createActionHandlers`),
-  the architectural map can also open in a Bloc editor of the image (`openOn:`).
+  the architectural map adds its move handler and its type hints (see below), and can also open in a Bloc editor of
+  the image (`openOn:`).
 - **`GLSPMooseBrowser`** is one per client session (plus one *without client*, see below). It is
   - the **browser of the model**: the model calls it back (`buildDSM` for the DSM, `runVisualization` for the map,
     `updateToolbar`, `application`); after a change of the model it sends the model again to its client
@@ -176,6 +177,20 @@ sequenceDiagram
         Browser->>Model: browser: (a new browser without client)
     end
 ```
+
+## Moving a node of the architectural map
+
+The client sends GLSP's standard operation `changeBounds`. What the user can do with each element type is told by
+the server with **type hints** (`GLSPArchitecturalMapDiagramModule>>shapeTypeHints`, `edgeTypeHints`): the nodes can
+only be moved (not resized, deleted or reparented), the dependencies cannot be edited (they follow their nodes).
+
+- `GLSPArchitecturalMapChangeBoundsHandler` gives the new positions to the browser of the session
+  (`moveNodeWithId:to:`), which keeps them (`movedPositions`, one browser per client: each client its own positions);
+  `GLSPArchitecturalMapVisualization` puts a moved node where the user put it, the others where the layout puts them.
+- It is an action handler, not an operation handler: GLSP-Server records operations for undo by copying the source
+  model (`GLSPRecordingCommand`, `veryDeepCopy`), here the browser, with the map model and the Moose model behind it.
+  As in Roassal, a move cannot be undone.
+- A change of the map (`runVisualization`, after `updateFromConfiguration:`) lays out all the nodes again, as in Roassal.
 
 ## Notes for maintenance
 

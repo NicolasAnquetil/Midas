@@ -68,13 +68,47 @@ GLSPArchitecturalMapDiagramModule >> browserClass [
 ]
 
 { #category : 'accessing' }
+GLSPArchitecturalMapDiagramModule >> createActionHandlers [
+	"The user can move the nodes"
+
+	^ super createActionHandlers
+		  add: GLSPArchitecturalMapChangeBoundsHandler new;
+		  yourself
+]
+
+{ #category : 'accessing' }
 GLSPArchitecturalMapDiagramModule >> diagramType [
 
 	^ 'archmap-diagram'
 ]
 
 { #category : 'accessing' }
+GLSPArchitecturalMapDiagramModule >> edgeTypeHints [
+	"What the user can do with the dependencies (the client applies it): nothing, they follow their nodes"
+
+	^ { (GLSPEdgeTypeHint new
+		   elementTypeId: 'archmap-dependency';
+		   repositionable: false;
+		   deletable: false;
+		   routable: false;
+		   yourself) }
+]
+
+{ #category : 'accessing' }
 GLSPArchitecturalMapDiagramModule >> gmodelFactory [
 
 	^ GLSPArchitecturalMapVisualization new
+]
+
+{ #category : 'accessing' }
+GLSPArchitecturalMapDiagramModule >> shapeTypeHints [
+	"What the user can do with the nodes (the client applies it): only move them"
+
+	^ { (GLSPShapeTypeHint new
+		   elementTypeId: 'archmap-node';
+		   repositionable: true;
+		   resizable: false;
+		   deletable: false;
+		   reparentable: false;
+		   yourself) }
 ]

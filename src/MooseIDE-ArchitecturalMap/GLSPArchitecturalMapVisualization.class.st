@@ -21,12 +21,17 @@ GLSPArchitecturalMapVisualization >> circleRadiusFor: aCollectionOfShapes [
 	^ widest + self gapSize / (2 * (Float pi / aCollectionOfShapes size) sin)
 ]
 
-{ #category : 'creation' }
+{ #category : 'building' }
 GLSPArchitecturalMapVisualization >> createGModel: aModelState [
 
-	| mapModel shapes origin root nodeIds |
-	mapModel := aModelState sourceModel ifNotNil: [ :browser | browser mapModel ].
-	mapModel ifNil: [ ^ GLSPGModelRoot new id: 'archmap'; type: 'graph'; yourself ].
+	| browser mapModel shapes origin root nodeIds |
+	browser := aModelState sourceModel.
+	mapModel := browser ifNotNil: [ browser mapModel ].
+	mapModel ifNil: [
+			^ GLSPGModelRoot new
+				  id: 'archmap';
+				  type: 'graph';
+				  yourself ].
 	shapes := self rootShapesFor: mapModel.
 	root := GLSPGModelRoot new
 		        id: 'archmap';
@@ -38,10 +43,13 @@ GLSPArchitecturalMapVisualization >> createGModel: aModelState [
 		          into: [ :min :each | min min: each ].
 	nodeIds := Dictionary new.
 	shapes do: [ :shape |
-			| entity |
+			| entity node |
 			entity := shape model rawModel.
 			nodeIds at: entity put: (self idFor: entity).
-			root add: (self nodeFor: shape origin: origin) ].
+			node := self nodeFor: shape origin: origin.
+			"Where the user put it, if moved; where the layout put it otherwise"
+			node position: (browser positionOfNodeWithId: node id ifNone: [ node position ]).
+			root add: node ].
 	root addAll: (self edgesFor: mapModel nodeIds: nodeIds).
 	^ root
 ]
