@@ -47,6 +47,7 @@ BaselineOfMooseIDE >> defineDependencies: spec [
 	self pharoAIHierachicalClustering: spec.
 	self interactiveNotebook: spec.
 	self classBlueprint: spec.
+	self glsp: spec.
 
 	spec for: #WithFamix do: [ self famixQueries: spec ]
 ]
@@ -56,11 +57,10 @@ BaselineOfMooseIDE >> defineGroups: spec [
 
 	spec
 		group: 'CriticBrowser-Metamodel'
-		with:
-			#( 'Famix-CriticBrowser-Entities' 'Famix-CriticBrowser-ManualEntities'
-			   'Famix-CriticBrowser-Generator' 'Famix-CriticBrowser-Tests' ) ;
-		group: 'bulkedit'
-		with: #( 'MooseIDE-BulkEditor' )
+		with: #( 'Famix-CriticBrowser-Entities' 'Famix-CriticBrowser-ManualEntities' 'Famix-CriticBrowser-Generator'
+			   'Famix-CriticBrowser-Tests' );
+		group: 'bulkedit' with: #( 'MooseIDE-BulkEditor' );
+		group: 'glsp' with: #( 'GLSP' )
 ]
 
 { #category : 'packages' }
@@ -177,6 +177,12 @@ BaselineOfMooseIDE >> famixTagging: spec [
 		baseline: 'FamixTagging'
 		with: [
 		spec repository: 'github://moosetechnology/FamixTagging:development/src' ]
+]
+
+{ #category : 'dependencies' }
+BaselineOfMooseIDE >> glsp: spec [
+
+	spec baseline: 'GLSP' with: [ spec repository: 'github://NicolasAnquetil/Pharo-GLSP:main/src' ]
 ]
 
 { #category : 'dependencies' }
