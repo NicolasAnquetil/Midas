@@ -27,6 +27,15 @@ GLSPArchitecturalMapBrowser class >> setEntities: aCollection in: aModel [
 	aModel entities: aCollection
 ]
 
+{ #category : 'selecting' }
+GLSPArchitecturalMapBrowser >> entitiesWithNodeIds: aCollectionOfIds [
+	"The entities drawn as nodes with these ids (other ids, e.g. of dependencies, are ignored)"
+
+	| visualization |
+	visualization := GLSPArchitecturalMapVisualization new.
+	^ self mapModel rootNodes select: [ :each | aCollectionOfIds includes: (visualization idFor: each) ]
+]
+
 { #category : 'accessing' }
 GLSPArchitecturalMapBrowser >> mapModel [
 

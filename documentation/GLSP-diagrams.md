@@ -192,6 +192,20 @@ only be moved (not resized, deleted or reparented), the dependencies cannot be e
   As in Roassal, a move cannot be undone.
 - A change of the map (`runVisualization`, after `updateFromConfiguration:`) lays out all the nodes again, as in Roassal.
 
+## Selecting nodes of the architectural map
+
+Selecting is done by the client (click, Ctrl/Cmd+click to add or remove a node, Ctrl/Cmd+A, Shift+drag for a box, a
+click on the background to deselect). It tells the server with GLSP's standard actions `elementSelected`
+(`GLSPSelectAction`) and `allSelected` (`GLSPSelectAllAction`), which the client sends because the server announces
+them.
+
+- `GLSPArchitecturalMapSelectHandler` keeps the selection in the map model: `MiArchitecturalMapModel>>selectedEntities`.
+  Its `miSelectedItem` answers the selected entities, or all its entities when none is selected (as
+  `MiAbstractVisualizationBrowser>>miSelectedItem` does with the Roassal canvas). New entities (`entities:`) clear the
+  selection.
+- `GLSPArchitecturalMapVisualization` sends the nodes of the selected entities with the standard GModel property
+  `selected`, so that a model sent again (after a move, a change of the map) still shows the selection.
+
 ## Notes for maintenance
 
 - The server sends what the elements are, not how they look (native GLSP): types and CSS classes, no colors. The

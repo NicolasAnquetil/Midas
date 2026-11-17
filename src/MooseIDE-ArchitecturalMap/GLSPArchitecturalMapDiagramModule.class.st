@@ -69,10 +69,11 @@ GLSPArchitecturalMapDiagramModule >> browserClass [
 
 { #category : 'accessing' }
 GLSPArchitecturalMapDiagramModule >> createActionHandlers [
-	"The user can move the nodes"
+	"The user can move and select the nodes"
 
 	^ super createActionHandlers
 		  add: GLSPArchitecturalMapChangeBoundsHandler new;
+		  add: GLSPArchitecturalMapSelectHandler new;
 		  yourself
 ]
 

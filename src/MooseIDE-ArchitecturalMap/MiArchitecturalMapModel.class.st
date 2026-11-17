@@ -20,7 +20,8 @@ Class {
 		'hideMegamorphicInvocations',
 		'megamorphicTreshold',
 		'showDirectoriesAsRootNodes',
-		'weightedLinks'
+		'weightedLinks',
+		'selectedEntities'
 	],
 	#category : 'MooseIDE-ArchitecturalMap-model',
 	#package : 'MooseIDE-ArchitecturalMap',
@@ -288,8 +289,10 @@ MiArchitecturalMapModel >> entities [
 
 { #category : 'accessing' }
 MiArchitecturalMapModel >> entities: aCollection [
+	"The entities shown in the map: a new map, with no selection"
 
 	entities := aCollection.
+	selectedEntities := nil.
 	self recomputeRootNodes.
 	self recomputeDefaultSettings
 ]
@@ -338,8 +341,9 @@ MiArchitecturalMapModel >> layout [
 
 { #category : 'accessing' }
 MiArchitecturalMapModel >> miSelectedItem [
+	"The selected entities; all the entities of the map when none is selected"
 
-	^ self entities
+	^ self selectedEntities ifEmpty: [ self entities ]
 ]
 
 { #category : 'settings management' }
@@ -375,6 +379,19 @@ MiArchitecturalMapModel >> selectRelatedTo: anEntity [
 
 	browser selectRelatedTo: anEntity 
 
+]
+
+{ #category : 'accessing' }
+MiArchitecturalMapModel >> selectedEntities [
+	"The entities whose nodes are selected in the map"
+
+	^ selectedEntities ifNil: [ selectedEntities := OrderedCollection new ]
+]
+
+{ #category : 'accessing' }
+MiArchitecturalMapModel >> selectedEntities: aCollection [
+
+	selectedEntities := aCollection asOrderedCollection
 ]
 
 { #category : 'settings management' }

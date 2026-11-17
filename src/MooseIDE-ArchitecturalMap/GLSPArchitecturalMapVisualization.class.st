@@ -49,6 +49,8 @@ GLSPArchitecturalMapVisualization >> createGModel: aModelState [
 			node := self nodeFor: shape origin: origin.
 			"Where the user put it, if moved; where the layout put it otherwise"
 			node position: (browser positionOfNodeWithId: node id ifNone: [ node position ]).
+			"Still shown selected when the model is sent again"
+			node selected: (mapModel selectedEntities includes: entity).
 			root add: node ].
 	root addAll: (self edgesFor: mapModel nodeIds: nodeIds).
 	^ root

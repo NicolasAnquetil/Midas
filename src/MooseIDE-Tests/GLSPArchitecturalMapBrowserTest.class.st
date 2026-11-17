@@ -24,6 +24,13 @@ GLSPArchitecturalMapBrowserTest >> elementsOfType: aType in: aRoot [
 ]
 
 { #category : 'helpers' }
+GLSPArchitecturalMapBrowserTest >> handle: aSelectionAction [
+	"The client tells the server what the user selected"
+
+	^ GLSPArchitecturalMapSelectHandler new execute: aSelectionAction in: session
+]
+
+{ #category : 'helpers' }
 GLSPArchitecturalMapBrowserTest >> move: aPackage to: aPoint [
 	"The client moved the node of aPackage (standard GLSP operation changeBounds)"
 
@@ -47,9 +54,24 @@ GLSPArchitecturalMapBrowserTest >> nodeIdOf: aPackage [
 ]
 
 { #category : 'helpers' }
+GLSPArchitecturalMapBrowserTest >> nodeOf: aPackage [
+
+	^ session modelState root children detect: [ :each | each id = (self nodeIdOf: aPackage) ]
+]
+
+{ #category : 'helpers' }
 GLSPArchitecturalMapBrowserTest >> positionOf: aPackage [
 
 	^ (session modelState root children detect: [ :each | each id = (self nodeIdOf: aPackage) ]) position
+]
+
+{ #category : 'helpers' }
+GLSPArchitecturalMapBrowserTest >> select: aCollectionOfPackages [
+	"The user added the nodes of these packages to the selection (Ctrl/Cmd+click)"
+
+	^ self handle: (GLSPSelectAction new
+			   selectedElementsIDs: (aCollectionOfPackages collect: [ :each | self nodeIdOf: each ]);
+			   yourself)
 ]
 
 { #category : 'running' }
@@ -118,6 +140,30 @@ GLSPArchitecturalMapBrowserTest >> testAMoveIsNotRecordedForUndo [
 ]
 
 { #category : 'tests' }
+GLSPArchitecturalMapBrowserTest >> testDeselectAllFirst [
+	"A click on a node: it alone is selected"
+
+	self select: { package1 }.
+	self handle: (GLSPSelectAction new
+			 selectedElementsIDs: { (self nodeIdOf: package2) };
+			 deselectAll: true;
+			 yourself).
+	self assert: mapModel selectedEntities asArray equals: { package2 }
+]
+
+{ #category : 'tests' }
+GLSPArchitecturalMapBrowserTest >> testDeselectingANode [
+
+	self select: {
+			package1.
+			package2 }.
+	self handle: (GLSPSelectAction new
+			 deselectedElementsIDs: { (self nodeIdOf: package1) };
+			 yourself).
+	self assert: mapModel selectedEntities asArray equals: { package2 }
+]
+
+{ #category : 'tests' }
 GLSPArchitecturalMapBrowserTest >> testMovedNodesStayInPlaceWhenTheModelIsDrawnAgain [
 
 	self move: package1 to: 300 @ 400.
@@ -142,6 +188,56 @@ GLSPArchitecturalMapBrowserTest >> testMovingANodeLeavesTheOthersInPlace [
 	before := self positionOf: package2.
 	self move: package1 to: 300 @ 400.
 	self assert: (self positionOf: package2) equals: before
+]
+
+{ #category : 'tests' }
+GLSPArchitecturalMapBrowserTest >> testNewEntitiesClearTheSelection [
+
+	self select: { package1 }.
+	mapModel entities: famixModel allModelPackages.
+	self assert: mapModel selectedEntities isEmpty
+]
+
+{ #category : 'tests' }
+GLSPArchitecturalMapBrowserTest >> testSelectAllAndDeselectAll [
+
+	self handle: (GLSPSelectAllAction new
+			 select: true;
+			 yourself).
+	self assertCollection: mapModel selectedEntities hasSameElements: {
+			package1.
+			package2 }.
+	self handle: (GLSPSelectAllAction new
+			 select: false;
+			 yourself).
+	self assert: mapModel selectedEntities isEmpty
+]
+
+{ #category : 'tests' }
+GLSPArchitecturalMapBrowserTest >> testSelectingANodeSelectsItsEntityInTheModel [
+
+	self select: { package1 }.
+	self assert: mapModel selectedEntities asArray equals: { package1 }.
+	self assert: mapModel miSelectedItem asArray equals: { package1 }
+]
+
+{ #category : 'tests' }
+GLSPArchitecturalMapBrowserTest >> testSelectingAnEdgeSelectsNoEntity [
+
+	self handle: (GLSPSelectAction new
+			 selectedElementsIDs: ((self elementsOfType: 'archmap-dependency' in: session modelState root) collect: [ :each | each id ]);
+			 yourself).
+	self assert: mapModel selectedEntities isEmpty
+]
+
+{ #category : 'tests' }
+GLSPArchitecturalMapBrowserTest >> testSelectingMoreNodesAddsToTheSelection [
+
+	self select: { package1 }.
+	self select: { package2 }.
+	self assertCollection: mapModel selectedEntities hasSameElements: {
+			package1.
+			package2 }
 ]
 
 { #category : 'tests' }
@@ -178,9 +274,28 @@ GLSPArchitecturalMapBrowserTest >> testTheNodesCanOnlyBeMoved [
 ]
 
 { #category : 'tests' }
+GLSPArchitecturalMapBrowserTest >> testTheSelectedNodesAreSentSelected [
+	"So that a model sent again (e.g. after a move) still shows the selection"
+
+	self select: { package1 }.
+	session updateGModel.
+	self assert: (self nodeOf: package1) selected.
+	self deny: (self nodeOf: package2) selected
+]
+
+{ #category : 'tests' }
 GLSPArchitecturalMapBrowserTest >> testTheServerAnnouncesTheMove [
 
 	self assert: (GLSPArchitecturalMapDiagramModule new handledActionKinds includes: GLSPChangeBoundsOperation kind)
+]
+
+{ #category : 'tests' }
+GLSPArchitecturalMapBrowserTest >> testTheServerAnnouncesTheSelection [
+
+	| kinds |
+	kinds := GLSPArchitecturalMapDiagramModule new handledActionKinds.
+	self assert: (kinds includes: GLSPSelectAction kind).
+	self assert: (kinds includes: GLSPSelectAllAction kind)
 ]
 
 { #category : 'tests' }
@@ -193,4 +308,11 @@ GLSPArchitecturalMapBrowserTest >> testWhenTheClientHasGoneTheModelGetsABrowserW
 	"The model works with it"
 	mapModel updateFromConfiguration: mapModel currentConfiguration.
 	self assert: mapModel rootNodes size equals: 2
+]
+
+{ #category : 'tests' }
+GLSPArchitecturalMapBrowserTest >> testWithoutSelectionTheModelAnswersItsEntities [
+
+	self assert: mapModel selectedEntities isEmpty.
+	self assert: mapModel miSelectedItem equals: mapModel entities
 ]
