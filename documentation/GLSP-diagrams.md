@@ -35,18 +35,23 @@ The organisation mirrors the one of MooseIDE, where a Spec browser (`MiDSMBrowse
 | model | MiArchitecturalMap-Model, MiDSMBrowserModel | (unchanged) | | |
 | browser: the model's `browser`, receives its callbacks and the client's | MiArchitecturalMap-Browser, MiDSMBrowser | GLSPMooseBrowser | GLSPArchitecturalMap-Browser | GLSPDSMBrowser |
 | visualization: draws the model (the GLSP *GModel factory*) | MiArchitecturalMap-Visualization, MiDSMVisualization | (GLSPGModelFactory) | GLSPArchitecturalMap-Visualization | GLSPDSMVisualization |
-| diagram module: defines a diagram type for the GLSP server | — | GLSPMooseDiagramModule | GLSPArchitecturalMap-DiagramModule | GLSPDSMDiagramModule |
+| diagram module: defines a diagram type for the GLSP server | — | GLSPMooseDiagramModule (one class, its browserClass says the diagram) | | |
 | storage: required by GLSP, reads nothing, refuses to save | — | GLSPMooseSourceModel-Storage | | |
 | action sent by the client, and its handler | — | | GLSPArchitecturalMap-ChangeBoundsHandler (standard changeBounds) | GLSPDSMHoverCellAction (custom), GLSPDSMHoverCellAction-Handler |
 
 What each part does:
 
-- **`GLSPMooseDiagramModule`** holds the entities to show. For each client session it creates a browser
-  (`browserClass`) with its own model of these entities, as each MooseIDE browser in Pharo has its own model: each
-  displayed diagram has its model. Its subclasses only say `diagramType`,
-  `gmodelFactory` (the visualization) and `browserClass`; the DSM adds its hover handler (`createActionHandlers`),
-  the architectural map adds its move handler and its type hints (see below), and can also open in a Bloc editor of
-  the image (`openOn:`).
+- **`GLSPMooseDiagramModule`** is one class for every diagram: it holds the entities to show and its
+  `browserClass`. For each client session it creates a browser (`browserClass`) with its own model of these
+  entities, as each MooseIDE browser in Pharo has its own model: each displayed diagram has its model. What is
+  specific to a diagram, it asks the class side of its browser class: `diagramType`, `gmodelFactory` (the
+  visualization), `actionHandlers` (the DSM's hover handler, the map's move and select handlers) and the type hints
+  (`shapeTypeHints`, `edgeTypeHints`; `nil` for GLSP's defaults, the map's say its nodes can only be moved). The
+  diagrams are read-only: `createActionHandlers` gives the sessions only the requests of the model, the type hints
+  and the context actions, then the diagram's handlers; no operations, undo, redo or save, so the client is not told
+  it can send them.
+- **The browser class side** also builds the module (`GLSPMooseBrowser class>>diagramModuleOn: entities`) and serves
+  it alone (`serve:onPort:`); the architectural map can also open in a Bloc editor of the image (`openOn:`).
 - **`GLSPMooseBrowser`** is one per client session (plus one *without client*, see below). It is
   - the **browser of the model**: the model calls it back (`buildDSM` for the DSM, `runVisualization` for the map,
     `updateToolbar`, `application`); after a change of the model it sends the model again to its client
@@ -66,13 +71,13 @@ In Pharo, one GLSP server for both diagrams:
 ```smalltalk
 entities := MooseModel root allModels first allModelPackages.
 launcher := GLSPMooseDiagramModule
-	serveAll: { GLSPArchitecturalMapDiagramModule on: entities. GLSPDSMDiagramModule on: entities }
+	serveAll: { GLSPArchitecturalMapBrowser diagramModuleOn: entities. GLSPDSMBrowser diagramModuleOn: entities }
 	onPort: 5007.
 "... later"
 launcher stop.
 ```
 
-One diagram alone: `GLSPDSMDiagramModule serve: entities onPort: 5007`.
+One diagram alone: `GLSPDSMBrowser serve: entities onPort: 5007`.
 
 In `browser-client/` of Pharo-GLSP: `npm install` once, then `node server.js` (bridge on port 8080 to the GLSP server on 5007), and open
 http://localhost:8080/ (architectural map) or http://localhost:8080/?diagram=dsm (DSM).
@@ -89,7 +94,7 @@ sequenceDiagram
     participant Page as Browser page (app.ts)
     participant Bridge as server.js (bridge)
     participant Server as GLSPServer (one per connection)
-    participant Module as GLSPDSMDiagramModule
+    participant Module as GLSPMooseDiagramModule (browserClass GLSPDSMBrowser)
     participant Session as GLSPClientSession
     participant Browser as GLSPDSMBrowser
     participant Model as MiDSMBrowserModel
@@ -118,8 +123,7 @@ sequenceDiagram
     Session-->>Page: setModel
 ```
 
-The architectural map is opened the same way, with `GLSPArchitecturalMapDiagramModule`,
-`GLSPArchitecturalMapBrowser`, `MiArchitecturalMapModel` and `GLSPArchitecturalMapVisualization` (which lets
+The architectural map is opened the same way, with `GLSPArchitecturalMapBrowser` as browser class, `MiArchitecturalMapModel` and `GLSPArchitecturalMapVisualization` (which lets
 `MiArchitecturalMapBuilder` and Roassal size and place the nodes).
 
 ## Hovering a DSM cell (callback from the client)
@@ -184,7 +188,7 @@ sequenceDiagram
 ## Moving a node of the architectural map
 
 The client sends GLSP's standard operation `changeBounds`. What the user can do with each element type is told by
-the server with **type hints** (`GLSPArchitecturalMapDiagramModule>>shapeTypeHints`, `edgeTypeHints`): the nodes can
+the server with **type hints** (`GLSPArchitecturalMapBrowser class>>shapeTypeHints`, `edgeTypeHints`): the nodes can
 only be moved (not resized, deleted or reparented), the dependencies cannot be edited (they follow their nodes).
 
 - `GLSPArchitecturalMapChangeBoundsHandler` gives the new positions to the browser of the session
@@ -222,5 +226,5 @@ them.
 - After changing the Pharo side, restart the GLSP server (the running one keeps its modules and model), then
   reload the page; after changing `browser-client/`, restart `node server.js` (it rebuilds the client).
 - The client must know the element types of a diagram (views in `browser-client/src/di.config.tsx`) and its name
-  (`browser-client/src/app.ts`). A new diagram: a `GLSPMooseDiagramModule` subclass, a `GLSPMooseBrowser` subclass,
-  a visualization (`GLSPGModelFactory` subclass), and its views in the client.
+  (`browser-client/src/app.ts`). A new diagram: a `GLSPMooseBrowser` subclass (its class side says `diagramType`,
+  `gmodelFactory`, `actionHandlers` and the type hints), a visualization (`GLSPGModelFactory` subclass), and its views in the client.
