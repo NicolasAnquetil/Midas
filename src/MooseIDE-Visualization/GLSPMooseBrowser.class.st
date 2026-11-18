@@ -1,7 +1,7 @@
 "
-The browser of a MooseIDE visualization shown by a GLSP client, as a MiAbstractBrowser is for a visualization shown in Pharo. One per client session (see GLSPMooseDiagramModule>>createClientSession:server:clientActionKinds:).
+The browser of a MooseIDE visualization shown by a GLSP client, as a MiAbstractBrowser is for a visualization shown in Pharo. One per client session (see GLSPMooseDiagramModule>>createClientSession:server:clientActionKinds:), with its own model (see class>>on:).
 
-I am the browser of my model (MiAbstractModel>>browser:), which calls me back; my subclasses answer these callbacks, usually by sending the model again to the client (#sendModelToClient). When the client has gone, the model gets a browser without client (#detachFromModel). A browser without client is also what a model has before any client connects (see class>>modelOn:).
+I am the browser of my model (MiAbstractModel>>browser:), which calls me back; my subclasses answer these callbacks, usually by sending the model again to the client (#sendModelToClient). When the client has gone, the model gets a browser without client (#detachFromModel). Before the diagram module gives me my session, I am a browser without client (see class>>modelOn:).
 
 I am also the source model of my session: the visualization (the GLSP model factory) draws the model from me.
 "
@@ -19,19 +19,27 @@ Class {
 
 { #category : 'instance creation' }
 GLSPMooseBrowser class >> modelOn: aCollection [
-	"A model of the entities of aCollection, with a browser without client: it can be served (GLSPMooseDiagramModule), each client then has its browser"
+	"A model of the entities of aCollection, with a browser without client"
 
-	| aModel |
-	aModel := self newModel.
-	self new model: aModel.
-	self setEntities: aCollection in: aModel.
-	^ aModel
+	^ (self on: aCollection) model
 ]
 
 { #category : 'instance creation' }
 GLSPMooseBrowser class >> newModel [
 
 	self subclassResponsibility
+]
+
+{ #category : 'instance creation' }
+GLSPMooseBrowser class >> on: aCollection [
+	"A browser with its own model of the entities of aCollection, as a MooseIDE browser in Pharo has its own model"
+
+	| browser aModel |
+	browser := self new.
+	aModel := self newModel.
+	browser model: aModel.
+	self setEntities: aCollection in: aModel.
+	^ browser
 ]
 
 { #category : 'instance creation' }

@@ -92,11 +92,12 @@ GLSPArchitecturalMapBrowserTest >> setUp [
 	famixModel newInvocation
 		sender: ((famixModel newMethodNamed: 'a') parentType: class1);
 		candidates: { ((famixModel newMethodNamed: 'b') parentType: class2) }.
-	mapModel := GLSPArchitecturalMapBrowser modelOn: famixModel allModelPackages.
 	server := GLSPTestServer new.
-	session := (GLSPArchitecturalMapDiagramModule new
-		            model: mapModel;
-		            yourself) createClientSession: 'test' server: server clientActionKinds: #(  ).
+	session := (GLSPArchitecturalMapDiagramModule on: famixModel allModelPackages)
+		           createClientSession: 'test'
+		           server: server
+		           clientActionKinds: #(  ).
+	mapModel := session modelState sourceModel model.
 	GLSPRequestModelActionHandler new execute: GLSPRequestModelAction new in: session
 ]
 

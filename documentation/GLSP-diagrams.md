@@ -41,8 +41,9 @@ The organisation mirrors the one of MooseIDE, where a Spec browser (`MiDSMBrowse
 
 What each part does:
 
-- **`GLSPMooseDiagramModule`** holds the model, shared by all the clients. For each client session it creates a
-  browser (`browserClass`) and sets it as the browser of the model. Its subclasses only say `diagramType`,
+- **`GLSPMooseDiagramModule`** holds the entities to show. For each client session it creates a browser
+  (`browserClass`) with its own model of these entities, as each MooseIDE browser in Pharo has its own model: each
+  displayed diagram has its model. Its subclasses only say `diagramType`,
   `gmodelFactory` (the visualization) and `browserClass`; the DSM adds its hover handler (`createActionHandlers`),
   the architectural map adds its move handler and its type hints (see below), and can also open in a Bloc editor of
   the image (`openOn:`).
@@ -53,11 +54,10 @@ What each part does:
   - the **source model of its session**: the visualization draws the model from it (`dsmModel`, `mapModel`);
   - the receiver of the **client's callbacks**: `GLSPDSMBrowser>>hoverCellWithId:`, which keeps the hovered cell
     of its client (its column and row are outlined) and shows its SCC (`showSCC:`, as `MiDSMBrowser`).
-- **A browser without client**: MooseIDE models need a browser. `GLSPMooseBrowser class>>modelOn:` builds the model
-  with a browser that has no session (its callbacks do nothing), and when a client has gone, its browser gives the
-  model a new browser without client (`detachFromModel`).
-- The model has **one** browser: with several clients, the last one connected receives the changes made to the
-  model in Pharo; each client still has its own highlight, which goes through its own session.
+- **A browser without client**: MooseIDE models need a browser. `GLSPMooseBrowser class>>on:` builds a browser
+  with its own model and no session (its callbacks do nothing) until the diagram module gives it its session;
+  `modelOn:` answers such a model. When a client has gone, its browser gives the model a new browser without client
+  (`detachFromModel`).
 
 ## Running
 
@@ -72,8 +72,7 @@ launcher := GLSPMooseDiagramModule
 launcher stop.
 ```
 
-One diagram alone: `GLSPDSMDiagramModule serve: entities onPort: 5007`, or `serveModel: aModel onPort: 5007` with a
-model built by `GLSPDSMBrowser modelOn: entities` (to keep a hand on it).
+One diagram alone: `GLSPDSMDiagramModule serve: entities onPort: 5007`.
 
 In `browser-client/` of Pharo-GLSP: `npm install` once, then `node server.js` (bridge on port 8080 to the GLSP server on 5007), and open
 http://localhost:8080/ (architectural map) or http://localhost:8080/?diagram=dsm (DSM).
@@ -82,7 +81,7 @@ http://localhost:8080/ (architectural map) or http://localhost:8080/?diagram=dsm
 ## Opening a diagram
 
 The browser page opens a WebSocket on the bridge, which opens one TCP connection to the Pharo server; for each
-connection the launcher creates a `GLSPServer` with copies of the diagram modules (they share the model).
+connection the launcher creates a `GLSPServer` with copies of the diagram modules (they share the entities; each session builds its own model).
 
 ```mermaid
 sequenceDiagram

@@ -1,5 +1,5 @@
 "
-A read-only GLSP diagram of MooseIDE, showing a model of a MooseIDE browser (e.g. a MiDSMBrowserModel). Each client session gets its own browser (my #browserClass, a GLSPMooseBrowser), set as the browser of the model; the model is shared by the sessions.
+A read-only GLSP diagram of MooseIDE, showing the entities of a MooseGroup. Each client session gets its own browser (my #browserClass, a GLSPMooseBrowser) with its own model (e.g. a MiDSMBrowserModel), as each MooseIDE browser in Pharo has its own model: each displayed diagram has its model.
 
 My subclasses say what is specific to their diagram: #diagramType, #gmodelFactory (the visualization) and #browserClass.
 
@@ -9,25 +9,25 @@ Several diagrams can be served on one port, each client choosing its diagram typ
 		onPort: 5007.
 	launcher stop
 
-One diagram: GLSPDSMDiagramModule serve: aMooseGroup onPort: 5007 (or serveModel: aModel onPort: 5007).
+One diagram: GLSPDSMDiagramModule serve: aMooseGroup onPort: 5007
 "
 Class {
 	#name : 'GLSPMooseDiagramModule',
 	#superclass : 'GLSPDiagramModule',
 	#instVars : [
-		'model'
+		'entities'
 	],
 	#category : 'MooseIDE-Visualization-GLSP',
 	#package : 'MooseIDE-Visualization',
 	#tag : 'GLSP'
 }
 
-{ #category : 'serving' }
+{ #category : 'instance creation' }
 GLSPMooseDiagramModule class >> on: aCollection [
 	"My diagram of the entities of aCollection (a MooseGroup)"
 
 	^ self new
-		  model: (self new browserClass modelOn: aCollection);
+		  entities: aCollection;
 		  yourself
 ]
 
@@ -51,17 +51,6 @@ GLSPMooseDiagramModule class >> serveAll: aCollectionOfModules onPort: aPortNumb
 		  yourself
 ]
 
-{ #category : 'serving' }
-GLSPMooseDiagramModule class >> serveModel: aModel onPort: aPortNumber [
-	"Serve my diagram of aModel (see GLSPMooseBrowser class>>modelOn:) alone. Answer the launcher (send it #stop when done)"
-
-	^ self
-		  serveAll: { (self new
-				   model: aModel;
-				   yourself) }
-		  onPort: aPortNumber
-]
-
 { #category : 'accessing' }
 GLSPMooseDiagramModule >> browserClass [
 	"The GLSPMooseBrowser subclass of my diagram"
@@ -71,27 +60,27 @@ GLSPMooseDiagramModule >> browserClass [
 
 { #category : 'accessing' }
 GLSPMooseDiagramModule >> createClientSession: anId server: aServer clientActionKinds: aCollection [
-	"Each client session has its browser, set in the model"
+	"Each client session has its browser with its own model, as each MooseIDE browser in Pharo has its own"
 
 	| session |
 	session := super createClientSession: anId server: aServer clientActionKinds: aCollection.
-	session modelState sourceModel: (self browserClass new
+	session modelState sourceModel: ((self browserClass on: entities)
 			 session: session;
-			 model: model;
 			 yourself).
 	^ session
 ]
 
 { #category : 'accessing' }
-GLSPMooseDiagramModule >> model [
+GLSPMooseDiagramModule >> entities [
+	"What my diagram shows (a MooseGroup): each client session draws it from its own model"
 
-	^ model
+	^ entities
 ]
 
 { #category : 'accessing' }
-GLSPMooseDiagramModule >> model: aModel [
+GLSPMooseDiagramModule >> entities: aCollection [
 
-	model := aModel
+	entities := aCollection
 ]
 
 { #category : 'accessing' }

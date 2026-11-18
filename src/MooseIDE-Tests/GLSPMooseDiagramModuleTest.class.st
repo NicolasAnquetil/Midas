@@ -52,6 +52,21 @@ GLSPMooseDiagramModuleTest >> testEachDiagramTypeGetsItsBrowser [
 ]
 
 { #category : 'tests' }
+GLSPMooseDiagramModuleTest >> testEachSessionHasItsOwnModel [
+	"As each MooseIDE browser in Pharo has its own model"
+
+	| module first second |
+	module := server diagramModules at: 'dsm-diagram'.
+	first := (module createClientSession: 's1' server: server clientActionKinds: #(  )) modelState sourceModel.
+	second := (module createClientSession: 's2' server: server clientActionKinds: #(  )) modelState sourceModel.
+	self assert: first model class equals: MiDSMBrowserModel.
+	self deny: first model identicalTo: second model.
+	self assert: first model browser identicalTo: first.
+	self assert: second model browser identicalTo: second.
+	self assert: first model orderedNodesX size equals: 2
+]
+
+{ #category : 'tests' }
 GLSPMooseDiagramModuleTest >> testOneServerAnnouncesBothDiagramTypes [
 
 	| actions |
@@ -59,16 +74,6 @@ GLSPMooseDiagramModuleTest >> testOneServerAnnouncesBothDiagramTypes [
 	self assertCollection: actions keys hasSameElements: #( 'archmap-diagram' 'dsm-diagram' ).
 	self assert: ((actions at: 'dsm-diagram') includes: GLSPDSMHoverCellAction kind).
 	self deny: ((actions at: 'archmap-diagram') includes: GLSPDSMHoverCellAction kind)
-]
-
-{ #category : 'tests' }
-GLSPMooseDiagramModuleTest >> testTheModelOfADiagramIsBuiltWithABrowserWithoutClient [
-
-	| dsm |
-	dsm := (server diagramModules at: 'dsm-diagram') model.
-	self assert: dsm class equals: MiDSMBrowserModel.
-	self assert: dsm browser session isNil.
-	self assert: dsm orderedNodesX size equals: 2
 ]
 
 { #category : 'tests' }

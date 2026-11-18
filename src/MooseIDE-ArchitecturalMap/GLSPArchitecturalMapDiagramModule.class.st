@@ -38,15 +38,6 @@ GLSPArchitecturalMapDiagramModule class >> openOn: aCollection [
 ]
 
 { #category : 'opening' }
-GLSPArchitecturalMapDiagramModule class >> openOnModel: aMapModel [
-	"Open a Bloc editor on aMapModel (see GLSPMooseBrowser class>>modelOn:)"
-
-	^ self openOnModule: (self new
-			   model: aMapModel;
-			   yourself)
-]
-
-{ #category : 'opening' }
 GLSPArchitecturalMapDiagramModule class >> openOnModule: aDiagramModule [
 	"Serve aDiagramModule from a GLSP server of this image and open a Bloc editor on it.
 	The sourceUri is ignored by the server, but GLSPBlocEditor derives its title from a file:// URL"
