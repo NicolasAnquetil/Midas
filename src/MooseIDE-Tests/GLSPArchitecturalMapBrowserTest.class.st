@@ -93,7 +93,7 @@ GLSPArchitecturalMapBrowserTest >> setUp [
 		sender: ((famixModel newMethodNamed: 'a') parentType: class1);
 		candidates: { ((famixModel newMethodNamed: 'b') parentType: class2) }.
 	server := GLSPTestServer new.
-	session := (GLSPArchitecturalMapDiagramModule on: famixModel allModelPackages)
+	session := (GLSPArchitecturalMapBrowser diagramModuleOn: famixModel allModelPackages)
 		           createClientSession: 'test'
 		           server: server
 		           clientActionKinds: #(  ).
@@ -262,7 +262,7 @@ GLSPArchitecturalMapBrowserTest >> testTheNodesCanOnlyBeMoved [
 	"Type hints: the server tells the client what the user can do with each element type"
 
 	| module node dependency |
-	module := GLSPArchitecturalMapDiagramModule new.
+	module := (GLSPArchitecturalMapBrowser diagramModuleOn: #(  )).
 	node := module shapeTypeHints detect: [ :each | each elementTypeId = 'archmap-node' ].
 	self assert: node repositionable.
 	self deny: node resizable.
@@ -287,14 +287,14 @@ GLSPArchitecturalMapBrowserTest >> testTheSelectedNodesAreSentSelected [
 { #category : 'tests' }
 GLSPArchitecturalMapBrowserTest >> testTheServerAnnouncesTheMove [
 
-	self assert: (GLSPArchitecturalMapDiagramModule new handledActionKinds includes: GLSPChangeBoundsOperation kind)
+	self assert: ((GLSPArchitecturalMapBrowser diagramModuleOn: #(  )) handledActionKinds includes: GLSPChangeBoundsOperation kind)
 ]
 
 { #category : 'tests' }
 GLSPArchitecturalMapBrowserTest >> testTheServerAnnouncesTheSelection [
 
 	| kinds |
-	kinds := GLSPArchitecturalMapDiagramModule new handledActionKinds.
+	kinds := (GLSPArchitecturalMapBrowser diagramModuleOn: #(  )) handledActionKinds.
 	self assert: (kinds includes: GLSPSelectAction kind).
 	self assert: (kinds includes: GLSPSelectAllAction kind)
 ]

@@ -32,8 +32,19 @@ GLSPMooseDiagramModuleTest >> setUp [
 		candidates: { ((famixModel newMethodNamed: 'b') parentType: class2) }.
 	server := GLSPServer new.
 	{
-		(GLSPArchitecturalMapDiagramModule on: famixModel allModelPackages).
-		(GLSPDSMDiagramModule on: famixModel allModelPackages) } do: [ :each | server registerDiagramModule: each ]
+		(GLSPArchitecturalMapBrowser diagramModuleOn: famixModel allModelPackages).
+		(GLSPDSMBrowser diagramModuleOn: famixModel allModelPackages) } do: [ :each | server registerDiagramModule: each ]
+]
+
+{ #category : 'tests' }
+GLSPMooseDiagramModuleTest >> testADiagramAnnouncesNoEditing [
+	"The diagrams are read-only: the client is not told it can send operations, undo, redo or save"
+
+	(server serverActions at: 'archmap-diagram') , (server serverActions at: 'dsm-diagram') do: [ :kind |
+		self deny: (#( 'glspUndo' 'glspRedo' 'saveModel' ) includes: kind) ].
+	self
+		assertCollection: (server serverActions at: 'dsm-diagram')
+		hasSameElements: #( 'requestModel' 'requestTypeHints' 'requestContextActions' 'dsmHoverCell' )
 ]
 
 { #category : 'tests' }

@@ -1,5 +1,5 @@
 "
-I draw a MiArchitecturalMapModel for a GLSP client, as MiArchitecturalMapVisualization draws it in Roassal for a MiArchitecturalMapBrowser: from the GLSPArchitecturalMapBrowser of the session, I build a GModel (I am the GLSP model factory of GLSPArchitecturalMapDiagramModule): a node per root entity (positioned and sized by the Roassal layout of MiArchitecturalMapBuilder) and one edge per ordered pair of roots having a dependency between their descendants.
+I draw a MiArchitecturalMapModel for a GLSP client, as MiArchitecturalMapVisualization draws it in Roassal for a MiArchitecturalMapBrowser: from the GLSPArchitecturalMapBrowser of the session, I build a GModel (I am the GLSP model factory of the architectural map diagram, see GLSPArchitecturalMapBrowser class>>gmodelFactory): a node per root entity (positioned and sized by the Roassal layout of MiArchitecturalMapBuilder) and one edge per ordered pair of roots having a dependency between their descendants.
 "
 Class {
 	#name : 'GLSPArchitecturalMapVisualization',

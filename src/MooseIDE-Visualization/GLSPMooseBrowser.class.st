@@ -4,6 +4,8 @@ The browser of a MooseIDE visualization shown by a GLSP client, as a MiAbstractB
 I am the browser of my model (MiAbstractModel>>browser:), which calls me back; my subclasses answer these callbacks, usually by sending the model again to the client (#sendModelToClient). When the client has gone, the model gets a browser without client (#detachFromModel). Before the diagram module gives me my session, I am a browser without client (see class>>modelOn:).
 
 I am also the source model of my session: the visualization (the GLSP model factory) draws the model from me.
+
+My class side says what is specific to my diagram, for GLSPMooseDiagramModule: diagramType, gmodelFactory, actionHandlers and the type hints. It also builds my diagram module (diagramModuleOn:) and serves it alone (serve:onPort:).
 "
 Class {
 	#name : 'GLSPMooseBrowser',
@@ -16,6 +18,41 @@ Class {
 	#package : 'MooseIDE-Visualization',
 	#tag : 'GLSP'
 }
+
+{ #category : 'diagram' }
+GLSPMooseBrowser class >> actionHandlers [
+	"The handlers of what the client of my diagram sends, beside the standard requests"
+
+	^ #(  )
+]
+
+{ #category : 'serving' }
+GLSPMooseBrowser class >> diagramModuleOn: aCollection [
+	"My diagram of the entities of aCollection (a MooseGroup), to register in a GLSP server"
+
+	^ GLSPMooseDiagramModule browserClass: self entities: aCollection
+]
+
+{ #category : 'diagram' }
+GLSPMooseBrowser class >> diagramType [
+	"The GLSP diagram type of my diagram, chosen by the client"
+
+	self subclassResponsibility
+]
+
+{ #category : 'diagram' }
+GLSPMooseBrowser class >> edgeTypeHints [
+	"What the user can do with the edges of my diagram; nil: GLSP's defaults"
+
+	^ nil
+]
+
+{ #category : 'diagram' }
+GLSPMooseBrowser class >> gmodelFactory [
+	"The visualization drawing my model for the client (a GLSPGModelFactory)"
+
+	self subclassResponsibility
+]
 
 { #category : 'instance creation' }
 GLSPMooseBrowser class >> modelOn: aCollection [
@@ -42,10 +79,25 @@ GLSPMooseBrowser class >> on: aCollection [
 	^ browser
 ]
 
+{ #category : 'serving' }
+GLSPMooseBrowser class >> serve: aCollection onPort: aPortNumber [
+	"Serve my diagram of the entities of aCollection (a MooseGroup) alone. Answer the launcher (send it #stop when done).
+	Several diagrams on one port: GLSPMooseDiagramModule class>>serveAll:onPort:"
+
+	^ GLSPMooseDiagramModule serveAll: { (self diagramModuleOn: aCollection) } onPort: aPortNumber
+]
+
 { #category : 'instance creation' }
 GLSPMooseBrowser class >> setEntities: aCollection in: aModel [
 
 	self subclassResponsibility
+]
+
+{ #category : 'diagram' }
+GLSPMooseBrowser class >> shapeTypeHints [
+	"What the user can do with the nodes of my diagram; nil: GLSP's defaults"
+
+	^ nil
 ]
 
 { #category : 'accessing' }

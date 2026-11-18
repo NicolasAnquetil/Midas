@@ -15,6 +15,33 @@ Class {
 	#tag : 'GLSP'
 }
 
+{ #category : 'diagram' }
+GLSPDSMBrowser class >> actionHandlers [
+	"Hovering a cell highlights its SCC"
+
+	^ { GLSPDSMHoverCellActionHandler new }
+]
+
+{ #category : 'diagram' }
+GLSPDSMBrowser class >> diagramType [
+
+	^ 'dsm-diagram'
+]
+
+{ #category : 'examples' }
+GLSPDSMBrowser class >> exampleServe [
+	"Serve the DSM of the packages of the first Moose model on port 5007; inspect the launcher and send it #stop when done"
+
+	<example>
+	^ (self serve: MooseModel root allModels first allModelPackages onPort: 5007) inspect
+]
+
+{ #category : 'diagram' }
+GLSPDSMBrowser class >> gmodelFactory [
+
+	^ GLSPDSMVisualization new
+]
+
 { #category : 'instance creation' }
 GLSPDSMBrowser class >> newModel [
 

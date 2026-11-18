@@ -68,7 +68,7 @@ GLSPDSMBrowserTest >> setUp [
 	self invocationFrom: class3 to: class1.
 	visualization := GLSPDSMVisualization new.
 	server := GLSPTestServer new.
-	session := (GLSPDSMDiagramModule on: {
+	session := (GLSPDSMBrowser diagramModuleOn: {
 			            class1.
 			            class2.
 			            class3 }) createClientSession: 'test' server: server clientActionKinds: #(  ).
@@ -206,7 +206,7 @@ GLSPDSMBrowserTest >> testTheOutlinesAreNotAnimated [
 { #category : 'tests' }
 GLSPDSMBrowserTest >> testTheServerAnnouncesTheHoverAction [
 
-	self assert: (GLSPDSMDiagramModule new handledActionKinds includes: GLSPDSMHoverCellAction kind)
+	self assert: ((GLSPDSMBrowser diagramModuleOn: #(  )) handledActionKinds includes: GLSPDSMHoverCellAction kind)
 ]
 
 { #category : 'tests' }

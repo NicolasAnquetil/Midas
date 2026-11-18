@@ -1,5 +1,5 @@
 "
-I draw a MiDSMBrowserModel for a GLSP client, as MiDSMVisualization draws it in Roassal for a MiDSMBrowser: from the GLSPDSMBrowser of the session, I build a GModel (I am the GLSP model factory of GLSPDSMDiagramModule), a matrix with one column per entity of orderedNodesX and one row per entity of orderedNodesY.
+I draw a MiDSMBrowserModel for a GLSP client, as MiDSMVisualization draws it in Roassal for a MiDSMBrowser: from the GLSPDSMBrowser of the session, I build a GModel (I am the GLSP model factory of the DSM diagram, see GLSPDSMBrowser class>>gmodelFactory), a matrix with one column per entity of orderedNodesX and one row per entity of orderedNodesY.
 
 - a 'dsm-column-header' and a 'dsm-row-header' node per entity, with its name as label ('dsm-column-label', 'dsm-row-label');
 - a 'dsm-cell' node per (column, row) pair: the dependencies of the column entity towards the row entity. Its label ('dsm-weight') is their number (empty when 0); its css class tells its kind (dsm-diagonal, dsm-empty, dsm-cycle, dsm-dependency); its args give its color as the DSM model computes it ('fill') and a tooltip ('title').
