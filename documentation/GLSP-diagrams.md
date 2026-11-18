@@ -102,8 +102,11 @@ sequenceDiagram
     Page->>Server: initializeClientSession(diagramType: dsm-diagram)
     Server->>Module: createClientSession:server:clientActionKinds:
     Module->>Session: new
-    Module->>Browser: new, session: session, model: model
-    Browser->>Model: browser: self
+    Module->>Browser: GLSPDSMBrowser on: entities
+    Browser->>Model: new (newModel), browser: self
+    Browser->>Model: followEntity: entities (setEntities:in:)
+    Note over Browser,Model: a new model for this session, as each MooseIDE browser in Pharo has its own
+    Module->>Browser: session: session
     Note over Module,Browser: the browser is the source model of the session
     Page->>Server: process(requestModel)
     Server->>Session: process: GLSPRequestModelAction
@@ -155,7 +158,8 @@ sequenceDiagram
 
 ## A change of the model in Pharo (callback from the model)
 
-For instance `model followEntity: otherEntities` on the DSM, or `updateFromConfiguration:` on the map:
+For instance `model followEntity: otherEntities` on the DSM, or `updateFromConfiguration:` on the map. Each session
+has its own model (`session modelState sourceModel model`): the change goes to that session's client only.
 
 ```mermaid
 sequenceDiagram
