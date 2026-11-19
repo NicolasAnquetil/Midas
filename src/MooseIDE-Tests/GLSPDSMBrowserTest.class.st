@@ -77,6 +77,20 @@ GLSPDSMBrowserTest >> setUp [
 ]
 
 { #category : 'tests' }
+GLSPDSMBrowserTest >> testABrowserBuildsItsModelBeforeHavingASession [
+
+	| browser |
+	browser := GLSPDSMBrowser on: {
+			           class1.
+			           class2.
+			           class3 }.
+	self assert: browser model class equals: MiDSMBrowserModel.
+	self assert: browser model browser identicalTo: browser.
+	self assert: browser session isNil.
+	self assert: browser model orderedNodesX size equals: 3
+]
+
+{ #category : 'tests' }
 GLSPDSMBrowserTest >> testAChangeOfTheMatrixIsSentToTheClient [
 
 	| update |
@@ -87,20 +101,6 @@ GLSPDSMBrowserTest >> testAChangeOfTheMatrixIsSentToTheClient [
 	update := server sentActions first.
 	self assert: update kind equals: 'updateModel'.
 	self assert: (update newRoot children select: [ :each | each type = 'dsm-cell' ]) size equals: 4
-]
-
-{ #category : 'tests' }
-GLSPDSMBrowserTest >> testAModelIsBuiltWithABrowserWithoutClient [
-
-	| model |
-	model := GLSPDSMBrowser modelOn: {
-			         class1.
-			         class2.
-			         class3 }.
-	self assert: model class equals: MiDSMBrowserModel.
-	self assert: model browser class equals: GLSPDSMBrowser.
-	self assert: model browser session isNil.
-	self assert: model orderedNodesX size equals: 3
 ]
 
 { #category : 'tests' }
@@ -210,15 +210,17 @@ GLSPDSMBrowserTest >> testTheServerAnnouncesTheHoverAction [
 ]
 
 { #category : 'tests' }
-GLSPDSMBrowserTest >> testWhenTheClientHasGoneTheModelGetsABrowserWithoutClient [
+GLSPDSMBrowserTest >> testWhenTheClientHasGoneTheBrowserHasNoSession [
 
+	| browser |
+	browser := dsm browser.
 	server close.
 	dsm followEntity: {
 			class1.
 			class2 }.
-	self assert: dsm browser class equals: GLSPDSMBrowser.
-	self assert: dsm browser session isNil.
-	"The model works with it"
+	self assert: dsm browser identicalTo: browser.
+	self assert: browser session isNil.
+	"The model works with it, nothing is sent"
 	dsm followEntity: { class1 }.
 	self assert: dsm orderedNodesX size equals: 1
 ]

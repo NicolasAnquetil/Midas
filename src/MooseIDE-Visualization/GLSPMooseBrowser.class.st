@@ -1,7 +1,7 @@
 "
 The browser of a MooseIDE visualization shown by a GLSP client, as a MiAbstractBrowser is for a visualization shown in Pharo. One per client session (see GLSPMooseDiagramModule>>createClientSession:server:clientActionKinds:), with its own model (see class>>on:).
 
-I am the browser of my model (MiAbstractModel>>browser:), which calls me back; my subclasses answer these callbacks, usually by sending the model again to the client (#sendModelToClient). When the client has gone, the model gets a browser without client (#detachFromModel). Before the diagram module gives me my session, I am a browser without client (see class>>modelOn:).
+I am the browser of my model (MiAbstractModel>>browser:), which calls me back; my subclasses answer these callbacks, usually by sending the model again to the client (#sendModelToClient). While I have no session, these callbacks send nothing: before the diagram module gives me my session (building my model already calls me back, see class>>on:), and after my client has gone.
 
 I am also the source model of my session: the visualization (the GLSP model factory) draws the model from me.
 
@@ -55,13 +55,6 @@ GLSPMooseBrowser class >> gmodelFactory [
 ]
 
 { #category : 'instance creation' }
-GLSPMooseBrowser class >> modelOn: aCollection [
-	"A model of the entities of aCollection, with a browser without client"
-
-	^ (self on: aCollection) model
-]
-
-{ #category : 'instance creation' }
 GLSPMooseBrowser class >> newModel [
 
 	self subclassResponsibility
@@ -107,13 +100,6 @@ GLSPMooseBrowser >> application [
 	^ MiApplication current
 ]
 
-{ #category : 'client' }
-GLSPMooseBrowser >> detachFromModel [
-	"My client has gone: the model gets a browser without client (MooseIDE models need one)"
-
-	(model notNil and: [ model browser == self ]) ifTrue: [ self class new model: model ]
-]
-
 { #category : 'accessing' }
 GLSPMooseBrowser >> model [
 
@@ -130,7 +116,7 @@ GLSPMooseBrowser >> model: aModel [
 
 { #category : 'client' }
 GLSPMooseBrowser >> sendModelToClient [
-	"The model changed: draw it again and send it to the client. If the client has gone, I am no longer the browser of the model"
+	"The model changed: draw it again and send it to the client. No session (not yet given one, or its client has gone): nothing to send"
 
 	session ifNil: [ ^ self ].
 	session modelState sourceModel == self ifFalse: [ ^ self ].
@@ -138,7 +124,7 @@ GLSPMooseBrowser >> sendModelToClient [
 	session server ifNil: [ ^ self ].
 	[ session sendToClient: self updateModelAction ]
 		on: NetworkError
-		do: [ :error | self detachFromModel ]
+		do: [ :error | session := nil ]
 ]
 
 { #category : 'accessing' }

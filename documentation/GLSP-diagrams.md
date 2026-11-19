@@ -52,17 +52,17 @@ What each part does:
   it can send them.
 - **The browser class side** also builds the module (`GLSPMooseBrowser class>>diagramModuleOn: entities`) and serves
   it alone (`serve:onPort:`); the architectural map can also open in a Bloc editor of the image (`openOn:`).
-- **`GLSPMooseBrowser`** is one per client session (plus one *without client*, see below). It is
+- **`GLSPMooseBrowser`** is one per client session. It is
   - the **browser of the model**: the model calls it back (`buildDSM` for the DSM, `runVisualization` for the map,
     `updateToolbar`, `application`); after a change of the model it sends the model again to its client
     (`sendModelToClient`);
   - the **source model of its session**: the visualization draws the model from it (`dsmModel`, `mapModel`);
   - the receiver of the **client's callbacks**: `GLSPDSMBrowser>>hoverCellWithId:`, which keeps the hovered cell
     of its client (its column and row are outlined) and shows its SCC (`showSCC:`, as `MiDSMBrowser`).
-- **A browser without client**: MooseIDE models need a browser. `GLSPMooseBrowser class>>on:` builds a browser
-  with its own model and no session (its callbacks do nothing) until the diagram module gives it its session;
-  `modelOn:` answers such a model. When a client has gone, its browser gives the model a new browser without client
-  (`detachFromModel`).
+- **A browser without session**: its callbacks send nothing. That is the case while `GLSPMooseBrowser class>>on:`
+  builds its model (which already calls it back, e.g. `followEntity:` → `buildDSM`), before the diagram module gives
+  it its session, and after its client has gone (sending fails: the browser forgets its session). The model keeps
+  its browser all along.
 
 ## Running
 
@@ -118,7 +118,7 @@ sequenceDiagram
     Session->>Session: GLSPMooseSourceModelStorage loadSourceModel: (nothing to read)
     Session->>Vis: createGModel: modelState
     Vis->>Browser: dsmModel
-    Vis->>Model: orderedNodesX, orderedNodesY, getTupleDependencyWeight:, colorForTuple:...
+    Vis->>Model: orderedNodesX, orderedNodesY, getTupleDependencyWeight:, isDiagonal:, isDependency:, isCycle:
     Vis-->>Session: GModel (headers, cells)
     Session-->>Page: setModel
 ```
@@ -152,7 +152,7 @@ sequenceDiagram
         Browser->>Session: updateGModel
         Session->>Vis: createGModel:
         Vis->>Browser: isHighlighted: tuple (for each cell)
-        Vis->>Model: kindOf:in: (CSS classes dsm-cycle..., dsm-highlighted: the client colors the cells)
+        Vis->>Model: isDiagonal:, isDependency:, isCycle: (kindOf:in:, CSS classes dsm-cycle..., dsm-highlighted: the client colors the cells)
         Vis->>Browser: hoveredTuple (two node:rectangle outlines, class dsm-hovered-line, over the cells)
         Browser-->>Handler: { updateModel }
         Handler-->>Session: { updateModel }
@@ -181,7 +181,7 @@ sequenceDiagram
     alt the client is connected
         Browser->>Page: updateModel
     else the client has gone (NetworkError)
-        Browser->>Model: browser: (a new browser without client)
+        Browser->>Browser: session := nil (later callbacks send nothing)
     end
 ```
 

@@ -43,10 +43,10 @@ GLSPDSMVisualizationTest >> setUp [
 	famixModel newInvocation
 		sender: mth1;
 		candidates: { mth2 }.
-	dsm := GLSPDSMBrowser modelOn: {
-			       class1.
-			       class2.
-			       class3 }.
+	dsm := (GLSPDSMBrowser on: {
+			        class1.
+			        class2.
+			        class3 }) model.
 	visualization := GLSPDSMVisualization new.
 	gmodel := visualization createGModel: (GLSPModelState new
 			           sourceModel: dsm browser;

@@ -102,6 +102,17 @@ GLSPArchitecturalMapBrowserTest >> setUp [
 ]
 
 { #category : 'tests' }
+GLSPArchitecturalMapBrowserTest >> testABrowserBuildsItsModelBeforeHavingASession [
+
+	| browser |
+	browser := GLSPArchitecturalMapBrowser on: famixModel allModelPackages.
+	self assert: browser model class equals: MiArchitecturalMapModel.
+	self assert: browser model browser identicalTo: browser.
+	self assert: browser session isNil.
+	self assert: browser model rootNodes size equals: 2
+]
+
+{ #category : 'tests' }
 GLSPArchitecturalMapBrowserTest >> testAChangeOfTheMapIsSentToTheClient [
 
 	mapModel updateFromConfiguration: mapModel currentConfiguration.
@@ -119,17 +130,6 @@ GLSPArchitecturalMapBrowserTest >> testAChangeOfTheMapLaysOutTheNodesAgain [
 	self move: package1 to: 300 @ 400.
 	mapModel updateFromConfiguration: mapModel currentConfiguration.
 	self assert: (self positionOf: package1) equals: before
-]
-
-{ #category : 'tests' }
-GLSPArchitecturalMapBrowserTest >> testAModelIsBuiltWithABrowserWithoutClient [
-
-	| model |
-	model := GLSPArchitecturalMapBrowser modelOn: famixModel allModelPackages.
-	self assert: model class equals: MiArchitecturalMapModel.
-	self assert: model browser class equals: GLSPArchitecturalMapBrowser.
-	self assert: model browser session isNil.
-	self assert: model rootNodes size equals: 2
 ]
 
 { #category : 'tests' }
@@ -300,13 +300,15 @@ GLSPArchitecturalMapBrowserTest >> testTheServerAnnouncesTheSelection [
 ]
 
 { #category : 'tests' }
-GLSPArchitecturalMapBrowserTest >> testWhenTheClientHasGoneTheModelGetsABrowserWithoutClient [
+GLSPArchitecturalMapBrowserTest >> testWhenTheClientHasGoneTheBrowserHasNoSession [
 
+	| browser |
+	browser := mapModel browser.
 	server close.
 	mapModel updateFromConfiguration: mapModel currentConfiguration.
-	self assert: mapModel browser class equals: GLSPArchitecturalMapBrowser.
-	self assert: mapModel browser session isNil.
-	"The model works with it"
+	self assert: mapModel browser identicalTo: browser.
+	self assert: browser session isNil.
+	"The model works with it, nothing is sent"
 	mapModel updateFromConfiguration: mapModel currentConfiguration.
 	self assert: mapModel rootNodes size equals: 2
 ]
