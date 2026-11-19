@@ -80,9 +80,7 @@ GLSPMooseDiagramModule >> createClientSession: anId server: aServer clientAction
 
 	| session |
 	session := super createClientSession: anId server: aServer clientActionKinds: aCollection.
-	session modelState sourceModel: ((self browserClass on: entities)
-			 session: session;
-			 yourself).
+	session modelState sourceModel: (self browserClass on: entities session: session).
 	^ session
 ]
 

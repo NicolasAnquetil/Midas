@@ -32,7 +32,7 @@ GLSPDSMVisualizationTest >> elementsOfType: aType [
 GLSPDSMVisualizationTest >> setUp [
 	"Class1 depends on Class2 (mth1 invokes mth2); Class3 depends on nothing"
 
-	| mth1 mth2 |
+	| mth1 mth2 session |
 	super setUp.
 	famixModel := FamixJavaModel new.
 	class1 := famixModel newClassNamed: 'Class1'.
@@ -43,14 +43,13 @@ GLSPDSMVisualizationTest >> setUp [
 	famixModel newInvocation
 		sender: mth1;
 		candidates: { mth2 }.
-	dsm := (GLSPDSMBrowser on: {
-			        class1.
-			        class2.
-			        class3 }) model.
+	session := (GLSPDSMBrowser diagramModuleOn: {
+			            class1.
+			            class2.
+			            class3 }) createClientSession: 'test' server: GLSPTestServer new clientActionKinds: #(  ).
+	dsm := session modelState sourceModel model.
 	visualization := GLSPDSMVisualization new.
-	gmodel := visualization createGModel: (GLSPModelState new
-			           sourceModel: dsm browser;
-			           yourself)
+	gmodel := visualization createGModel: session modelState
 ]
 
 { #category : 'tests' }

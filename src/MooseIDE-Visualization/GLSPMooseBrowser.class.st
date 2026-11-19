@@ -1,7 +1,7 @@
 "
-The browser of a MooseIDE visualization shown by a GLSP client, as a MiAbstractBrowser is for a visualization shown in Pharo. One per client session (see GLSPMooseDiagramModule>>createClientSession:server:clientActionKinds:), with its own model (see class>>on:).
+The browser of a MooseIDE visualization shown by a GLSP client, as a MiAbstractBrowser is for a visualization shown in Pharo. One per client session, created with it (see GLSPMooseDiagramModule>>createClientSession:server:clientActionKinds:), with its own model (see class>>on:session:).
 
-I am the browser of my model (MiAbstractModel>>browser:), which calls me back; my subclasses answer these callbacks, usually by sending the model again to the client (#sendModelToClient). While I have no session, these callbacks send nothing: before the diagram module gives me my session (building my model already calls me back, see class>>on:), and after my client has gone.
+I am the browser of my model (MiAbstractModel>>browser:), which calls me back; my subclasses answer these callbacks, usually by sending the model again to the client (#sendModelToClient).
 
 I am also the source model of my session: the visualization (the GLSP model factory) draws the model from me.
 
@@ -61,11 +61,13 @@ GLSPMooseBrowser class >> newModel [
 ]
 
 { #category : 'instance creation' }
-GLSPMooseBrowser class >> on: aCollection [
-	"A browser with its own model of the entities of aCollection, as a MooseIDE browser in Pharo has its own model"
+GLSPMooseBrowser class >> on: aCollection session: aClientSession [
+	"The browser of aClientSession, with its own model of the entities of aCollection, as a MooseIDE browser in Pharo has its own model.
+	Building the model already calls me back: nothing is sent to the client, I am not yet the source model of the session (see #sendModelToClient)"
 
 	| browser aModel |
 	browser := self new.
+	browser session: aClientSession.
 	aModel := self newModel.
 	browser model: aModel.
 	self setEntities: aCollection in: aModel.
@@ -116,15 +118,14 @@ GLSPMooseBrowser >> model: aModel [
 
 { #category : 'client' }
 GLSPMooseBrowser >> sendModelToClient [
-	"The model changed: draw it again and send it to the client. No session (not yet given one, or its client has gone): nothing to send"
+	"The model changed: draw it again and send it to the client. Not while the model is being built (I am not yet the source model of my session), nor once my client has gone"
 
-	session ifNil: [ ^ self ].
 	session modelState sourceModel == self ifFalse: [ ^ self ].
 	session updateGModel.
 	session server ifNil: [ ^ self ].
 	[ session sendToClient: self updateModelAction ]
 		on: NetworkError
-		do: [ :error | session := nil ]
+		do: [ :error | "The client has gone: nobody to send to" ]
 ]
 
 { #category : 'accessing' }

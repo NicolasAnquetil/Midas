@@ -52,17 +52,14 @@ What each part does:
   it can send them.
 - **The browser class side** also builds the module (`GLSPMooseBrowser class>>diagramModuleOn: entities`) and serves
   it alone (`serve:onPort:`); the architectural map can also open in a Bloc editor of the image (`openOn:`).
-- **`GLSPMooseBrowser`** is one per client session. It is
+- **`GLSPMooseBrowser`** is one per client session, created with it (`GLSPMooseBrowser class>>on:session:`). It is
   - the **browser of the model**: the model calls it back (`buildDSM` for the DSM, `runVisualization` for the map,
     `updateToolbar`, `application`); after a change of the model it sends the model again to its client
-    (`sendModelToClient`);
+    (`sendModelToClient`), but not while the model is being built (the client has not asked for it yet) nor once
+    the client has gone;
   - the **source model of its session**: the visualization draws the model from it (`dsmModel`, `mapModel`);
   - the receiver of the **client's callbacks**: `GLSPDSMBrowser>>hoverCellWithId:`, which keeps the hovered cell
     of its client (its column and row are outlined) and shows its SCC (`showSCC:`, as `MiDSMBrowser`).
-- **A browser without session**: its callbacks send nothing. That is the case while `GLSPMooseBrowser class>>on:`
-  builds its model (which already calls it back, e.g. `followEntity:` → `buildDSM`), before the diagram module gives
-  it its session, and after its client has gone (sending fails: the browser forgets its session). The model keeps
-  its browser all along.
 
 ## Running
 
@@ -107,12 +104,11 @@ sequenceDiagram
     Page->>Server: initializeClientSession(diagramType: dsm-diagram)
     Server->>Module: createClientSession:server:clientActionKinds:
     Module->>Session: new
-    Module->>Browser: GLSPDSMBrowser on: entities
+    Module->>Browser: GLSPDSMBrowser on: entities session: session
     Browser->>Model: new (newModel), browser: self
     Browser->>Model: followEntity: entities (setEntities:in:)
-    Note over Browser,Model: a new model for this session, as each MooseIDE browser in Pharo has its own
-    Module->>Browser: session: session
-    Note over Module,Browser: the browser is the source model of the session
+    Note over Browser,Model: a new model for this session, as each MooseIDE browser in Pharo has its own<br/>(its buildDSM callback sends nothing: the browser is not yet the source model)
+    Module->>Session: modelState sourceModel: browser
     Page->>Server: process(requestModel)
     Server->>Session: process: GLSPRequestModelAction
     Session->>Session: GLSPMooseSourceModelStorage loadSourceModel: (nothing to read)
@@ -181,7 +177,7 @@ sequenceDiagram
     alt the client is connected
         Browser->>Page: updateModel
     else the client has gone (NetworkError)
-        Browser->>Browser: session := nil (later callbacks send nothing)
+        Browser->>Browser: nothing to send to
     end
 ```
 

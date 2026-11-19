@@ -102,17 +102,6 @@ GLSPArchitecturalMapBrowserTest >> setUp [
 ]
 
 { #category : 'tests' }
-GLSPArchitecturalMapBrowserTest >> testABrowserBuildsItsModelBeforeHavingASession [
-
-	| browser |
-	browser := GLSPArchitecturalMapBrowser on: famixModel allModelPackages.
-	self assert: browser model class equals: MiArchitecturalMapModel.
-	self assert: browser model browser identicalTo: browser.
-	self assert: browser session isNil.
-	self assert: browser model rootNodes size equals: 2
-]
-
-{ #category : 'tests' }
 GLSPArchitecturalMapBrowserTest >> testAChangeOfTheMapIsSentToTheClient [
 
 	mapModel updateFromConfiguration: mapModel currentConfiguration.
@@ -300,15 +289,16 @@ GLSPArchitecturalMapBrowserTest >> testTheServerAnnouncesTheSelection [
 ]
 
 { #category : 'tests' }
-GLSPArchitecturalMapBrowserTest >> testWhenTheClientHasGoneTheBrowserHasNoSession [
+GLSPArchitecturalMapBrowserTest >> testWhenTheClientHasGoneNothingIsSent [
 
-	| browser |
+	| browser sent |
 	browser := mapModel browser.
+	sent := server sentActions size.
 	server close.
 	mapModel updateFromConfiguration: mapModel currentConfiguration.
 	self assert: mapModel browser identicalTo: browser.
-	self assert: browser session isNil.
-	"The model works with it, nothing is sent"
+	self assert: server sentActions size equals: sent.
+	"The model still works"
 	mapModel updateFromConfiguration: mapModel currentConfiguration.
 	self assert: mapModel rootNodes size equals: 2
 ]

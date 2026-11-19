@@ -77,20 +77,6 @@ GLSPDSMBrowserTest >> setUp [
 ]
 
 { #category : 'tests' }
-GLSPDSMBrowserTest >> testABrowserBuildsItsModelBeforeHavingASession [
-
-	| browser |
-	browser := GLSPDSMBrowser on: {
-			           class1.
-			           class2.
-			           class3 }.
-	self assert: browser model class equals: MiDSMBrowserModel.
-	self assert: browser model browser identicalTo: browser.
-	self assert: browser session isNil.
-	self assert: browser model orderedNodesX size equals: 3
-]
-
-{ #category : 'tests' }
 GLSPDSMBrowserTest >> testAChangeOfTheMatrixIsSentToTheClient [
 
 	| update |
@@ -169,6 +155,20 @@ GLSPDSMBrowserTest >> testLeavingTheMatrixRemovesTheOutlines [
 ]
 
 { #category : 'tests' }
+GLSPDSMBrowserTest >> testNothingIsSentWhileTheModelIsBuilt [
+	"Building the model calls the browser back (followEntity: -> buildDSM): the client has not asked for the model yet"
+
+	| otherServer otherSession |
+	otherServer := GLSPTestServer new.
+	otherSession := (GLSPDSMBrowser diagramModuleOn: {
+			                 class1.
+			                 class2 }) createClientSession: 'other' server: otherServer clientActionKinds: #(  ).
+	self assert: otherSession modelState sourceModel session identicalTo: otherSession.
+	self assert: otherSession modelState sourceModel model orderedNodesX size equals: 2.
+	self assert: otherServer sentActions isEmpty
+]
+
+{ #category : 'tests' }
 GLSPDSMBrowserTest >> testTheActionIsReadFromJSON [
 
 	| action |
@@ -210,17 +210,18 @@ GLSPDSMBrowserTest >> testTheServerAnnouncesTheHoverAction [
 ]
 
 { #category : 'tests' }
-GLSPDSMBrowserTest >> testWhenTheClientHasGoneTheBrowserHasNoSession [
+GLSPDSMBrowserTest >> testWhenTheClientHasGoneNothingIsSent [
 
-	| browser |
+	| browser sent |
 	browser := dsm browser.
+	sent := server sentActions size.
 	server close.
 	dsm followEntity: {
 			class1.
 			class2 }.
 	self assert: dsm browser identicalTo: browser.
-	self assert: browser session isNil.
-	"The model works with it, nothing is sent"
+	self assert: server sentActions size equals: sent.
+	"The model still works"
 	dsm followEntity: { class1 }.
 	self assert: dsm orderedNodesX size equals: 1
 ]
