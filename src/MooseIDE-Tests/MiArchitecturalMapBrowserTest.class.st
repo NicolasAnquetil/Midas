@@ -73,13 +73,14 @@ MiArchitecturalMapBrowserTest >> testSettingsAction [
 { #category : 'tests' }
 MiArchitecturalMapBrowserTest >> testSettingsAvailableLayouts [
 
-	self assert: browser specModel class availableLayouts isNotEmpty
+	self assert: browser specModel availableLayouts isNotEmpty.
+	self assert: (browser specModel availableLayouts includes: browser specModel layout)
 ]
 
 { #category : 'tests' }
 MiArchitecturalMapBrowserTest >> testSettingsDefaultLayout [
 
-	self assert: browser specModel layout equals: RSFlowLayout
+	self assert: browser specModel layout equals: browser defaultMapLayout
 ]
 
 { #category : 'tests' }

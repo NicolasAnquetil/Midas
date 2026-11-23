@@ -411,21 +411,18 @@ MiArchitecturalMapBuilder >> setDependencies [
 { #category : 'building' }
 MiArchitecturalMapBuilder >> setDependenciesForEntity: anEntity [
 
-	anEntity isQueryable ifFalse: [ ^ self ].
-
-	mapModel associationTypes do: [ :associationType |
-			(anEntity queryLocal: #in with: associationType) do: [ :dependency |
-					(mapModel shouldHideDependency: dependency) ifFalse: [
-						self setDependency: dependency forEntity: anEntity ] ] ]
+	(mapModel getDependenciesFor: anEntity) do: [ :dependency | self setDependency: dependency forEntity: anEntity ]
 ]
 
 { #category : 'building' }
 MiArchitecturalMapBuilder >> setDependenciesForTag: aTagNode [
+	"The dependencies shown are those of the map model (selected association types, hidden ones excluded), as for the other entities"
 
 	aTagNode children do: [ :child |
-		child rawModel isTag ifFalse: [
-			(child rawModel queryAllLocal: #in) do: [ :incommingDependency |
-				(nodeMooseIDDict at: incommingDependency source mooseID ifAbsent: [ nil ]) ifNotNil: [ :hNode | hNode dependencyTo: child withModel: incommingDependency ] ] ] ]
+			child rawModel isTag ifFalse: [
+					(mapModel getDependenciesFor: child rawModel) do: [ :incommingDependency |
+							incommingDependency source ifNotNil: [ :source |
+								nodeMooseIDDict at: source mooseID ifPresent: [ :hNode | hNode dependencyTo: child withModel: incommingDependency ] ] ] ] ]
 ]
 
 { #category : 'building' }

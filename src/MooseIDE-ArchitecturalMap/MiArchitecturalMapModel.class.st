@@ -26,19 +26,6 @@ Class {
 	#package : 'MooseIDE-ArchitecturalMap'
 }
 
-{ #category : 'available' }
-MiArchitecturalMapModel class >> availableLayouts [
-	"RSLayout withAllSubclasses reject: [ :c | c isAbstract ]
-But some of them require specific configuration that we cannot easily specify here so we choose a subset of the simplest ones"
-
-	^ {
-		  RSFlowLayout.
-		  RSCircleLayout.
-		  RSGridLayout.
-		  RSTreeLayout.
-		  MiForceBasedLayout }
-]
-
 { #category : 'as yet unclassified' }
 MiArchitecturalMapModel class >> defaultDynamicTagIsDead [
 
@@ -77,12 +64,6 @@ MiArchitecturalMapModel class >> defaultHideMegamorphicInvocations [
 MiArchitecturalMapModel class >> defaultHideReceivedEntities [
 
 	^ false
-]
-
-{ #category : 'defaults' }
-MiArchitecturalMapModel class >> defaultLayout [
-
-	^ RSFlowLayout
 ]
 
 { #category : 'defaults' }
@@ -159,6 +140,13 @@ MiArchitecturalMapModel >> availableDoubleClickActions [
 			   yourself) }
 ]
 
+{ #category : 'accessing' }
+MiArchitecturalMapModel >> availableLayouts [
+	"The layouts the front-end (my browser) can lay out the map with"
+
+	^ browser availableMapLayouts
+]
+
 { #category : 'available' }
 MiArchitecturalMapModel >> availableQueries [
 
@@ -229,7 +217,7 @@ MiArchitecturalMapModel >> currentConfiguration [
 		  associationTypes: associationTypes;
 		  availableDoubleClickActions: self availableDoubleClickActions;
 		  doubleClickAction: doubleClickAction;
-		  availableLayouts: self class availableLayouts;
+		  availableLayouts: self availableLayouts;
 		  layout: layout;
 		  availableTags: self availableTags;
 		  tags: tags;
@@ -250,17 +238,15 @@ MiArchitecturalMapModel >> defaultConfiguration [
 		  associationTypes: self availableAssociationTypes;
 		  availableDoubleClickActions: self availableDoubleClickActions;
 		  doubleClickAction: self defaultDoubleClickAction;
-		  availableLayouts: self class availableLayouts;
-		  layout: self class defaultLayout;
+		  availableLayouts: self availableLayouts;
+		  layout: self defaultLayout;
 		  availableTags: self availableTags;
 		  tags: self class defaultTags;
 		  hideReceivedEntities: self class defaultHideReceivedEntities;
 		  childrenQuery: self defaultChildrenQuery;
-		  hideMegamorphicInvocations:
-			  self class defaultHideMegamorphicInvocations;
+		  hideMegamorphicInvocations: self class defaultHideMegamorphicInvocations;
 		  megamorphicTreshold: self class defaultMegamorphicTreshold;
-		  showDirectoriesAsRootNodes:
-			  self class defaultShowDirectoriesAsRootNodes;
+		  showDirectoriesAsRootNodes: self class defaultShowDirectoriesAsRootNodes;
 		  weightedLinks: self class weightedLinks;
 		  yourself
 ]
@@ -269,6 +255,12 @@ MiArchitecturalMapModel >> defaultConfiguration [
 MiArchitecturalMapModel >> defaultDoubleClickAction [
 
 	^ self availableDoubleClickActions first
+]
+
+{ #category : 'accessing' }
+MiArchitecturalMapModel >> defaultLayout [
+
+	^ browser defaultMapLayout
 ]
 
 { #category : 'settings' }
@@ -293,6 +285,15 @@ MiArchitecturalMapModel >> entities: aCollection [
 	self recomputeDefaultSettings
 ]
 
+{ #category : 'accessing' }
+MiArchitecturalMapModel >> getDependenciesFor: anEntity [
+	"The incoming dependencies of anEntity shown in the map: those of the selected association types, without the hidden ones (megamorphic invocations)"
+
+	anEntity isQueryable ifFalse: [ ^ #(  ) ].
+	^ associationTypes flatCollect: [ :associationType |
+		  (anEntity queryLocal: #in with: associationType) reject: [ :dependency | self shouldHideDependency: dependency ] ]
+]
+
 { #category : 'testing' }
 MiArchitecturalMapModel >> hasSettings [
 
@@ -313,11 +314,11 @@ MiArchitecturalMapModel >> initializeSettings [
 	childrenQuery := self defaultChildrenQuery.
 	hideReceivedEntities := self class defaultHideReceivedEntities.
 	doubleClickAction := self defaultDoubleClickAction.
-	layout := self class defaultLayout.
+	layout := self defaultLayout.
 	hideMegamorphicInvocations := self class defaultHideMegamorphicInvocations.
 	megamorphicTreshold := self class defaultMegamorphicTreshold.
 	showDirectoriesAsRootNodes := self class defaultShowDirectoriesAsRootNodes.
-	weightedLinks := self class weightedLinks 
+	weightedLinks := self class weightedLinks
 ]
 
 { #category : 'accessing' }

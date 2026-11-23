@@ -13,7 +13,8 @@ Class {
 		'dropFileHandlers',
 		'mooseModelsTag',
 		'currentModelsBrowser',
-		'visualizationTimeout'
+		'visualizationTimeout',
+		'architecturalMapBrowserClass'
 	],
 	#classVars : [
 		'Current'
@@ -86,6 +87,19 @@ MiApplication >> addBindingForModel: aModel [
 { #category : 'accessing' }
 MiApplication >> allBrowsers: aMiClass [
 	^self browsers select: [ :aBrowser | aBrowser isKindOf: aMiClass ]
+]
+
+{ #category : 'settings' }
+MiApplication >> architecturalMapBrowserClass [
+	"The browser class (front-end) opened for an architectural map. nil: the default one (see MiArchitecturalMapBrowser class>>frontEndClass)"
+
+	^ architecturalMapBrowserClass
+]
+
+{ #category : 'settings' }
+MiApplication >> architecturalMapBrowserClass: aBrowserClass [
+
+	architecturalMapBrowserClass := aBrowserClass
 ]
 
 { #category : 'queries' }
