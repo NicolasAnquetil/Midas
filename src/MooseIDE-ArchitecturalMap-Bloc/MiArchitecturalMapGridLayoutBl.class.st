@@ -21,7 +21,7 @@ MiArchitecturalMapGridLayoutBl class >> layoutName [
 ]
 
 { #category : 'layout' }
-MiArchitecturalMapGridLayoutBl >> applyOn: anElement count: anInteger [
+MiArchitecturalMapGridLayoutBl >> applyOn: anElement topElementsCount: anInteger [
 
 	anElement layout: (BlGridLayout horizontal
 			 columnCount: (anInteger sqrt ceiling max: 1);

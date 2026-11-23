@@ -21,7 +21,7 @@ MiArchitecturalMapLinearLayoutBl class >> layoutName [
 ]
 
 { #category : 'layout' }
-MiArchitecturalMapLinearLayoutBl >> applyOn: anElement count: anInteger [
+MiArchitecturalMapLinearLayoutBl >> applyOn: anElement topElementsCount: anInteger [
 
 	anElement layout: BlLinearLayout vertical.
 	anElement constraintsDo: [ :c |

@@ -52,7 +52,7 @@ MiArchitecturalMapViewBl >> build [
 	"element (fills its parent, receives the drag and the mouse wheel) > canvas (moved and zoomed) > lines under nodes"
 
 	nodesLayer := BlElement new.
-	(layoutClass ifNil: [ MiArchitecturalMapFlowLayoutBl ]) new applyOn: nodesLayer count: tree roots size.
+	(layoutClass ifNil: [ MiArchitecturalMapFlowLayoutBl ]) new applyOn: nodesLayer topElementsCount: tree roots size.
 	nodesLayer addChildren: (tree roots collect: [ :each | self elementForNode: each ]).
 	nodesLayer addEventHandlerOn: BlElementLayoutComputedEvent do: [ :event | self updateLines ].
 

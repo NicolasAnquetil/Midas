@@ -21,7 +21,7 @@ MiArchitecturalMapCircularLayoutBl class >> layoutName [
 ]
 
 { #category : 'layout' }
-MiArchitecturalMapCircularLayoutBl >> applyOn: anElement count: anInteger [
+MiArchitecturalMapCircularLayoutBl >> applyOn: anElement topElementsCount: anInteger [
 	"The circle fills anElement: its diameter is about the perimeter needed by the nodes divided by pi"
 
 	| diameter |

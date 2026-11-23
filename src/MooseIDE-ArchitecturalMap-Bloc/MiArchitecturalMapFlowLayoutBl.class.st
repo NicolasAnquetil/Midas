@@ -21,7 +21,7 @@ MiArchitecturalMapFlowLayoutBl class >> layoutName [
 ]
 
 { #category : 'layout' }
-MiArchitecturalMapFlowLayoutBl >> applyOn: anElement count: anInteger [
+MiArchitecturalMapFlowLayoutBl >> applyOn: anElement topElementsCount: anInteger [
 
 	anElement layout: BlFlowLayout horizontal.
 	anElement constraintsDo: [ :c |
