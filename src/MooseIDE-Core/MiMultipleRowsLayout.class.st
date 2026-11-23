@@ -31,22 +31,20 @@ MiMultipleRowsLayout >> addPresenters: aCollection [
 
 { #category : 'adding' }
 MiMultipleRowsLayout >> addPresenters: aCollection withConstraints: aConstraintsBlock [
-	"puts presenters on rows of up to 4 presenters (to the limit of 12 presenter)
+	"puts presenters on rows of up to 3 presenters (so that a row fits in the settings window)
 	 tries to put same number of presenters on each row"
 
 	| nbRows rowLength |
 	self beTopToBottom.
 
-	nbRows := aCollection size / 4 roundUpTo: 1.
+	nbRows := aCollection size / 3 roundUpTo: 1.
 	"rowLength is the number of items per row in order to be evenly distributed
-	e.g: for 9 items it will be:
-	 0 - 0 - 0
-	 0 - 0 - 0
-	 0 - 0 - 0
+	e.g: for 4 items it will be:
+	 0 - 0
+	 0 - 0
 	instead of
-	0 - 0 - 0 - 0
-	0 - 0 - 0 - 0
-	0
+	 0 - 0 - 0
+	 0
 	"
 	rowLength := aCollection size / nbRows roundUpTo: 1.
 
