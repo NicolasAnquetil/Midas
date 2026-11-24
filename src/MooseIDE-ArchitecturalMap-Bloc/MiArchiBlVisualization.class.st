@@ -6,7 +6,7 @@ I draw with Bloc and Toplo the architectural map built by a `MiArchiBlTreeBuilde
 - `MiArchiBlLayout` subclasses (`layoutClass`): place the root boxes in `nodesLayer`. The browser chooses the layout: its `MiArchitecturalMapModel>>#layout`, by default `MiArchitecturalMapBrowserBl>>#defaultMapLayout`.
 - `tokenSource`: an element already in a space (the space root). Its Toplo theme gives the colors (`#tokenNamed:`).
 - `MiArchitecturalMapBrowserBl>>#showTree:` creates me in the Bloc UI process and puts my `#element` in its space.
-- The element tree I build: `element` (fills its parent, clips, gets the mouse) > `canvas` (frame layout with padding; moved and scaled) > `nodesLayer` under `linesLayer`.
+- The element tree I build: `element` (fills its parent, clips, gets the mouse) > `canvas` (frame layout with padding; moved and scaled) > from bottom to top `nodesLayer`, `halosLayer`, `linesLayer`.
 - Bloc documentation followed (github.com/pharo-graphics/Bloc, doc/): LayoutAndConstraints (position is a request; layout handlers change only what differs) and GraphicalPatterns (zoom and pan).
 
 ## Assumptions & Invariants
@@ -19,7 +19,7 @@ I draw with Bloc and Toplo the architectural map built by a `MiArchiBlTreeBuilde
 - Lines are redrawn after a layout of `nodesLayer` only if some box bounds changed (`lastBounds`, kept as copies since `#boundsInSpace` is changed in place), so the space can settle.
 - Each line has its dependency in its `userData` at `#miArchitecturalMapDependency`.
 - Pan and zoom are kept in `origin` (where the canvas is in `element`) and `zoom`, and applied together by `#applyTransform` (absolute scale, top left origin). Zoom is around the mouse cursor, by 1.1 per wheel step, between `#minZoom` and `#maxZoom`. Dragging with the mouse pressed pans. Mouse positions are in space coordinates (`#position`, never `#screenPosition`).
-- Highlight: the mouse over a box (`BlMouseOverEvent`, which bubbles, handled on `element`) highlights the node of the innermost box under it (`#nodeUnder:`, walking up from the event target). Its dependencies both ways (lines and arrow heads) are drawn in the theme's accent color (`color-primary`), 2 pixels wide, and the boxes at their other end get a border of that color (same style, dashed or not). Over the background, or when the mouse leaves `element` (`BlMouseLeaveEvent`), nothing is highlighted. Only one node at a time (`highlightedNode`); the highlight is reapplied when the lines are redrawn.
+- Highlight: the mouse over a box (`BlMouseOverEvent`, which bubbles, handled on `element`) highlights the node of the innermost box under it (`#nodeUnder:`, walking up from the event target). Its dependencies both ways and the boxes at their other end get a yellow halo (`#haloColor`), and keep their own look: both are drawn in `halosLayer` (over the boxes, under the lines): a box gets a translucent yellow ring just outside its bounds (`#haloForBox:`; a gaussian shadow is too faint on a light background), a line a thin (3 px) translucent yellow stroke along it (`#haloForLine:`; Bloc shadows do not follow the stroke of a line). Over the background, or when the mouse leaves `element` (`BlMouseLeaveEvent`), nothing is highlighted. Only one node at a time (`highlightedNode`); the highlight is reapplied when the lines are redrawn.
 - Not thread-safe: once my element is in an opened space, use me only from its UI process (`BlSpace>>#defer:`).
 
 ## Main API
@@ -27,7 +27,7 @@ I draw with Bloc and Toplo the architectural map built by a `MiArchiBlTreeBuilde
 - `#element`: the element to add to the space (built on first send).
 - `#elementsByNode`: the box of each displayed node.
 - `#zoomBy:` a wheel event, `#panBy:` a move event, `#highlight:` a node or nil: the mouse interactions.
-- For the tests: `#linesLayer`, `#origin`, `#zoom`.
+- For the tests: `#linesLayer`, `#halosLayer`, `#origin`, `#zoom`.
 
 "
 Class {
@@ -46,7 +46,8 @@ Class {
 		'zoom',
 		'origin',
 		'dragFrom',
-		'highlightedNode'
+		'highlightedNode',
+		'halosLayer'
 	],
 	#category : 'MooseIDE-ArchitecturalMap-Bloc-browser',
 	#package : 'MooseIDE-ArchitecturalMap-Bloc',
@@ -147,10 +148,11 @@ MiArchiBlVisualization >> boundsOf: anElement [
 
 { #category : 'building' }
 MiArchiBlVisualization >> build [
-	"Build and answer the element showing the map. It contains the canvas, which contains the lines layer under the nodes layer.
-	The order matters: the canvas needs both layers, the element needs the canvas"
+	"Build and answer the element showing the map. It contains the canvas, which contains, from bottom to top, the nodes layer, the halos layer and the lines layer.
+	The order matters: the canvas needs the layers, the element needs the canvas"
 
 	self buildNodesLayer.
+	self buildHalosLayer.
 	self buildLinesLayer.
 	self buildCanvas.
 	self buildElement.
@@ -159,13 +161,14 @@ MiArchiBlVisualization >> build [
 
 { #category : 'building' }
 MiArchiBlVisualization >> buildCanvas [
-	"The lines over the nodes: the boxes are filled, and nested when expanded, so lines under them would be hidden. Moved (origin) and zoomed by #applyTransform"
+	"The lines over the nodes: the boxes are filled, and nested when expanded, so lines under them would be hidden. The halos of the highlighted lines are between them. Moved (origin) and zoomed by #applyTransform"
 
 	canvas := BlElement new
 		          layout: BlFrameLayout new;
 		          padding: (BlInsets all: 20);
 		          addChildren: {
 				          nodesLayer.
+				          halosLayer.
 				          linesLayer };
 		          yourself.
 	canvas constraintsDo: [ :c |
@@ -192,6 +195,20 @@ MiArchiBlVisualization >> buildElement [
 		addEventHandlerOn: BlMouseUpEvent do: [ :event | dragFrom := nil ];
 		addEventHandlerOn: BlMouseOverEvent do: [ :event | self highlight: (self nodeUnder: event) ];
 		addEventHandlerOn: BlMouseLeaveEvent do: [ :event | self highlight: nil ]
+]
+
+{ #category : 'building' }
+MiArchiBlVisualization >> buildHalosLayer [
+	"The halos of the highlighted lines: over the boxes, under the lines. Like the lines layer, it fills the canvas and ignores the mouse"
+
+	halosLayer := BlElement new
+		              layout: BlBasicLayout new;
+		              clipChildren: false;
+		              preventMeAndChildrenMouseEvents;
+		              yourself.
+	halosLayer constraintsDo: [ :c |
+			c horizontal matchParent.
+			c vertical matchParent ]
 ]
 
 { #category : 'building' }
@@ -259,18 +276,58 @@ MiArchiBlVisualization >> elementsByNode [
 	^ elementsByNode
 ]
 
+{ #category : 'styling' }
+MiArchiBlVisualization >> haloColor [
+
+	^ Color yellow
+]
+
+{ #category : 'highlight' }
+MiArchiBlVisualization >> haloForBox: aBox [
+	"A translucent yellow ring around aBox, drawn just outside its bounds (a gaussian shadow is too faint on a light background)"
+
+	| bounds |
+	bounds := self boundsOf: aBox.
+	^ BlElement new
+		  geometry: (BlRoundedRectangleGeometry cornerRadius: 3);
+		  border: (BlBorder paint: (self haloColor alpha: 0.7) width: 5);
+		  outskirts: BlOutskirts outside;
+		  position: bounds origin;
+		  extent: bounds extent;
+		  yourself
+]
+
+{ #category : 'highlight' }
+MiArchiBlVisualization >> haloForLine: aLine [
+	"A thin translucent yellow stroke along aLine, with round ends (Bloc shadows do not follow the stroke of a line)"
+
+	^ BlElement new
+		  constraintsDo: [ :c |
+				  c horizontal matchParent.
+				  c vertical matchParent ];
+		  geometry: (BlLineGeometry from: aLine geometry from to: aLine geometry to);
+		  outskirts: BlOutskirts centered;
+		  border: (BlBorder builder
+				   paint: (self haloColor alpha: 0.35);
+				   width: 3;
+				   lineCap: BlStrokeLineCap round;
+				   build);
+		  yourself
+]
+
+{ #category : 'testing' }
+MiArchiBlVisualization >> halosLayer [
+	"The element holding the halos of the highlighted lines (for the tests)"
+
+	^ halosLayer
+]
+
 { #category : 'highlight' }
 MiArchiBlVisualization >> highlight: aNodeOrNil [
 	"Show the dependencies of aNodeOrNil (none for nil)"
 
 	highlightedNode := aNodeOrNil.
 	self updateHighlight
-]
-
-{ #category : 'highlight' }
-MiArchiBlVisualization >> highlightColor [
-
-	^ self tokenNamed: #'color-primary'
 ]
 
 { #category : 'initialization' }
@@ -288,14 +345,6 @@ MiArchiBlVisualization >> layoutClass: aLayoutClass [
 	"A subclass of MiArchiBlLayout (required before #element)"
 
 	layoutClass := aLayoutClass
-]
-
-{ #category : 'styling' }
-MiArchiBlVisualization >> lineBorderHighlighted: aBoolean [
-
-	^ aBoolean
-		  ifTrue: [ BlBorder paint: self highlightColor width: 2 ]
-		  ifFalse: [ BlBorder paint: self lineColor width: 1 ]
 ]
 
 { #category : 'styling' }
@@ -320,7 +369,7 @@ MiArchiBlVisualization >> lineElementFor: aDependency [
 		        clipChildren: false;
 		        geometry: (BlLineGeometry from: from to: to);
 		        outskirts: BlOutskirts centered;
-		        border: (self lineBorderHighlighted: false);
+		        border: (BlBorder paint: self lineColor width: 1);
 		        addChild: (self arrowHeadAt: to from: from);
 		        yourself.
 	line userData at: #miArchitecturalMapDependency put: aDependency.
@@ -396,27 +445,21 @@ MiArchiBlVisualization >> tree: aTree [
 
 { #category : 'highlight' }
 MiArchiBlVisualization >> updateHighlight [
-	"Each line and box drawn normally, except the dependencies of highlightedNode (both ways, line and arrow head) and the boxes at their other end"
+	"The dependencies of highlightedNode (both ways) and the boxes at their other end get a yellow halo in the halos layer; the lines and boxes keep their look"
 
 	| remoteNodes |
 	remoteNodes := IdentitySet new.
+	halosLayer removeChildren.
+	highlightedNode ifNil: [ ^ self ].
 	linesLayer children do: [ :line |
-			| dependency isHighlighted |
+			| dependency |
 			dependency := line userData at: #miArchitecturalMapDependency.
-			isHighlighted := highlightedNode isNotNil and: [
-				                 dependency source == highlightedNode or: [ dependency target == highlightedNode ] ].
-			isHighlighted ifTrue: [
+			(dependency source == highlightedNode or: [ dependency target == highlightedNode ]) ifTrue: [
 					remoteNodes add: (dependency source == highlightedNode
 							 ifTrue: [ dependency target ]
-							 ifFalse: [ dependency source ]) ].
-			line border: (self lineBorderHighlighted: isHighlighted).
-			line children first background: (isHighlighted
-					 ifTrue: [ self highlightColor ]
-					 ifFalse: [ self lineColor ]) ].
-	elementsByNode keysAndValuesDo: [ :node :box |
-			box border: ((remoteNodes includes: node)
-					 ifTrue: [ (self borderFor: node) copyWithPaint: self highlightColor ]
-					 ifFalse: [ self borderFor: node ]) ]
+							 ifFalse: [ dependency source ]).
+					halosLayer addChild: (self haloForLine: line) ] ].
+	remoteNodes do: [ :node | halosLayer addChild: (self haloForBox: (elementsByNode at: node)) ]
 ]
 
 { #category : 'lines' }
