@@ -91,11 +91,38 @@ MiArchiBlVisualizationTest >> fire: anEvent at: aPoint on: aVisualization [
 ]
 
 { #category : 'running' }
+MiArchiBlVisualizationTest >> highlightColor [
+	"The accent color of the theme"
+
+	^ space root valueOfTokenNamed: #'color-primary'
+]
+
+{ #category : 'running' }
 MiArchiBlVisualizationTest >> layOut: aVisualization [
 	"Add the element of aVisualization to the space and wait until the space has settled: the layout is done and the lines are drawn"
 
 	space deferAndSettle: [ space root addChild: aVisualization element ].
 	^ aVisualization
+]
+
+{ #category : 'running' }
+MiArchiBlVisualizationTest >> lineFrom: sourceEntity to: targetEntity in: aVisualization [
+
+	^ aVisualization linesLayer children detect: [ :each |
+			  | dependency |
+			  dependency := each userData at: #miArchitecturalMapDependency.
+			  dependency source entity == sourceEntity and: [ dependency target entity == targetEntity ] ]
+]
+
+{ #category : 'running' }
+MiArchiBlVisualizationTest >> mouseOver: aBox [
+	"The mouse comes over aBox: the event bubbles up from it, as with a real mouse"
+
+	space deferAndSettle: [
+			aBox fireEvent: (BlMouseOverEvent new
+					 position: aBox boundsInSpace center;
+					 screenPosition: aBox boundsInSpace center + (1000 @ 1000);
+					 yourself) ]
 ]
 
 { #category : 'running' }
@@ -203,6 +230,29 @@ MiArchiBlVisualizationTest >> testElementWithoutLayoutClassFails [
 	self should: [ visualization element ] raise: Error
 ]
 
+{ #category : 'tests - highlight' }
+MiArchiBlVisualizationTest >> testHighlightKeptWhenLinesAreRedrawn [
+	"Boxes move while the mouse is over package1: the new line to package2 is still highlighted"
+
+	| visualization |
+	visualization := self layOut: (self visualizationOf: self tree).
+	self mouseOver: (self boxOf: package1 in: visualization).
+	space deferAndSettle: [ (self boxOf: package1 in: visualization) margin: (BlInsets all: 40) ].
+	self assert: (self lineFrom: package1 to: package2 in: visualization) border paint color equals: self highlightColor
+]
+
+{ #category : 'tests - highlight' }
+MiArchiBlVisualizationTest >> testHighlightedLineHasHighlightedArrowHead [
+
+	| visualization head |
+	visualization := self layOut: (self visualizationOf: self tree).
+	head := (self lineFrom: package1 to: package2 in: visualization) children first.
+	self deny: head background paint color equals: self highlightColor.
+	self mouseOver: (self boxOf: package1 in: visualization).
+	head := (self lineFrom: package1 to: package2 in: visualization) children first.
+	self assert: head background paint color equals: self highlightColor
+]
+
 { #category : 'tests' }
 MiArchiBlVisualizationTest >> testLineEndsAreOnBoxBorders [
 	"Lines are under the boxes: they go from border to border, so that the arrow head is visible"
@@ -250,6 +300,85 @@ MiArchiBlVisualizationTest >> testLinesNotRedrawnWhenBoxesDidNotMove [
 	lines := visualization linesLayer children asArray.
 	visualization updateLines.
 	self assert: visualization linesLayer children asArray equals: lines
+]
+
+{ #category : 'tests - highlight' }
+MiArchiBlVisualizationTest >> testMouseLeavingTheMapRemovesHighlight [
+	"Over package1, then the mouse leaves the whole map (leave events are sent to the element itself, they do not bubble)"
+
+	| visualization |
+	visualization := self layOut: (self visualizationOf: self tree).
+	self mouseOver: (self boxOf: package1 in: visualization).
+	space deferAndSettle: [
+			visualization element dispatchEvent: (BlMouseLeaveEvent new
+					 position: 900 @ 700;
+					 screenPosition: 1900 @ 1700;
+					 yourself) ].
+	self deny: (self lineFrom: package1 to: package2 in: visualization) border paint color equals: self highlightColor.
+	self deny: (self boxOf: package2 in: visualization) border paint color equals: self highlightColor
+]
+
+{ #category : 'tests - highlight' }
+MiArchiBlVisualizationTest >> testMouseOverBackgroundRemovesHighlight [
+	"Over package1, then over the background: the line and the box of package2 look as before"
+
+	| visualization line box2 lineBorder box2Border |
+	visualization := self layOut: (self visualizationOf: self tree).
+	line := self lineFrom: package1 to: package2 in: visualization.
+	box2 := self boxOf: package2 in: visualization.
+	lineBorder := line border.
+	box2Border := box2 border.
+	self mouseOver: (self boxOf: package1 in: visualization).
+	self mouseOver: visualization element.
+	self assert: line border equals: lineBorder.
+	self assert: box2 border equals: box2Border
+]
+
+{ #category : 'tests - highlight' }
+MiArchiBlVisualizationTest >> testMouseOverBoxHighlightsIncomingLine [
+	"package1 depends on package2: with the mouse over package2, the line from package1 is highlighted too"
+
+	| visualization line |
+	visualization := self layOut: (self visualizationOf: self tree).
+	self mouseOver: (self boxOf: package2 in: visualization).
+	line := self lineFrom: package1 to: package2 in: visualization.
+	self assert: line border paint color equals: self highlightColor.
+	self assert: line border width equals: 2
+]
+
+{ #category : 'tests - highlight' }
+MiArchiBlVisualizationTest >> testMouseOverBoxHighlightsOutgoingLine [
+	"package1 depends on package2: with the mouse over package1, the line to package2 is drawn in the accent color, 2 pixels wide"
+
+	| visualization line |
+	visualization := self layOut: (self visualizationOf: self tree).
+	self mouseOver: (self boxOf: package1 in: visualization).
+	line := self lineFrom: package1 to: package2 in: visualization.
+	self assert: line border paint color equals: self highlightColor.
+	self assert: line border width equals: 2
+]
+
+{ #category : 'tests - highlight' }
+MiArchiBlVisualizationTest >> testMouseOverBoxHighlightsRemoteBoxes [
+	"With the mouse over package1, package2 (at the other end of its dependency) has an accent border, both ways"
+
+	| visualization |
+	visualization := self layOut: (self visualizationOf: self tree).
+	self mouseOver: (self boxOf: package1 in: visualization).
+	self assert: (self boxOf: package2 in: visualization) border paint color equals: self highlightColor.
+	self mouseOver: (self boxOf: package2 in: visualization).
+	self assert: (self boxOf: package1 in: visualization) border paint color equals: self highlightColor
+]
+
+{ #category : 'tests - highlight' }
+MiArchiBlVisualizationTest >> testMouseOverNestedBoxHighlightsItsOwnDependencies [
+	"Expanded packages: the mouse over the label of Class2 (inside package2) highlights Class1 -> Class2, not Class1 -> Class3"
+
+	| visualization |
+	visualization := self layOut: (self visualizationOf: self expandedTree).
+	self mouseOver: (self boxOf: class2 in: visualization) children first.
+	self assert: (self lineFrom: class1 to: class2 in: visualization) border paint color equals: self highlightColor.
+	self deny: (self lineFrom: class1 to: class3 in: visualization) border paint color equals: self highlightColor
 ]
 
 { #category : 'tests' }

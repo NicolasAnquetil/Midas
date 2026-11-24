@@ -19,13 +19,14 @@ I draw with Bloc and Toplo the architectural map built by a `MiArchiBlTreeBuilde
 - Lines are redrawn after a layout of `nodesLayer` only if some box bounds changed (`lastBounds`, kept as copies since `#boundsInSpace` is changed in place), so the space can settle.
 - Each line has its dependency in its `userData` at `#miArchitecturalMapDependency`.
 - Pan and zoom are kept in `origin` (where the canvas is in `element`) and `zoom`, and applied together by `#applyTransform` (absolute scale, top left origin). Zoom is around the mouse cursor, by 1.1 per wheel step, between `#minZoom` and `#maxZoom`. Dragging with the mouse pressed pans. Mouse positions are in space coordinates (`#position`, never `#screenPosition`).
+- Highlight: the mouse over a box (`BlMouseOverEvent`, which bubbles, handled on `element`) highlights the node of the innermost box under it (`#nodeUnder:`, walking up from the event target). Its dependencies both ways (lines and arrow heads) are drawn in the theme's accent color (`color-primary`), 2 pixels wide, and the boxes at their other end get a border of that color (same style, dashed or not). Over the background, or when the mouse leaves `element` (`BlMouseLeaveEvent`), nothing is highlighted. Only one node at a time (`highlightedNode`); the highlight is reapplied when the lines are redrawn.
 - Not thread-safe: once my element is in an opened space, use me only from its UI process (`BlSpace>>#defer:`).
 
 ## Main API
 - `MiArchiBlVisualization new tree: aTreeBuilder; layoutClass: aLayoutClass; tokenSource: aSpaceRoot; yourself`
 - `#element`: the element to add to the space (built on first send).
 - `#elementsByNode`: the box of each displayed node.
-- `#zoomBy:` a wheel event, `#panBy:` a move event: the mouse interactions.
+- `#zoomBy:` a wheel event, `#panBy:` a move event, `#highlight:` a node or nil: the mouse interactions.
 - For the tests: `#linesLayer`, `#origin`, `#zoom`.
 
 "
@@ -44,7 +45,8 @@ Class {
 		'lastBounds',
 		'zoom',
 		'origin',
-		'dragFrom'
+		'dragFrom',
+		'highlightedNode'
 	],
 	#category : 'MooseIDE-ArchitecturalMap-Bloc-browser',
 	#package : 'MooseIDE-ArchitecturalMap-Bloc',
@@ -173,7 +175,7 @@ MiArchiBlVisualization >> buildCanvas [
 
 { #category : 'building' }
 MiArchiBlVisualization >> buildElement [
-	"The element shown: it fills its parent and clips the canvas. It receives the mouse: wheel to zoom, drag to pan (the zoom and pan pattern of the Bloc guide on graphical patterns)"
+	"The element shown: it fills its parent and clips the canvas. It receives the mouse: wheel to zoom, drag to pan (the zoom and pan pattern of the Bloc guide on graphical patterns), over to highlight the dependencies of the box under the mouse, leave to remove the highlight"
 
 	element := BlElement new
 		           layout: BlBasicLayout new;
@@ -187,7 +189,9 @@ MiArchiBlVisualization >> buildElement [
 		addEventHandlerOn: BlMouseWheelEvent do: [ :event | self zoomBy: event ];
 		addEventHandlerOn: BlMouseDownEvent do: [ :event | dragFrom := event position ];
 		addEventHandlerOn: BlMouseMoveEvent do: [ :event | self panBy: event ];
-		addEventHandlerOn: BlMouseUpEvent do: [ :event | dragFrom := nil ]
+		addEventHandlerOn: BlMouseUpEvent do: [ :event | dragFrom := nil ];
+		addEventHandlerOn: BlMouseOverEvent do: [ :event | self highlight: (self nodeUnder: event) ];
+		addEventHandlerOn: BlMouseLeaveEvent do: [ :event | self highlight: nil ]
 ]
 
 { #category : 'building' }
@@ -255,6 +259,20 @@ MiArchiBlVisualization >> elementsByNode [
 	^ elementsByNode
 ]
 
+{ #category : 'highlight' }
+MiArchiBlVisualization >> highlight: aNodeOrNil [
+	"Show the dependencies of aNodeOrNil (none for nil)"
+
+	highlightedNode := aNodeOrNil.
+	self updateHighlight
+]
+
+{ #category : 'highlight' }
+MiArchiBlVisualization >> highlightColor [
+
+	^ self tokenNamed: #'color-primary'
+]
+
 { #category : 'initialization' }
 MiArchiBlVisualization >> initialize [
 
@@ -270,6 +288,14 @@ MiArchiBlVisualization >> layoutClass: aLayoutClass [
 	"A subclass of MiArchiBlLayout (required before #element)"
 
 	layoutClass := aLayoutClass
+]
+
+{ #category : 'styling' }
+MiArchiBlVisualization >> lineBorderHighlighted: aBoolean [
+
+	^ aBoolean
+		  ifTrue: [ BlBorder paint: self highlightColor width: 2 ]
+		  ifFalse: [ BlBorder paint: self lineColor width: 1 ]
 ]
 
 { #category : 'styling' }
@@ -294,7 +320,7 @@ MiArchiBlVisualization >> lineElementFor: aDependency [
 		        clipChildren: false;
 		        geometry: (BlLineGeometry from: from to: to);
 		        outskirts: BlOutskirts centered;
-		        border: (BlBorder paint: self lineColor width: 1);
+		        border: (self lineBorderHighlighted: false);
 		        addChild: (self arrowHeadAt: to from: from);
 		        yourself.
 	line userData at: #miArchitecturalMapDependency put: aDependency.
@@ -318,6 +344,18 @@ MiArchiBlVisualization >> maxZoom [
 MiArchiBlVisualization >> minZoom [
 
 	^ 0.1
+]
+
+{ #category : 'highlight' }
+MiArchiBlVisualization >> nodeUnder: aMouseEvent [
+	"The node of the innermost box under the mouse, nil on the background. Over events bubble up from the element under the mouse: walk up from it to the first box"
+
+	| current |
+	current := aMouseEvent target.
+	[ current isNil or: [ current == element ] ] whileFalse: [
+			(current userData at: #miArchitecturalMapNode ifAbsent: [ nil ]) ifNotNil: [ :node | ^ node ].
+			current := current parent ].
+	^ nil
 ]
 
 { #category : 'testing' }
@@ -356,10 +394,36 @@ MiArchiBlVisualization >> tree: aTree [
 	tree := aTree
 ]
 
+{ #category : 'highlight' }
+MiArchiBlVisualization >> updateHighlight [
+	"Each line and box drawn normally, except the dependencies of highlightedNode (both ways, line and arrow head) and the boxes at their other end"
+
+	| remoteNodes |
+	remoteNodes := IdentitySet new.
+	linesLayer children do: [ :line |
+			| dependency isHighlighted |
+			dependency := line userData at: #miArchitecturalMapDependency.
+			isHighlighted := highlightedNode isNotNil and: [
+				                 dependency source == highlightedNode or: [ dependency target == highlightedNode ] ].
+			isHighlighted ifTrue: [
+					remoteNodes add: (dependency source == highlightedNode
+							 ifTrue: [ dependency target ]
+							 ifFalse: [ dependency source ]) ].
+			line border: (self lineBorderHighlighted: isHighlighted).
+			line children first background: (isHighlighted
+					 ifTrue: [ self highlightColor ]
+					 ifFalse: [ self lineColor ]) ].
+	elementsByNode keysAndValuesDo: [ :node :box |
+			box border: ((remoteNodes includes: node)
+					 ifTrue: [ (self borderFor: node) copyWithPaint: self highlightColor ]
+					 ifFalse: [ self borderFor: node ]) ]
+]
+
 { #category : 'lines' }
 MiArchiBlVisualization >> updateLines [
 	"Draw again the lines between the boxes, only if they moved since the last time: a layout is computed often, and a handler of BlElementLayoutComputedEvent must only change what differs, or the space never settles.
-	The bounds are kept as copies (#asRectangle): #boundsInSpace answers the same cached object, changed in place by each layout"
+	The bounds are kept as copies (#asRectangle): #boundsInSpace answers the same cached object, changed in place by each layout.
+	The new lines show the current highlight"
 
 	| visible bounds |
 	bounds := elementsByNode values collect: [ :each | each boundsInSpace asRectangle ].
@@ -368,7 +432,8 @@ MiArchiBlVisualization >> updateLines [
 	visible := tree visibleDependencies select: [ :each |
 		           (elementsByNode includesKey: each source) and: [ elementsByNode includesKey: each target ] ].
 	linesLayer removeChildren.
-	linesLayer addChildren: (visible collect: [ :each | self lineElementFor: each ])
+	linesLayer addChildren: (visible collect: [ :each | self lineElementFor: each ]).
+	highlightedNode ifNotNil: [ self updateHighlight ]
 ]
 
 { #category : 'testing' }
