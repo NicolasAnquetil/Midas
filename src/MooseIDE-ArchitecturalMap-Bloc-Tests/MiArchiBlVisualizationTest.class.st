@@ -610,6 +610,49 @@ MiArchiBlVisualizationTest >> testDragParentBoxMovesItsChildren [
 	self assert: (self boxOf: class2 in: visualization) boundsInSpace origin equals: class2Origin + (20 @ 50)
 ]
 
+{ #category : 'tests - moving' }
+MiArchiBlVisualizationTest >> testDragSelectedBoxMovesAllSelected [
+	"package1 and package2 selected: dragging package1 moves both by the same amount"
+
+	| visualization package1Origin package2Origin start |
+	visualization := self recordingVisualizationOf: self tree.
+	self click: (self boxOf: package1 in: visualization).
+	self shiftClick: (self boxOf: package2 in: visualization).
+	package1Origin := (self boxOf: package1 in: visualization) boundsInSpace origin.
+	package2Origin := (self boxOf: package2 in: visualization) boundsInSpace origin.
+	start := (self boxOf: package1 in: visualization) children first boundsInSpace center.
+	self drag: visualization from: start to: start + (30 @ 40).
+	self assert: (self boxOf: package1 in: visualization) boundsInSpace origin equals: package1Origin + (30 @ 40).
+	self assert: (self boxOf: package2 in: visualization) boundsInSpace origin equals: package2Origin + (30 @ 40)
+]
+
+{ #category : 'tests - moving' }
+MiArchiBlVisualizationTest >> testDragSelectedBoxMovesNestedSelectedBoxOnce [
+	"Expanded tree, package2 and its Class2 selected: dragging package2 moves Class2 with it, once (not again by itself in package2)"
+
+	| visualization class2Origin start |
+	visualization := self recordingVisualizationOf: self expandedTree.
+	self click: (self boxOf: package2 in: visualization).
+	self shiftClick: (self boxOf: class2 in: visualization).
+	class2Origin := (self boxOf: class2 in: visualization) boundsInSpace origin.
+	start := (self boxOf: package2 in: visualization) children first boundsInSpace center.
+	self drag: visualization from: start to: start + (30 @ 40).
+	self assert: (self boxOf: class2 in: visualization) boundsInSpace origin equals: class2Origin + (30 @ 40)
+]
+
+{ #category : 'tests - moving' }
+MiArchiBlVisualizationTest >> testDragUnselectedBoxMovesItAlone [
+	"package2 selected: dragging package1 (not selected) moves package1 only"
+
+	| visualization package2Origin start |
+	visualization := self recordingVisualizationOf: self tree.
+	self click: (self boxOf: package2 in: visualization).
+	package2Origin := (self boxOf: package2 in: visualization) boundsInSpace origin.
+	start := (self boxOf: package1 in: visualization) children first boundsInSpace center.
+	self drag: visualization from: start to: start + (30 @ 40).
+	self assert: (self boxOf: package2 in: visualization) boundsInSpace origin equals: package2Origin
+]
+
 { #category : 'tests - highlight' }
 MiArchiBlVisualizationTest >> testDraggedBoxIsHighlightedAtRelease [
 	"The mouse was over package1, then package2 is dragged: at the release the mouse is over package2, so the line from package1 has a halo where it is now, and package1 gets the ring"

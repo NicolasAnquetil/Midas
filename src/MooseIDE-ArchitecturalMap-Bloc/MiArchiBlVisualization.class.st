@@ -20,7 +20,7 @@ I draw with Bloc and Toplo the architectural map built by a `MiArchiBlTreeBuilde
 - Lines are redrawn after a layout of `boxesLayer` only if some box bounds changed (`lastBounds`), so the space can settle. The bounds are taken in the coordinates of the lines layer (`#placeOf:`), so zoom and pan, which move the canvas as a whole, redraw nothing: only moving boxes does.
 - Each line has its dependency in its `userData` at `#miArchitecturalMapDependency`.
 - Pan and zoom are kept in `origin` (where the canvas is in `viewport`) and `zoom`, and applied together by `#applyTransform` (absolute scale, top left origin). Zoom is around the mouse cursor, by 1.1 per wheel step, between `#minZoom` and `#maxZoom`. Dragging the background pans. Mouse positions are in space coordinates (`#position`, never `#screenPosition`).
-- Moving boxes: dragging a box moves it, dragging the background pans. Drags are Bloc drag events (`BlDragStartEvent`, `BlDragEvent`, `BlDragEndEvent`): the space starts one after a press and a move of a few pixels, sends it to the element that consumed the drag start (the innermost box, see `#beDraggable:`, or else `viewport`), and ends it at the release. `lastDragPosition` is the mouse position at the previous drag event, for the move since then (`#dragDeltaOf:`). At the first move of a child, its container stops laying out its children (`#freezeLayoutOf:` replaces its layout by a `MiArchiBlFittingBasicLayout` with each child where it was): from then on it is as big as needed to contain all of them. So a parent box grows to contain a moved child, or a child drawn again bigger.
+- Moving boxes: dragging a box moves it, dragging the background pans. Dragging a selected box moves all the selected boxes, each within its own parent, but those inside another selected box, moved with it (`#boxesMovedWith:`); dragging a box that is not selected moves it alone. Drags are Bloc drag events (`BlDragStartEvent`, `BlDragEvent`, `BlDragEndEvent`): the space starts one after a press and a move of a few pixels, sends it to the element that consumed the drag start (the innermost box, see `#beDraggable:`, or else `viewport`), and ends it at the release. `lastDragPosition` is the mouse position at the previous drag event, for the move since then (`#dragDeltaOf:`). At the first move of a child, its container stops laying out its children (`#freezeLayoutOf:` replaces its layout by a `MiArchiBlFittingBasicLayout` with each child where it was): from then on it is as big as needed to contain all of them. So a parent box grows to contain a moved child, or a child drawn again bigger.
 - Selection: a click on a box selects it alone, a shift-click adds it to the selection or removes it (`#beSelectable:`, `#clickOn:shift:`), a click on the background clears it. Bloc sends no click after a drag, so moving a box selects nothing. `selectedNodes` keeps the selection in the order of the clicks; each change is told to `browser` (`#selectEntities:`, the entities of the nodes), and marks the boxes with a light brown ring (`#selectionColor`) in `selectionLayer`, drawn again when boxes move (`#updateSelectionRings`). A selected node whose box disappears (a child of a collapsed node) leaves the selection (`#unselectNodesWithoutBox`).
 - Menu: each box is a Toplo element with a context menu (`#giveMenuTo:for:`), opened by a right click. Its items are chosen when it opens (`#menuItemsFor:`), in order:
   - Expand or Collapse, for a node with children: changes the node (`#isExpanded:`, `#toggle:`).
@@ -125,11 +125,14 @@ MiArchiBlVisualization >> backgroundFor: aNode [
 
 { #category : 'interactions' }
 MiArchiBlVisualization >> beDraggable: aBox [
-	"Dragging aBox moves it within its parent (#move:by:), by the move of the mouse divided by the zoom, so it follows the mouse"
+	"Dragging aBox moves it, and the other selected boxes if it is selected (#boxesMovedWith:), each within its parent (#move:by:), by the move of the mouse divided by the zoom, so they follow the mouse"
 
 	aBox
 		addEventHandlerOn: BlDragStartEvent do: [ :event | self startDrag: event ];
-		addEventHandlerOn: BlDragEvent do: [ :event | self move: event currentTarget by: (self dragDeltaOf: event) / zoom ];
+		addEventHandlerOn: BlDragEvent do: [ :event |
+				| delta |
+				delta := (self dragDeltaOf: event) / zoom.
+				(self boxesMovedWith: event currentTarget) do: [ :each | self move: each by: delta ] ];
 		addEventHandlerOn: BlDragEndEvent do: [ :event | self endDrag: event ]
 ]
 
@@ -238,6 +241,16 @@ MiArchiBlVisualization >> boxes [
 	"All the boxes drawn, found in the boxes layer: the elements that know their node. A map has few boxes, so they are looked up rather than kept in a dictionary"
 
 	^ boxesLayer allChildrenBreadthFirstSelect: [ :each | (self nodeOf: each) isNotNil ]
+]
+
+{ #category : 'interactions' }
+MiArchiBlVisualization >> boxesMovedWith: aBox [
+	"The boxes moved when aBox is dragged: aBox alone if it is not selected; otherwise all the selected boxes, but those inside another selected box (moved with it, they must not be moved twice)"
+
+	(selectedNodes includes: (self nodeOf: aBox)) ifFalse: [ ^ { aBox } ].
+	^ (selectedNodes reject: [ :each |
+		   each parent notNil and: [ each parent withAllParents anySatisfy: [ :ancestor | selectedNodes includes: ancestor ] ] ])
+		  collect: [ :each | self boxOf: each ]
 ]
 
 { #category : 'accessing' }
