@@ -171,7 +171,7 @@ MiArchiBlVisualization >> boxContaining: anElement [
 
 { #category : 'building' }
 MiArchiBlVisualization >> boxForNode: aNode [
-	"The box of aNode: its label, then (when expanded) the boxes of its children. It knows its node (#nodeOf:), can be dragged (#beDraggable:), and has a context menu if aNode has children (#giveMenuTo:for:). A Toplo element, for the menu"
+	"The box of aNode: its label, then (when expanded) the container of the boxes of its children (#childrenContainerFor:). It knows its node (#nodeOf:), can be dragged (#beDraggable:), and has a context menu if aNode has children (#giveMenuTo:for:). A Toplo element, for the menu"
 
 	| box |
 	box := ToElement new
@@ -189,14 +189,7 @@ MiArchiBlVisualization >> boxForNode: aNode [
 	self beDraggable: box.
 	aNode hasChildren ifTrue: [ self giveMenuTo: box for: aNode ].
 	self keepRightClicksIn: box.
-	(aNode isExpanded and: [ aNode hasChildren ]) ifTrue: [
-			box addChild: (BlElement new
-					 layout: BlFlowLayout horizontal;
-					 constraintsDo: [ :c |
-							 c horizontal fitContent.
-							 c vertical fitContent ];
-					 addChildren: (aNode children collect: [ :each | self boxForNode: each ]);
-					 yourself) ].
+	(aNode isExpanded and: [ aNode hasChildren ]) ifTrue: [ box addChild: (self childrenContainerFor: aNode) ].
 	^ box
 ]
 
@@ -309,6 +302,18 @@ MiArchiBlVisualization >> buildViewport [
 		addEventHandlerOn: BlDragEndEvent do: [ :event | self endDrag: event ];
 		addEventHandlerOn: BlMouseOverEvent do: [ :event | self highlight: (self nodeUnder: event) ];
 		addEventHandlerOn: BlMouseLeaveEvent do: [ :event | self highlight: nil ]
+]
+
+{ #category : 'building' }
+MiArchiBlVisualization >> childrenContainerFor: aNode [
+	"The element under the label of the box of aNode, holding the boxes of its children (built by #boxForNode:, so recursively). It exists for its layout: the box lays out its label and this element vertically, this element lays out the boxes in a square grid (MiArchiBlGridLayout: as many columns as the square root of their number), not in one long line. It is not a box: no node, no menu, nothing drawn, so a plain Bloc element. It is what #freezeLayoutOf: freezes when one of these boxes is moved"
+
+	| container |
+	container := BlElement new.
+	MiArchiBlGridLayout new applyOn: container topElementsCount: aNode children size.
+	^ container
+		  addChildren: (aNode children collect: [ :each | self boxForNode: each ]);
+		  yourself
 ]
 
 { #category : 'interactions' }

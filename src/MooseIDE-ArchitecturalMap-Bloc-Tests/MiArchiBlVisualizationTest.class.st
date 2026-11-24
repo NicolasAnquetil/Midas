@@ -248,6 +248,36 @@ MiArchiBlVisualizationTest >> testBoxesForChildrenWhenExpanded [
 			(self boxOf: class3 in: visualization) }
 ]
 
+{ #category : 'tests - boxes' }
+MiArchiBlVisualizationTest >> testChildrenOfExpandedBoxFormASquareGrid [
+	"With Class4 and Class5 added, package2 has 4 classes: shown in 2 rows of 2 (Class2 Class3, then Class4 Class5), not in one long line"
+
+	| class4 class5 visualization tree origins |
+	class4 := FamixStClass new
+		          name: 'Class4';
+		          parentPackage: package2;
+		          mooseModel: model;
+		          yourself.
+	class5 := FamixStClass new
+		          name: 'Class5';
+		          parentPackage: package2;
+		          mooseModel: model;
+		          yourself.
+	tree := self tree.
+	(tree roots detect: [ :each | each entity == package2 ]) isExpanded: true.
+	visualization := self layOut: (self visualizationOf: tree).
+	origins := {
+		           class2.
+		           class3.
+		           class4.
+		           class5 } collect: [ :each | (self boxOf: each in: visualization) boundsInSpace origin ].
+	self assert: origins second y equals: origins first y.
+	self assert: origins second x > origins first x.
+	self assert: origins third x equals: origins first x.
+	self assert: origins third y > origins first y.
+	self assert: origins fourth y equals: origins third y
+]
+
 { #category : 'tests - expand' }
 MiArchiBlVisualizationTest >> testChooseCollapseHidesChildren [
 	"In the expanded tree, Collapse on package2 removes the boxes of Class2 and Class3; the dependencies of Class1 now end on package2"
