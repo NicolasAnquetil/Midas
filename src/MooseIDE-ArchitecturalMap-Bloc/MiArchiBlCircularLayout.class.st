@@ -1,16 +1,16 @@
 "
-I lay out the root nodes of the Bloc architectural map on a circle (`ToBasicCircularLayout`, from Toplo).
+I lay out the root nodes of the Bloc architectural map on a circle (`MiArchiBlFittingCircularLayout`).
 
 ## Collaborators & Context
 - `MiArchiBlLayout`: my superclass, see it for how layouts are chosen and applied.
-- `MiArchiBlInsetCircularLayout` (a `ToBasicCircularLayout` of Toplo): does the work, inside an element of fixed size, keeping the boxes inside it.
+- `MiArchiBlFittingCircularLayout`: does the work. It sizes the circle from the boxes, at each layout pass.
 
 ## Assumptions & Invariants
-- The circle of the centers of the boxes has a diameter of about the perimeter the root nodes need (their number times `#nodeWidth`) divided by pi, and at least 300. The element is a square larger by `#nodeWidth`, so that the boxes on the circle are inside it (the circle is inset by half the biggest box).
-- `#nodeWidth` (150) is an estimate: wider boxes may overlap.
+- The element is as large as its content (fitContent): the circle and the boxes on it.
+- Each box gets a part of the circle in proportion to its size, so an expanded package makes room for itself, and neighbours do not overlap.
 
 ## Main API
-- `#applyOn:topElementsCount:`, `#nodeWidth`; class side `#layoutName` ('Circular'), `#layoutDescription`.
+- `#applyOn:topElementsCount:`; class side `#layoutName` ('Circular'), `#layoutDescription`.
 
 "
 Class {
@@ -35,19 +35,10 @@ MiArchiBlCircularLayout class >> layoutName [
 
 { #category : 'layout' }
 MiArchiBlCircularLayout >> applyOn: anElement topElementsCount: anInteger [
-	"The circle of the centers of the nodes has a diameter of about the perimeter needed by the nodes divided by pi. anElement is larger by #nodeWidth (the estimated width of a box), so the boxes on the circle are inside it (MiArchiBlInsetCircularLayout insets the circle by half the biggest box)"
+	"The root nodes on a circle sized from their boxes (MiArchiBlFittingCircularLayout), anElement as big as needed"
 
-	| diameter |
-	diameter := (anInteger * self nodeWidth / Float pi) rounded max: 300.
-	anElement layout: MiArchiBlInsetCircularLayout new.
+	anElement layout: MiArchiBlFittingCircularLayout new.
 	anElement constraintsDo: [ :c |
-			c horizontal exact: diameter + self nodeWidth.
-			c vertical exact: diameter + self nodeWidth ]
-]
-
-{ #category : 'layout' }
-MiArchiBlCircularLayout >> nodeWidth [
-	"An estimate of the width of a root node, to make the circle large enough"
-
-	^ 150
+			c horizontal fitContent.
+			c vertical fitContent ]
 ]

@@ -329,6 +329,40 @@ MiArchiBlVisualizationTest >> testCircularLayoutKeepsBoxesInside [
 	visualization boxes do: [ :each | self assert: (layerBounds containsRect: each boundsInSpace asRectangle) ]
 ]
 
+{ #category : 'tests - boxes' }
+MiArchiBlVisualizationTest >> testCircularLayoutMakesRoomForExpandedBox [
+	"Six packages on the circle; package2 has six classes and is expanded from its menu: it becomes much bigger, and no two packages overlap"
+
+	| mapModel tree visualization roots |
+	#( 'Class4' 'Class5' 'Class6' 'Class7' ) do: [ :each |
+			FamixStClass new
+				name: each;
+				parentPackage: package2;
+				mooseModel: model;
+				yourself ].
+	mapModel := self mapModelOf: MiArchitecturalMapBrowserBl.
+	mapModel entities: ({
+			 package1.
+			 package2 } , (#( 'package3' 'package4' 'package5' 'package6' ) collect: [ :each |
+				  FamixStPackage new
+					  name: each;
+					  mooseModel: model;
+					  yourself ])) asMooseGroup.
+	tree := MiArchiBlTreeBuilder new
+		        mapModel: mapModel;
+		        build;
+		        yourself.
+	visualization := self layOut: (MiArchiBlVisualization new
+			                  tree: tree;
+			                  layoutClass: MiArchiBlCircularLayout;
+			                  tokenSource: space root;
+			                  yourself).
+	self choose: 'Expand' in: (self rightClick: (self boxOf: package2 in: visualization)).
+	roots := tree roots collect: [ :each | (visualization boxOf: each) boundsInSpace asRectangle ].
+	roots doWithIndex: [ :each :i | (roots allButFirst: i) do: [ :other | self deny: (each intersects: other) ] ].
+	roots do: [ :each | self assert: ((self boxOf: package1 in: visualization) parent boundsInSpace asRectangle containsRect: each) ]
+]
+
 { #category : 'tests' }
 MiArchiBlVisualizationTest >> testDashedBorderForNodeWithChildren [
 
