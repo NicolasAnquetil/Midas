@@ -2,26 +2,27 @@
 I am a layout of the root nodes of an architectural map shown with Bloc: see my class-side #layoutDescription.
 "
 Class {
-	#name : 'MiArchitecturalMapCircularLayoutBl',
-	#superclass : 'MiArchitecturalMapLayoutBl',
-	#category : 'MooseIDE-ArchitecturalMap-Bloc',
-	#package : 'MooseIDE-ArchitecturalMap-Bloc'
+	#name : 'MiArchiBlCircularLayout',
+	#superclass : 'MiArchiBlLayout',
+	#category : 'MooseIDE-ArchitecturalMap-Bloc-data',
+	#package : 'MooseIDE-ArchitecturalMap-Bloc',
+	#tag : 'data'
 }
 
 { #category : 'accessing' }
-MiArchitecturalMapCircularLayoutBl class >> layoutDescription [
+MiArchiBlCircularLayout class >> layoutDescription [
 
 	^ 'On a circle'
 ]
 
 { #category : 'accessing' }
-MiArchitecturalMapCircularLayoutBl class >> layoutName [
+MiArchiBlCircularLayout class >> layoutName [
 
 	^ 'Circular'
 ]
 
 { #category : 'layout' }
-MiArchitecturalMapCircularLayoutBl >> applyOn: anElement topElementsCount: anInteger [
+MiArchiBlCircularLayout >> applyOn: anElement topElementsCount: anInteger [
 	"The circle fills anElement: its diameter is about the perimeter needed by the nodes divided by pi"
 
 	| diameter |
@@ -33,7 +34,7 @@ MiArchitecturalMapCircularLayoutBl >> applyOn: anElement topElementsCount: anInt
 ]
 
 { #category : 'layout' }
-MiArchitecturalMapCircularLayoutBl >> nodeWidth [
+MiArchiBlCircularLayout >> nodeWidth [
 	"An estimate of the width of a root node, to make the circle large enough"
 
 	^ 150

@@ -2,26 +2,27 @@
 I am a layout of the root nodes of an architectural map shown with Bloc: see my class-side #layoutDescription.
 "
 Class {
-	#name : 'MiArchitecturalMapFlowLayoutBl',
-	#superclass : 'MiArchitecturalMapLayoutBl',
-	#category : 'MooseIDE-ArchitecturalMap-Bloc',
-	#package : 'MooseIDE-ArchitecturalMap-Bloc'
+	#name : 'MiArchiBlFlowLayout',
+	#superclass : 'MiArchiBlLayout',
+	#category : 'MooseIDE-ArchitecturalMap-Bloc-data',
+	#package : 'MooseIDE-ArchitecturalMap-Bloc',
+	#tag : 'data'
 }
 
 { #category : 'accessing' }
-MiArchitecturalMapFlowLayoutBl class >> layoutDescription [
+MiArchiBlFlowLayout class >> layoutDescription [
 
 	^ 'Rows from left to right'
 ]
 
 { #category : 'accessing' }
-MiArchitecturalMapFlowLayoutBl class >> layoutName [
+MiArchiBlFlowLayout class >> layoutName [
 
 	^ 'Flow'
 ]
 
 { #category : 'layout' }
-MiArchitecturalMapFlowLayoutBl >> applyOn: anElement topElementsCount: anInteger [
+MiArchiBlFlowLayout >> applyOn: anElement topElementsCount: anInteger [
 
 	anElement layout: BlFlowLayout horizontal.
 	anElement constraintsDo: [ :c |
@@ -30,7 +31,7 @@ MiArchitecturalMapFlowLayoutBl >> applyOn: anElement topElementsCount: anInteger
 ]
 
 { #category : 'layout' }
-MiArchitecturalMapFlowLayoutBl >> maxWidth [
+MiArchiBlFlowLayout >> maxWidth [
 
 	^ 800
 ]

@@ -8,45 +8,46 @@ The list of layouts the user can pick in the map settings is MiArchitecturalMapL
 When a layout is chosen, the browser creates an instance and sends it #applyOn:topElementsCount:, with the element holding the root nodes and their number. The instance sets that element's layout and size constraints.
 "
 Class {
-	#name : 'MiArchitecturalMapLayoutBl',
+	#name : 'MiArchiBlLayout',
 	#superclass : 'Object',
-	#category : 'MooseIDE-ArchitecturalMap-Bloc',
-	#package : 'MooseIDE-ArchitecturalMap-Bloc'
+	#category : 'MooseIDE-ArchitecturalMap-Bloc-data',
+	#package : 'MooseIDE-ArchitecturalMap-Bloc',
+	#tag : 'data'
 }
 
 { #category : 'accessing' }
-MiArchitecturalMapLayoutBl class >> availableLayouts [
+MiArchiBlLayout class >> availableLayouts [
 	"What MiArchitecturalMapBrowserBl>>availableMapLayouts answers"
 
 	^ {
-		  MiArchitecturalMapFlowLayoutBl.
-		  MiArchitecturalMapGridLayoutBl.
-		  MiArchitecturalMapLinearLayoutBl.
-		  MiArchitecturalMapCircularLayoutBl }
+		  MiArchiBlFlowLayout.
+		  MiArchiBlGridLayout.
+		  MiArchiBlLinearLayout.
+		  MiArchiBlCircularLayout }
 ]
 
 { #category : 'accessing' }
-MiArchitecturalMapLayoutBl class >> isAbstract [
+MiArchiBlLayout class >> isAbstract [
 
 	^ self == MiArchitecturalMapLayoutBl
 ]
 
 { #category : 'accessing' }
-MiArchitecturalMapLayoutBl class >> layoutDescription [
+MiArchiBlLayout class >> layoutDescription [
 	"Shown in the map settings, as help"
 
 	^ self layoutName
 ]
 
 { #category : 'accessing' }
-MiArchitecturalMapLayoutBl class >> layoutName [
+MiArchiBlLayout class >> layoutName [
 	"Shown in the map settings"
 
 	^ self subclassResponsibility
 ]
 
 { #category : 'layout' }
-MiArchitecturalMapLayoutBl >> applyOn: anElement topElementsCount: anInteger [
+MiArchiBlLayout >> applyOn: anElement topElementsCount: anInteger [
 	"Lay out the root nodes of the map.
 	anElement is the element that will hold one child element per root node (nodesLayer in MiArchitecturalMapViewBl>>#build). Set its Bloc layout (e.g. a BlGridLayout) and its size constraints (e.g. fitContent).
 	anInteger is the number of root nodes. It is given because this method is called before the children are added to anElement, so they cannot be counted there. Some layouts need it, e.g. MiArchitecturalMapGridLayoutBl uses it to choose its number of columns."

@@ -1,12 +1,11 @@
 "
-I am a node of an architectural map shown with Bloc (MiArchitecturalMapBrowserBl): an entity of the map, or a tag grouping its tagged entities.
+I am a node of an architectural map shown with Bloc (MiArchitecturalMapBrowserBl).
 
-I know my parent and my children (sorted by name), my label (name) and my color (the color of a tag, nil for an entity). I am collapsed by default (isExpanded): a collapsed node hides its children, and the dependencies of its descendants are shown on it (see #visibleNode).
+I know my `entity`, `parent`, `children` (sorted by name), my label (`name`), and my `color` (the color of a tag, nil for an entity). I am collapsed by default (`isExpanded`): a collapsed node hides its children, and the dependencies of its descendants are shown on it (see #visibleNode).
 
-I do not depend on Roassal: MiArchitecturalMapTreeBl builds me from the MiArchitecturalMapModel.
 "
 Class {
-	#name : 'MiArchitecturalMapNodeBl',
+	#name : 'MiArchiBlNode',
 	#superclass : 'Object',
 	#instVars : [
 		'entity',
@@ -16,56 +15,57 @@ Class {
 		'children',
 		'isExpanded'
 	],
-	#category : 'MooseIDE-ArchitecturalMap-Bloc',
-	#package : 'MooseIDE-ArchitecturalMap-Bloc'
+	#category : 'MooseIDE-ArchitecturalMap-Bloc-data',
+	#package : 'MooseIDE-ArchitecturalMap-Bloc',
+	#tag : 'data'
 }
 
 { #category : 'accessing' }
-MiArchitecturalMapNodeBl >> children [
+MiArchiBlNode >> children [
 
 	^ children
 ]
 
 { #category : 'accessing' }
-MiArchitecturalMapNodeBl >> children: aCollection [
+MiArchiBlNode >> children: aCollection [
 
 	children := aCollection asOrderedCollection.
 	children do: [ :each | each parent: self ]
 ]
 
 { #category : 'accessing' }
-MiArchitecturalMapNodeBl >> color [
+MiArchiBlNode >> color [
 	"The color of a tag, nil for an entity"
 
 	^ color
 ]
 
 { #category : 'accessing' }
-MiArchitecturalMapNodeBl >> color: aColor [
+MiArchiBlNode >> color: aColor [
 
 	color := aColor
 ]
 
 { #category : 'accessing' }
-MiArchitecturalMapNodeBl >> entity [
+MiArchiBlNode >> entity [
 
 	^ entity
 ]
 
 { #category : 'accessing' }
-MiArchitecturalMapNodeBl >> entity: anEntity [
+MiArchiBlNode >> entity: anEntity [
 
 	entity := anEntity
 ]
 
 { #category : 'testing' }
-MiArchitecturalMapNodeBl >> hasChildren [
+MiArchiBlNode >> hasChildren [
 
 	^ children isNotEmpty
 ]
 
 { #category : 'initialization' }
-MiArchitecturalMapNodeBl >> initialize [
+MiArchiBlNode >> initialize [
 
 	super initialize.
 	children := OrderedCollection new.
@@ -73,49 +73,49 @@ MiArchitecturalMapNodeBl >> initialize [
 ]
 
 { #category : 'accessing' }
-MiArchitecturalMapNodeBl >> isExpanded [
+MiArchiBlNode >> isExpanded [
 
 	^ isExpanded
 ]
 
 { #category : 'accessing' }
-MiArchitecturalMapNodeBl >> isExpanded: aBoolean [
+MiArchiBlNode >> isExpanded: aBoolean [
 
 	isExpanded := aBoolean
 ]
 
 { #category : 'testing' }
-MiArchitecturalMapNodeBl >> isTag [
+MiArchiBlNode >> isTag [
 
 	^ entity isTag
 ]
 
 { #category : 'accessing' }
-MiArchitecturalMapNodeBl >> name [
+MiArchiBlNode >> name [
 
 	^ name
 ]
 
 { #category : 'accessing' }
-MiArchitecturalMapNodeBl >> name: aString [
+MiArchiBlNode >> name: aString [
 
 	name := aString
 ]
 
 { #category : 'accessing' }
-MiArchitecturalMapNodeBl >> parent [
+MiArchiBlNode >> parent [
 
 	^ parent
 ]
 
 { #category : 'accessing' }
-MiArchitecturalMapNodeBl >> parent: aNode [
+MiArchiBlNode >> parent: aNode [
 
 	parent := aNode
 ]
 
 { #category : 'printing' }
-MiArchitecturalMapNodeBl >> printOn: aStream [
+MiArchiBlNode >> printOn: aStream [
 
 	super printOn: aStream.
 	aStream
@@ -125,14 +125,14 @@ MiArchitecturalMapNodeBl >> printOn: aStream [
 ]
 
 { #category : 'querying' }
-MiArchitecturalMapNodeBl >> visibleNode [
+MiArchiBlNode >> visibleNode [
 	"The node shown for me: myself if all my ancestors are expanded, my highest collapsed ancestor otherwise"
 
 	^ self withAllParents reversed detect: [ :each | each == self or: [ each isExpanded not ] ]
 ]
 
 { #category : 'querying' }
-MiArchitecturalMapNodeBl >> withAllParents [
+MiArchiBlNode >> withAllParents [
 	"Me and my ancestors, the root last"
 
 	| result node |

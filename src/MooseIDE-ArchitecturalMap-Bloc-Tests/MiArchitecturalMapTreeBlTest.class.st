@@ -3,74 +3,15 @@ I test the tree of the Bloc architectural map (MiArchitecturalMapTreeBl), agains
 "
 Class {
 	#name : 'MiArchitecturalMapTreeBlTest',
-	#superclass : 'MiAbstractApplicationTest',
-	#instVars : [
-		'model',
-		'package1',
-		'package2',
-		'class1',
-		'class2',
-		'class3'
-	],
+	#superclass : 'MiArchitecturalMapBlAbstractTest',
 	#category : 'MooseIDE-ArchitecturalMap-Bloc-Tests',
 	#package : 'MooseIDE-ArchitecturalMap-Bloc-Tests'
 }
 
 { #category : 'running' }
-MiArchitecturalMapTreeBlTest >> mapModelOf: aBrowserClass [
-	"A map model of the two packages, with its browser (the model asks it its layouts)"
-
-	| mapModel |
-	mapModel := aBrowserClass newModel.
-	aBrowserClass on: mapModel.
-	mapModel entities: {
-			package1.
-			package2 } asMooseGroup.
-	^ mapModel
-]
-
-{ #category : 'running' }
 MiArchitecturalMapTreeBlTest >> pairsOf: aCollectionOfDependencies [
 
 	^ (aCollectionOfDependencies collect: [ :each | each source entity -> each target entity ]) asSet
-]
-
-{ #category : 'running' }
-MiArchitecturalMapTreeBlTest >> setUp [
-
-	super setUp.
-	model := FamixStModel new.
-	package1 := FamixStPackage new
-		            name: 'package1';
-		            mooseModel: model;
-		            yourself.
-	package2 := FamixStPackage new
-		            name: 'package2';
-		            mooseModel: model;
-		            yourself.
-	class1 := FamixStClass new
-		          name: 'Class1';
-		          parentPackage: package1;
-		          mooseModel: model;
-		          yourself.
-	class2 := FamixStClass new
-		          name: 'Class2';
-		          parentPackage: package2;
-		          mooseModel: model;
-		          yourself.
-	class3 := FamixStClass new
-		          name: 'Class3';
-		          parentPackage: package2;
-		          mooseModel: model;
-		          yourself.
-	FamixStInheritance new
-		subclass: class1;
-		superclass: class2;
-		mooseModel: model.
-	FamixStInheritance new
-		subclass: class1;
-		superclass: class3;
-		mooseModel: model
 ]
 
 { #category : 'tests' }
@@ -154,13 +95,4 @@ MiArchitecturalMapTreeBlTest >> testVisibleNode [
 	self assert: classNode visibleNode identicalTo: tree roots first.
 	tree roots first isExpanded: true.
 	self assert: classNode visibleNode identicalTo: classNode
-]
-
-{ #category : 'running' }
-MiArchitecturalMapTreeBlTest >> tree [
-
-	^ MiArchitecturalMapTreeBl new
-		  mapModel: (self mapModelOf: MiArchitecturalMapBrowserBl);
-		  build;
-		  yourself
 ]

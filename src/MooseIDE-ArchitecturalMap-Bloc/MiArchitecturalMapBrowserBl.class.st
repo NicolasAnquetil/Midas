@@ -16,8 +16,9 @@ Class {
 		'mapPresenter',
 		'view'
 	],
-	#category : 'MooseIDE-ArchitecturalMap-Bloc',
-	#package : 'MooseIDE-ArchitecturalMap-Bloc'
+	#category : 'MooseIDE-ArchitecturalMap-Bloc-browser',
+	#package : 'MooseIDE-ArchitecturalMap-Bloc',
+	#tag : 'browser'
 }
 
 { #category : 'world menu' }
@@ -79,7 +80,7 @@ MiArchitecturalMapBrowserBl >> canReceiveEntity: anEntity [
 { #category : 'layouts' }
 MiArchitecturalMapBrowserBl >> defaultMapLayout [
 
-	^ MiArchitecturalMapFlowLayoutBl
+	^ MiArchiBlFlowLayout
 ]
 
 { #category : 'actions' }
@@ -112,7 +113,7 @@ MiArchitecturalMapBrowserBl >> runVisualization [
 	"Build the map from the model and show it, in the UI process of Bloc"
 
 	| tree |
-	tree := MiArchitecturalMapTreeBl new
+	tree := MiArchiBlTreeBuilder new
 		        mapModel: specModel;
 		        build;
 		        yourself.
@@ -131,7 +132,7 @@ MiArchitecturalMapBrowserBl >> showTree: aTree [
 
 	| root |
 	root := self space root.
-	view := MiArchitecturalMapViewBl new
+	view := MiArchiBlVisualization new
 		        tree: aTree;
 		        layoutClass: specModel layout;
 		        tokenSource: root;
