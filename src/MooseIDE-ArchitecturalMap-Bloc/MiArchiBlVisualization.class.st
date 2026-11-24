@@ -2,6 +2,7 @@
 I draw with Bloc and Toplo the architectural map built by a `MiArchiBlTreeBuilder`: a box per visible node, an arrow per visible dependency, and the root boxes laid out by a `MiArchiBlLayout`. The map can be panned and zoomed with the mouse.
 
 ## Collaborators & Context
+- `browser` (a `MiArchitecturalMapBrowserBl`, optional): inspects and propagates entities for the menu of the boxes.
 - Vocabulary: a *node* is model data (a `MiArchiBlNode` of the tree, for an entity or a tag); a *box* is the Bloc element drawn for a node (`#boxOf:`, `#nodeOf:`); the *viewport* is the outermost Bloc element, the one shown, holding everything else.
 - `MiArchiBlTreeBuilder` (`tree`): gives the root `MiArchiBlNode`s (`#roots`) and the `MiArchiBlDependency`s between the visible nodes (`#visibleDependencies`).
 - `MiArchiBlLayout` subclasses (`layoutClass`): place the root boxes in `boxesLayer`. The browser chooses the layout: its `MiArchitecturalMapModel>>#layout`.
@@ -20,11 +21,18 @@ I draw with Bloc and Toplo the architectural map built by a `MiArchiBlTreeBuilde
 - Each line has its dependency in its `userData` at `#miArchitecturalMapDependency`.
 - Pan and zoom are kept in `origin` (where the canvas is in `viewport`) and `zoom`, and applied together by `#applyTransform` (absolute scale, top left origin). Zoom is around the mouse cursor, by 1.1 per wheel step, between `#minZoom` and `#maxZoom`. Dragging the background pans. Mouse positions are in space coordinates (`#position`, never `#screenPosition`).
 - Moving boxes: dragging a box moves it, dragging the background pans. Drags are Bloc drag events (`BlDragStartEvent`, `BlDragEvent`, `BlDragEndEvent`): the space starts one after a press and a move of a few pixels, sends it to the element that consumed the drag start (the innermost box, see `#beDraggable:`, or else `viewport`), and ends it at the release. `lastDragPosition` is the mouse position at the previous drag event, for the move since then (`#dragDeltaOf:`). At the first move of a child, its container stops laying out its children (`#freezeLayoutOf:` replaces its layout by a `MiArchiBlFittingBasicLayout` with each child where it was): from then on it is as big as needed to contain all of them. So a parent box grows to contain a moved child, or a child drawn again bigger.
-- Expand and collapse: a box whose node has children is a Toplo element with a context menu (`#giveMenuTo:for:`), opened by a right click: one item, Expand or Collapse according to the node. Choosing it changes the node (`#isExpanded:`) and draws only that box again, in place of the old one (`#toggle:`): the other boxes stay where they are, even if moved by hand. A right press stops at the innermost box (`#keepRightClicksIn:`), so a box inside another does not open the menu of the outer one.
+- Menu: each box is a Toplo element with a context menu (`#giveMenuTo:for:`), opened by a right click. Its items are chosen when it opens (`#menuItemsFor:`), in order:
+  - Expand or Collapse, for a node with children: changes the node (`#isExpanded:`, `#toggle:`).
+  - Relayout children, for an expanded node: its children go back to their grid (`#relayoutChildrenOf:`).
+  Both draw only that box again, in place of the old one (`#redrawBoxOf:`): the other boxes stay where they are, even if moved by hand.
+  - Hide or Show the incoming, outgoing or all links (`#linkItemsFor:`), only the items that would change something. A link is incoming (outgoing) for a box if its line ends (starts) at this very box, not at a box inside it. The nodes whose links are hidden are kept in `hiddenIncoming` and `hiddenOutgoing`; their lines are not drawn (`#isDrawn:`), and no box moves.
+  - Inspect and Propagate the entity of the node: asked to `browser` (`#inspectEntity:`, `#propagateEntity:`), nothing without browser.
+  A right press stops at the innermost box (`#keepRightClicksIn:`), so a box inside another does not open the menu of the outer one.
 - Highlight: the mouse over a box (`BlMouseOverEvent`, which bubbles, handled on `viewport`) highlights the node of the innermost box under it (`#nodeUnder:`). Its dependencies both ways and the boxes at their other end get a halo (`#haloColor`), and keep their own look: both are drawn in `halosLayer` (over the boxes, under the lines): a box gets a translucent yellow ring just outside its bounds (`#haloForBox:). Over the background, or when the mouse leaves `viewport` (`BlMouseLeaveEvent`), nothing is highlighted. Only one node at a time is highlighted, and no state is kept: the halos are the highlight. Redrawing the lines removes them (they follow the old lines and boxes); since boxes move only while dragged, the end of a drag highlights again what is under the mouse (`#endDrag:`, `#highlightAt:`). While a box is dragged, nothing is highlighted.
 
 ## Main API
-- `#toggle:` a node: expand or collapse it, as its menu does.
+- `#browser:` the browser showing the map (optional).
+- `#toggle:` a node: expand or collapse it, as its menu does. `#relayoutChildrenOf:` a node: lay out its children again.
 - `MiArchiBlVisualization new tree: aTreeBuilder; layoutClass: aLayoutClass; tokenSource: aSpaceRoot; yourself`
 - `#viewport`: the Bloc element to add to the space (built on first send). It shows the map: everything I draw is inside it.
 - `#boxes`: all the boxes drawn. `#boxOf:` a node: its box, nil if it is not shown. `#nodeOf:` a box: its node (nil for any other element).
@@ -48,7 +56,10 @@ Class {
 		'halosLayer',
 		'viewport',
 		'boxesLayer',
-		'lastDragPosition'
+		'lastDragPosition',
+		'browser',
+		'hiddenIncoming',
+		'hiddenOutgoing'
 	],
 	#category : 'MooseIDE-ArchitecturalMap-Bloc-browser',
 	#package : 'MooseIDE-ArchitecturalMap-Bloc',
@@ -171,7 +182,7 @@ MiArchiBlVisualization >> boxContaining: anElement [
 
 { #category : 'building' }
 MiArchiBlVisualization >> boxForNode: aNode [
-	"The box of aNode: its label, then (when expanded) the container of the boxes of its children (#childrenContainerFor:). It knows its node (#nodeOf:), can be dragged (#beDraggable:), and has a context menu if aNode has children (#giveMenuTo:for:). A Toplo element, for the menu"
+	"The box of aNode: its label, then (when expanded) the container of the boxes of its children (#childrenContainerFor:). It knows its node (#nodeOf:), can be dragged (#beDraggable:), and has a context menu (#giveMenuTo:for:). A Toplo element, for the menu"
 
 	| box |
 	box := ToElement new
@@ -187,7 +198,7 @@ MiArchiBlVisualization >> boxForNode: aNode [
 			c vertical fitContent ].
 	box userData at: #miArchitecturalMapNode put: aNode.
 	self beDraggable: box.
-	aNode hasChildren ifTrue: [ self giveMenuTo: box for: aNode ].
+	self giveMenuTo: box for: aNode.
 	self keepRightClicksIn: box.
 	(aNode isExpanded and: [ aNode hasChildren ]) ifTrue: [ box addChild: (self childrenContainerFor: aNode) ].
 	^ box
@@ -212,6 +223,13 @@ MiArchiBlVisualization >> boxes [
 	"All the boxes drawn, found in the boxes layer: the elements that know their node. A map has few boxes, so they are looked up rather than kept in a dictionary"
 
 	^ boxesLayer allChildrenBreadthFirstSelect: [ :each | (self nodeOf: each) isNotNil ]
+]
+
+{ #category : 'accessing' }
+MiArchiBlVisualization >> browser: aBrowser [
+	"The browser showing me (a MiArchitecturalMapBrowserBl): the menu of a box asks it to inspect or propagate the entity of the node (#inspectEntity:, #propagateEntity:). Optional: without browser, these items do nothing"
+
+	browser := aBrowser
 ]
 
 { #category : 'building' }
@@ -350,16 +368,11 @@ MiArchiBlVisualization >> freezeLayoutOf: aContainer [
 	positions do: [ :each | each key position: each value ]
 ]
 
-{ #category : 'expanding' }
+{ #category : 'menu' }
 MiArchiBlVisualization >> giveMenuTo: aBox for: aNode [
-	"The context menu of aBox (opened by a right click, by Toplo): Expand if aNode is collapsed, Collapse if it is expanded"
+	"The context menu of aBox (opened by a right click, by Toplo). Its items are chosen when it opens (#menuItemsFor:), so they follow the state of aNode"
 
-	aBox contextMenuBuilder: [ :menu :request |
-			menu addItem: ((ToMenuItem new labelText: (aNode isExpanded
-							   ifTrue: [ 'Collapse' ]
-							   ifFalse: [ 'Expand' ]))
-					 clickAction: [ self toggle: aNode ];
-					 yourself) ]
+	aBox contextMenuBuilder: [ :menu :request | (self menuItemsFor: aNode) do: [ :each | menu addItem: each ] ]
 ]
 
 { #category : 'styling' }
@@ -408,6 +421,14 @@ MiArchiBlVisualization >> halosLayer [
 	^ halosLayer
 ]
 
+{ #category : 'menu' }
+MiArchiBlVisualization >> hide: someHiddenSets linksOf: aNode [
+	"someHiddenSets: hiddenIncoming and/or hiddenOutgoing. Only the lines change: no box moves"
+
+	someHiddenSets do: [ :each | each add: aNode ].
+	self redrawLines
+]
+
 { #category : 'highlight' }
 MiArchiBlVisualization >> highlight: aNodeOrNil [
 	"The dependencies of aNodeOrNil (both ways) and the boxes at their other end get a yellow halo in the halos layer; the lines and boxes keep their look. For nil, nothing is highlighted"
@@ -441,10 +462,19 @@ MiArchiBlVisualization >> initialize [
 	super initialize.
 	lastBounds := #(  ).
 	origin := 0 @ 0.
-	zoom := 1
+	zoom := 1.
+	hiddenIncoming := IdentitySet new.
+	hiddenOutgoing := IdentitySet new
 ]
 
-{ #category : 'expanding' }
+{ #category : 'lines' }
+MiArchiBlVisualization >> isDrawn: aDependency [
+	"False if its line was hidden from the menu of its source box (outgoing links) or of its target box (incoming links)"
+
+	^ ((hiddenOutgoing includes: aDependency source) or: [ hiddenIncoming includes: aDependency target ]) not
+]
+
+{ #category : 'menu' }
 MiArchiBlVisualization >> keepRightClicksIn: aBox [
 	"A right press on aBox stops there: it does not go up to the boxes around aBox, which would open their menus. Installed after the menu of aBox, which sees the press first"
 
@@ -494,10 +524,71 @@ MiArchiBlVisualization >> linesLayer [
 	^ linesLayer
 ]
 
+{ #category : 'menu' }
+MiArchiBlVisualization >> linkItemsFor: aNode [
+	"Hide or show the incoming, outgoing or all links of the box of aNode: only the items that would change something. A link is incoming (outgoing) if its line ends (starts) at this box: lines of the boxes inside it are not concerned"
+
+	| dependencies hasIncoming hasOutgoing canHideIncoming canHideOutgoing canShowIncoming canShowOutgoing items |
+	dependencies := self shownDependencies.
+	hasIncoming := dependencies anySatisfy: [ :each | each target == aNode ].
+	hasOutgoing := dependencies anySatisfy: [ :each | each source == aNode ].
+	canHideIncoming := hasIncoming and: [ (hiddenIncoming includes: aNode) not ].
+	canShowIncoming := hasIncoming and: [ hiddenIncoming includes: aNode ].
+	canHideOutgoing := hasOutgoing and: [ (hiddenOutgoing includes: aNode) not ].
+	canShowOutgoing := hasOutgoing and: [ hiddenOutgoing includes: aNode ].
+	items := OrderedCollection new.
+	canHideIncoming ifTrue: [ items add: (self menuItem: 'Hide incoming links' do: [ self hide: { hiddenIncoming } linksOf: aNode ]) ].
+	canHideOutgoing ifTrue: [ items add: (self menuItem: 'Hide outgoing links' do: [ self hide: { hiddenOutgoing } linksOf: aNode ]) ].
+	(canHideIncoming or: [ canHideOutgoing ]) ifTrue: [
+			items add: (self menuItem: 'Hide all links' do: [
+						 self
+							 hide: {
+									 hiddenIncoming.
+									 hiddenOutgoing }
+							 linksOf: aNode ]) ].
+	canShowIncoming ifTrue: [ items add: (self menuItem: 'Show incoming links' do: [ self show: { hiddenIncoming } linksOf: aNode ]) ].
+	canShowOutgoing ifTrue: [ items add: (self menuItem: 'Show outgoing links' do: [ self show: { hiddenOutgoing } linksOf: aNode ]) ].
+	(canShowIncoming or: [ canShowOutgoing ]) ifTrue: [
+			items add: (self menuItem: 'Show all links' do: [
+						 self
+							 show: {
+									 hiddenIncoming.
+									 hiddenOutgoing }
+							 linksOf: aNode ]) ].
+	^ items
+]
+
 { #category : 'interactions' }
 MiArchiBlVisualization >> maxZoom [
 
 	^ 10
+]
+
+{ #category : 'menu' }
+MiArchiBlVisualization >> menuItem: aLabel do: aBlock [
+
+	^ (ToMenuItem new labelText: aLabel)
+		  clickAction: aBlock;
+		  yourself
+]
+
+{ #category : 'menu' }
+MiArchiBlVisualization >> menuItemsFor: aNode [
+	"The items of the menu of the box of aNode, in order: Expand or Collapse (if aNode has children), Relayout children (if it is expanded), the links items that would change something (#linkItemsFor:), Inspect, Propagate"
+
+	| items |
+	items := OrderedCollection new.
+	aNode hasChildren ifTrue: [
+			items add: (self
+					 menuItem: (aNode isExpanded
+							  ifTrue: [ 'Collapse' ]
+							  ifFalse: [ 'Expand' ])
+					 do: [ self toggle: aNode ]).
+			aNode isExpanded ifTrue: [ items add: (self menuItem: 'Relayout children' do: [ self relayoutChildrenOf: aNode ]) ] ].
+	items addAll: (self linkItemsFor: aNode).
+	items add: (self menuItem: 'Inspect' do: [ browser ifNotNil: [ browser inspectEntity: aNode entity ] ]).
+	items add: (self menuItem: 'Propagate' do: [ browser ifNotNil: [ browser propagateEntity: aNode entity ] ]).
+	^ items
 ]
 
 { #category : 'interactions' }
@@ -552,6 +643,48 @@ MiArchiBlVisualization >> placeOf: aBox [
 	^ (bounds origin roundTo: 0.01) corner: (bounds corner roundTo: 0.01)
 ]
 
+{ #category : 'expanding' }
+MiArchiBlVisualization >> redrawBoxOf: aNode [
+	"Draw the box of aNode again, in the place of the old one: the other boxes are not drawn again, so they stay where they are (even moved by hand). The new box keeps the position of the old one (used if its container was frozen by a move, #freezeLayoutOf:), and its children are laid out from scratch"
+
+	| oldBox newBox |
+	oldBox := self boxOf: aNode.
+	newBox := self boxForNode: aNode.
+	newBox position: oldBox position.
+	oldBox parent replaceChild: oldBox with: newBox
+]
+
+{ #category : 'lines' }
+MiArchiBlVisualization >> redrawLines [
+	"Draw the lines again, though no box moved (the hidden links changed)"
+
+	lastBounds := nil.
+	self updateLines
+]
+
+{ #category : 'expanding' }
+MiArchiBlVisualization >> relayoutChildrenOf: aNode [
+	"Lay out the children of aNode (expanded) again in their grid, forgetting where they were moved by hand (also inside them): draw the box of aNode again (#redrawBoxOf:)"
+
+	self redrawBoxOf: aNode
+]
+
+{ #category : 'menu' }
+MiArchiBlVisualization >> show: someHiddenSets linksOf: aNode [
+
+	someHiddenSets do: [ :each | each remove: aNode ifAbsent: [ ] ].
+	self redrawLines
+]
+
+{ #category : 'lines' }
+MiArchiBlVisualization >> shownDependencies [
+	"The dependencies between two nodes that have a box, hidden or not"
+
+	| shownNodes |
+	shownNodes := (self boxes collect: [ :each | self nodeOf: each ]) asIdentitySet.
+	^ tree visibleDependencies select: [ :each | (shownNodes includes: each source) and: [ shownNodes includes: each target ] ]
+]
+
 { #category : 'interactions' }
 MiArchiBlVisualization >> startDrag: aDragStartEvent [
 	"A drag starts on a box or on the background. Consuming the event makes the element handling it (a box, or the viewport) the target of the next drag events, as decided by the mouse processor of the space; it also stops the event there, so only the innermost box under the mouse moves"
@@ -562,14 +695,10 @@ MiArchiBlVisualization >> startDrag: aDragStartEvent [
 
 { #category : 'expanding' }
 MiArchiBlVisualization >> toggle: aNode [
-	"Expand aNode if it is collapsed, collapse it otherwise, and draw its box again, in the place of the old one: the other boxes are not drawn again, so they stay where they are (even moved by hand). If the container of the box was frozen by a move (#freezeLayoutOf:), the new box keeps the position of the old one, and the container fits it"
+	"Expand aNode if it is collapsed, collapse it otherwise, and draw its box again (#redrawBoxOf:)"
 
-	| oldBox newBox |
-	oldBox := self boxOf: aNode.
 	aNode isExpanded: aNode isExpanded not.
-	newBox := self boxForNode: aNode.
-	newBox position: oldBox position.
-	oldBox parent replaceChild: oldBox with: newBox
+	self redrawBoxOf: aNode
 ]
 
 { #category : 'styling' }
@@ -595,18 +724,16 @@ MiArchiBlVisualization >> tree: aTree [
 MiArchiBlVisualization >> updateLines [
 	"Draw again the lines between the boxes, only if they moved since the last time: a layout is computed often, and a handler of BlElementLayoutComputedEvent must only change what differs, or the space never settles.
 	The bounds are compared in the coordinates of the lines layer (#placeOf:): zoom and pan move the canvas as a whole, they change where the boxes are in the space but not there, so they redraw nothing.
+	The lines hidden from the menu of a box are not drawn (#isDrawn:).
 	The halos follow the old lines and boxes: they are removed. Boxes move only while dragged, and the end of a drag highlights again (#endDrag:)"
 
-	| boxes shownNodes bounds |
-	boxes := self boxes.
-	bounds := boxes collect: [ :each | self placeOf: each ].
-	(bounds = lastBounds) ifTrue: [ ^ self ].
+	| bounds |
+	bounds := self boxes collect: [ :each | self placeOf: each ].
+	bounds = lastBounds ifTrue: [ ^ self ].
 	lastBounds := bounds.
-	shownNodes := (boxes collect: [ :each | self nodeOf: each ]) asIdentitySet.
 	linesLayer removeChildren.
 	linesLayer addChildren:
-		((tree visibleDependencies select: [ :each | (shownNodes includes: each source) and: [ shownNodes includes: each target ] ])
-			 collect: [ :each | self lineElementFor: each ]).
+		((self shownDependencies select: [ :each | self isDrawn: each ]) collect: [ :each | self lineElementFor: each ]).
 	halosLayer removeChildren
 ]
 

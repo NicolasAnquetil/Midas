@@ -3,7 +3,7 @@ I am a browser that displays an architectural map with Bloc and Toplo, as `MiArc
 
 ## Collaborators & Context
 - `MiArchitecturalMapModel` (`specModel`): holds the entities and the settings. It calls me back (`#runVisualization` after a change of the settings) and asks me the layouts it can offer (`#availableMapLayouts`, `#defaultMapLayout`: `MiArchiBlLayout` subclasses).
-- `MiArchiBlTreeBuilder` turns the model into a tree of nodes, and `MiArchiBlVisualization` (`view`) draws it.
+- `MiArchiBlTreeBuilder` turns the model into a tree of nodes, and `MiArchiBlVisualization` (`view`) draws it. I am its browser: the menu of a box asks me to inspect (`MiInspectorBrowser`) or propagate (on my buses) the entity of its node.
 - `SpBlSpaceInMorphPresenter` (`mapPresenter`): embeds the Bloc space of the map in Spec. I give the space a Toplo theme, light or dark like the Pharo theme (`#toploTheme`).
 - `MiAbstractBrowser`: I am a Midas browser (bus, follow / receive entities). I am not in the world menu: the architectural map entry opens me instead of `MiArchitecturalMapBrowser` when the application says so (`MiArchitecturalMapBrowser class>>#frontEndClass`):
 	`MiApplication current architecturalMapBrowserClass: MiArchitecturalMapBrowserBl`
@@ -19,6 +19,7 @@ I am a browser that displays an architectural map with Bloc and Toplo, as `MiArc
 - `#followEntity:`: show the map of anEntity.
 - `#runVisualization`: rebuild and redraw the map from the model.
 - `#availableMapLayouts`, `#defaultMapLayout`: the layouts, for the model.
+- `#inspectEntity:`, `#propagateEntity:`: for the menu of the boxes of the map.
 - `#space`, `#view`: the Bloc space and the visualization shown.
 
 "
@@ -116,9 +117,23 @@ MiArchitecturalMapBrowserBl >> initializePresenters [
 ]
 
 { #category : 'actions' }
+MiArchitecturalMapBrowserBl >> inspectEntity: anEntity [
+	"Asked by the menu of a box of the map"
+
+	MiInspectorBrowser inspect: anEntity
+]
+
+{ #category : 'actions' }
 MiArchitecturalMapBrowserBl >> miSelectedItem [
 
 	^ specModel entities ifNil: [ #(  ) ]
+]
+
+{ #category : 'actions' }
+MiArchitecturalMapBrowserBl >> propagateEntity: anEntity [
+	"Asked by the menu of a box of the map: propagate anEntity on my buses, as the other maps do, without receiving it back"
+
+	self freezeDuring: [ anEntity miPropagateOn: self buses ]
 ]
 
 { #category : 'actions' }
@@ -149,6 +164,7 @@ MiArchitecturalMapBrowserBl >> showTree: aTree [
 		        tree: aTree;
 		        layoutClass: specModel layout;
 		        tokenSource: root;
+		        browser: self;
 		        yourself.
 	root removeChildren.
 	root addChild: view viewport

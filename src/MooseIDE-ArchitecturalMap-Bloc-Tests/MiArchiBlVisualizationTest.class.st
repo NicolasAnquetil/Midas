@@ -135,6 +135,17 @@ MiArchiBlVisualizationTest >> lineFrom: sourceEntity to: targetEntity in: aVisua
 ]
 
 { #category : 'running' }
+MiArchiBlVisualizationTest >> menuLabelsOf: aBox [
+	"The labels of the menu of aBox, opened by a right click then closed (Toplo does not open the menu of a box again while it is opened)"
+
+	| menu labels |
+	menu := self rightClick: aBox.
+	labels := (self labelsOf: menu) asArray.
+	space deferAndSettle: [ menu close ].
+	^ labels
+]
+
+{ #category : 'running' }
 MiArchiBlVisualizationTest >> mouse: anEvent at: aPoint [
 	"Send anEvent (a mouse down, move or up) at aPoint (space coordinates) to the space, as its host does, and wait for the space to settle. The space picks the element under aPoint, and turns a press followed by moves into drag events (as in BlMouseProcessingTest). The screen position is made different on purpose: the code must use #position"
 
@@ -312,6 +323,34 @@ MiArchiBlVisualizationTest >> testChooseExpandShowsChildrenInTheBox [
 	class1Box := self boxOf: class1 in: visualization.
 	self assert: class1Box isNotNil.
 	self assert: (class1Box allParentsInclude: (self boxOf: package1 in: visualization))
+]
+
+{ #category : 'tests - menu' }
+MiArchiBlVisualizationTest >> testChooseInspectAsksBrowser [
+	"Inspect in the menu of Class1 (a box without children) asks the browser to inspect Class1"
+
+	| visualization browser |
+	browser := MiArchiBlRecordingBrowser new.
+	visualization := (self visualizationOf: self expandedTree)
+		                 browser: browser;
+		                 yourself.
+	self layOut: visualization.
+	self choose: 'Inspect' in: (self rightClick: (self boxOf: class1 in: visualization)).
+	self assert: browser requests asArray equals: { (#inspect -> class1) }
+]
+
+{ #category : 'tests - menu' }
+MiArchiBlVisualizationTest >> testChoosePropagateAsksBrowser [
+	"Propagate in the menu of package2 asks the browser to propagate package2"
+
+	| visualization browser |
+	browser := MiArchiBlRecordingBrowser new.
+	visualization := (self visualizationOf: self tree)
+		                 browser: browser;
+		                 yourself.
+	self layOut: visualization.
+	self choose: 'Propagate' in: (self rightClick: (self boxOf: package2 in: visualization)).
+	self assert: browser requests asArray equals: { (#propagate -> package2) }
 ]
 
 { #category : 'tests - boxes' }
@@ -499,6 +538,42 @@ MiArchiBlVisualizationTest >> testExpandKeepsBoxesMovedByHand [
 	self assert: (package2Box parent boundsInSpace asRectangle containsRect: package2Box boundsInSpace asRectangle)
 ]
 
+{ #category : 'tests - links' }
+MiArchiBlVisualizationTest >> testHideAllThenShowAllLinks [
+	"Expanded tree: Hide all links on Class2 removes its line from Class1, Class1 to Class3 stays; Show all links brings it back"
+
+	| visualization |
+	visualization := self layOut: (self visualizationOf: self expandedTree).
+	self choose: 'Hide all links' in: (self rightClick: (self boxOf: class2 in: visualization)).
+	self assert: (self pairsOfLinesIn: visualization) equals: { (class1 -> class3) } asSet.
+	self choose: 'Show all links' in: (self rightClick: (self boxOf: class2 in: visualization)).
+	self assert: (self pairsOfLinesIn: visualization) equals: {
+			(class1 -> class2).
+			(class1 -> class3) } asSet
+]
+
+{ #category : 'tests - links' }
+MiArchiBlVisualizationTest >> testHideIncomingLinksRemovesLinesToTheBox [
+	"Hide incoming links on package2 removes the line from package1"
+
+	| visualization |
+	visualization := self layOut: (self visualizationOf: self tree).
+	self choose: 'Hide incoming links' in: (self rightClick: (self boxOf: package2 in: visualization)).
+	self assert: (self pairsOfLinesIn: visualization) isEmpty
+]
+
+{ #category : 'tests - links' }
+MiArchiBlVisualizationTest >> testHideOutgoingLinksRemovesLinesOnly [
+	"Hide outgoing links on package1 removes its line to package2, and moves no box"
+
+	| visualization bounds |
+	visualization := self layOut: (self visualizationOf: self tree).
+	bounds := visualization boxes collect: [ :each | each boundsInSpace asRectangle ].
+	self choose: 'Hide outgoing links' in: (self rightClick: (self boxOf: package1 in: visualization)).
+	self assert: (self pairsOfLinesIn: visualization) isEmpty.
+	self assert: (visualization boxes collect: [ :each | each boundsInSpace asRectangle ]) equals: bounds
+]
+
 { #category : 'tests - highlight' }
 MiArchiBlVisualizationTest >> testHighlightedLineKeepsItsLook [
 	"The halo is added under the line: the line and its arrow head keep their color and width"
@@ -560,6 +635,36 @@ MiArchiBlVisualizationTest >> testLinesNotRedrawnWhenBoxesDidNotMove [
 	lines := visualization linesLayer children asArray.
 	visualization updateLines.
 	self assert: visualization linesLayer children asArray equals: lines
+]
+
+{ #category : 'tests - links' }
+MiArchiBlVisualizationTest >> testLinkItemsOnlyThoseThatChangeSomething [
+	"package1 has an outgoing link and no incoming one, nothing hidden: Hide outgoing links and Hide all links, no incoming item, no Show item"
+
+	| visualization labels |
+	visualization := self layOut: (self visualizationOf: self tree).
+	labels := self menuLabelsOf: ((self boxOf: package1 in: visualization)).
+	self
+		assert: (labels select: [ :each | each includesSubstring: 'links' ]) asArray
+		equals: #( 'Hide outgoing links' 'Hide all links' )
+]
+
+{ #category : 'tests - menu' }
+MiArchiBlVisualizationTest >> testMenuOfBoxes [
+	"The whole menus, in order. package2 expanded: package2 has no links drawn to its own box (they go to its classes); Class2 has an incoming link. package1 collapsed: no Relayout children"
+
+	| visualization |
+	visualization := self layOut: (self visualizationOf: self expandedTree).
+	self
+		assert: (self menuLabelsOf: (self boxOf: package2 in: visualization))
+		equals: #( 'Collapse' 'Relayout children' 'Inspect' 'Propagate' ).
+	self
+		assert: (self menuLabelsOf: (self boxOf: class2 in: visualization))
+		equals: #( 'Hide incoming links' 'Hide all links' 'Inspect' 'Propagate' ).
+	visualization := self layOut: (self visualizationOf: self tree).
+	self
+		assert: (self menuLabelsOf: (self boxOf: package1 in: visualization))
+		equals: #( 'Expand' 'Hide outgoing links' 'Hide all links' 'Inspect' 'Propagate' )
 ]
 
 { #category : 'tests - highlight' }
@@ -702,35 +807,69 @@ MiArchiBlVisualizationTest >> testPanDoesNotRedrawLines [
 	self assert: (self lineFrom: package1 to: package2 in: visualization) identicalTo: line
 ]
 
-{ #category : 'tests - expand' }
-MiArchiBlVisualizationTest >> testRightClickBoxWithoutChildrenOpensNoMenu [
-	"Class1 has no children: no menu, neither its own nor the one of package1 around it"
+{ #category : 'tests - menu' }
+MiArchiBlVisualizationTest >> testRelayoutChildrenPutsThemBackInTheGrid [
+	"Expanded tree: Class3 dragged to the right (package2 grows), then Relayout children on package2: Class3 is back where the grid put it, package2 back to its size and where it was"
 
-	| visualization |
+	| visualization class3Origin package2Bounds start |
 	visualization := self layOut: (self visualizationOf: self expandedTree).
-	self assert: (self rightClick: (self boxOf: class1 in: visualization)) isNil.
-	self assert: (self boxOf: package1 in: visualization) currentContextMenu isNil
+	class3Origin := (self boxOf: class3 in: visualization) boundsInSpace origin.
+	package2Bounds := (self boxOf: package2 in: visualization) boundsInSpace asRectangle.
+	start := (self boxOf: class3 in: visualization) boundsInSpace center.
+	self drag: visualization from: start to: start + (80 @ 0).
+	self choose: 'Relayout children' in: (self rightClick: (self boxOf: package2 in: visualization)).
+	self assert: (self boxOf: class3 in: visualization) boundsInSpace origin equals: class3Origin.
+	self assert: (self boxOf: package2 in: visualization) boundsInSpace asRectangle equals: package2Bounds
 ]
 
 { #category : 'tests - expand' }
 MiArchiBlVisualizationTest >> testRightClickCollapsedBoxOffersExpand [
-	"package1 has a child and is collapsed: its menu has one item, Expand"
+	"package1 has a child and is collapsed: its menu starts with Expand"
 
 	| visualization menu |
 	visualization := self layOut: (self visualizationOf: self tree).
 	menu := self rightClick: (self boxOf: package1 in: visualization).
 	self assert: menu isNotNil.
-	self assert: (self labelsOf: menu) asArray equals: #( 'Expand' )
+	self assert: (self labelsOf: menu) first equals: 'Expand'.
+	self deny: ((self labelsOf: menu) includes: 'Collapse')
 ]
 
 { #category : 'tests - expand' }
 MiArchiBlVisualizationTest >> testRightClickExpandedBoxOffersCollapse [
-	"In the expanded tree, package2 shows its classes: its menu has one item, Collapse"
+	"In the expanded tree, package2 shows its classes: its menu starts with Collapse"
 
 	| visualization menu |
 	visualization := self layOut: (self visualizationOf: self expandedTree).
 	menu := self rightClick: (self boxOf: package2 in: visualization).
-	self assert: (self labelsOf: menu) asArray equals: #( 'Collapse' )
+	self assert: (self labelsOf: menu) first equals: 'Collapse'.
+	self deny: ((self labelsOf: menu) includes: 'Expand')
+]
+
+{ #category : 'tests - menu' }
+MiArchiBlVisualizationTest >> testRightClickNestedBoxOpensOnlyItsMenu [
+	"Class1 has no children: its menu has no Expand nor Collapse, and the menu of package1 around it does not open"
+
+	| visualization labels |
+	visualization := self layOut: (self visualizationOf: self expandedTree).
+	labels := self menuLabelsOf: ((self boxOf: class1 in: visualization)).
+	self deny: (labels includes: 'Expand').
+	self deny: (labels includes: 'Collapse').
+	self assert: (self boxOf: package1 in: visualization) currentContextMenu isNil
+]
+
+{ #category : 'tests - links' }
+MiArchiBlVisualizationTest >> testShowOutgoingLinksBringsThemBack [
+	"Once hidden, the outgoing links of package1 are offered to be shown again (and not hidden again); Show outgoing links draws the line to package2 again"
+
+	| visualization labels |
+	visualization := self layOut: (self visualizationOf: self tree).
+	self choose: 'Hide outgoing links' in: (self rightClick: (self boxOf: package1 in: visualization)).
+	labels := self menuLabelsOf: ((self boxOf: package1 in: visualization)).
+	self
+		assert: (labels select: [ :each | each includesSubstring: 'links' ]) asArray
+		equals: #( 'Show outgoing links' 'Show all links' ).
+	self choose: 'Show outgoing links' in: (self rightClick: (self boxOf: package1 in: visualization)).
+	self assert: (self pairsOfLinesIn: visualization) equals: { (package1 -> package2) } asSet
 ]
 
 { #category : 'tests' }
