@@ -290,7 +290,7 @@ MiArchiBlVisualization >> haloForBox: aBox [
 	bounds := self boundsOf: aBox.
 	^ BlElement new
 		  geometry: (BlRoundedRectangleGeometry cornerRadius: 3);
-		  border: (BlBorder paint: (self haloColor alpha: 0.7) width: 5);
+		  border: (BlBorder paint: (self haloColor alpha: 0.7) width: 3);
 		  outskirts: BlOutskirts outside;
 		  position: bounds origin;
 		  extent: bounds extent;

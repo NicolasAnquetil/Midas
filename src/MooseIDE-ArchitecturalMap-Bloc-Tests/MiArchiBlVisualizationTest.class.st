@@ -44,11 +44,11 @@ MiArchiBlVisualizationTest >> assertPoint: aPoint isOnBorderOf: anElement [
 
 { #category : 'running' }
 MiArchiBlVisualizationTest >> box: aBox hasHaloIn: aVisualization [
-	"A halo of a box is a translucent yellow ring around it, in the halos layer (same bounds, drawn outside them)"
+	"A halo of a box is a translucent yellow ring, 3 pixels wide, around it, in the halos layer (same bounds, drawn outside them)"
 
 	^ aVisualization halosLayer children anySatisfy: [ :each |
 			  each boundsInSpace asRectangle = aBox boundsInSpace asRectangle and: [
-				  (each border paint color alpha: 1) = Color yellow and: [ each border width > 0 ] ] ]
+				  (each border paint color alpha: 1) = Color yellow and: [ each border width = 3 ] ] ]
 ]
 
 { #category : 'running' }
