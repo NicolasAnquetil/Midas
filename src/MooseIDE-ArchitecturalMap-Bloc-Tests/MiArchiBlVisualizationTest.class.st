@@ -1,18 +1,21 @@
 "
-I test `MiArchiBlVisualization`, the Bloc drawing of the architectural map: its element tree, the boxes of the nodes, their styling, the lines of the dependencies, and the zoom.
+I test `MiArchiBlVisualization`, the Bloc drawing of the architectural map: its element tree, the boxes of the nodes, their styling, the lines of the dependencies, and the zoom and pan with the mouse.
 
 ## Collaborators & Context
 - `MiArchitecturalMapBlAbstractTest`: the fixture (two packages, Class1 inheriting from Class2 and Class3) and `#tree`.
 - `MiArchiBlTreeBuilder`, `MiArchiBlNode`: the tree drawn. Expanding nodes (`#isExpanded:`) before drawing chooses what is shown.
-- `BlSpace` (`space`): never opened. Its root, with a `ToRawTheme`, is the `tokenSource`, and holds the element so that a layout can be computed (`#layOut:`).
+- `BlSpace` (`space`) on the headless host (`BlHeadlessHost`), as in the Bloc guide TestingInteractions (github.com/pharo-graphics/Bloc, doc/). Its root, with a `ToRawTheme`, is the `tokenSource`.
 
 ## Assumptions & Invariants
-- Each test gets a new space from `#setUp`. Expand nodes before `#visualizationOf:` sends `#element`, because the boxes are built only once.
-- The lines are only there, and in place, after `#layOut:`. It computes two layout passes, as a shown space does over two frames: the lines layer is moved during the first pass and Bloc applies the move on the second.
+- Each test gets a new space, opened and settled by `#setUp`, and closed by `#tearDown`.
+- Expand nodes before `#visualizationOf:` sends `#element`, because the boxes are built only once.
+- The scene is only changed through `BlSpace>>#deferAndSettle:` (`#layOut:`, `#fire:at:on:`), so assertions see a settled space: layout done, lines drawn.
+- Mouse events are sent with `#fireEvent:` (they go up to the root, as with a real mouse), with a screen position different from the space position on purpose.
 
 ## Main API
 - `#visualizationOf:` a tree builder: a visualization with a flow layout and the space root as token source.
-- `#layOut:` a visualization: add its element to the space root and compute the layout twice (which draws the lines and puts them in place).
+- `#layOut:` a visualization: add its element to the space and settle.
+- `#fire:at:on:`, `#wheel:at:on:`, `#drag:from:to:`: mouse events on the element of a visualization.
 
 "
 Class {
@@ -35,6 +38,24 @@ MiArchiBlVisualizationTest >> boxOf: anEntity in: aVisualization [
 ]
 
 { #category : 'running' }
+MiArchiBlVisualizationTest >> drag: aVisualization from: startPoint to: endPoint [
+
+	self
+		fire: (BlMouseDownEvent new
+				 button: BlMouseButton primary;
+				 yourself)
+		at: startPoint
+		on: aVisualization.
+	self fire: BlMouseMoveEvent new at: endPoint on: aVisualization.
+	self
+		fire: (BlMouseUpEvent new
+				 button: BlMouseButton primary;
+				 yourself)
+		at: endPoint
+		on: aVisualization
+]
+
+{ #category : 'running' }
 MiArchiBlVisualizationTest >> expandedTree [
 	"The tree with both packages expanded"
 
@@ -45,24 +66,45 @@ MiArchiBlVisualizationTest >> expandedTree [
 ]
 
 { #category : 'running' }
-MiArchiBlVisualizationTest >> layOut: aVisualization [
-	"Add the element of aVisualization to the space and compute the layout, which draws the lines.
-	A second pass is needed, as in a shown space on the next frame: the lines layer is moved (#updateLines) while the first layout is computed, and Bloc applies it on the next one"
+MiArchiBlVisualizationTest >> fire: anEvent at: aPoint on: aVisualization [
+	"Fire anEvent at aPoint (space coordinates) on the element of aVisualization, as the mouse does, and wait for the space to settle. The screen position is made different on purpose: the code must use #position"
 
-	space root addChild: aVisualization element.
-	space root computeLayout.
-	space root requestLayout.
-	space root computeLayout.
+	anEvent
+		position: aPoint;
+		screenPosition: aPoint + (1000 @ 1000).
+	space deferAndSettle: [ aVisualization element fireEvent: anEvent ].
+	^ anEvent
+]
+
+{ #category : 'running' }
+MiArchiBlVisualizationTest >> layOut: aVisualization [
+	"Add the element of aVisualization to the space and wait until the space has settled: the layout is done and the lines are drawn"
+
+	space deferAndSettle: [ space root addChild: aVisualization element ].
 	^ aVisualization
 ]
 
 { #category : 'running' }
 MiArchiBlVisualizationTest >> setUp [
+	"A space on the headless host, opened and settled, as in the Bloc guide on testing"
 
 	super setUp.
 	space := BlSpace new.
+	space host: BlHeadlessHost default.
 	space extent: 800 @ 600.
-	space toTheme: ToRawTheme new
+	space toTheme: ToRawTheme new.
+	space
+		show;
+		settle
+]
+
+{ #category : 'running' }
+MiArchiBlVisualizationTest >> tearDown [
+
+	space
+		close;
+		settle.
+	super tearDown
 ]
 
 { #category : 'tests' }
@@ -159,6 +201,15 @@ MiArchiBlVisualizationTest >> testLinesNotRedrawnWhenBoxesDidNotMove [
 ]
 
 { #category : 'tests' }
+MiArchiBlVisualizationTest >> testMoveWithoutPressDoesNotPan [
+
+	| visualization |
+	visualization := self layOut: (self visualizationOf: self tree).
+	self fire: BlMouseMoveEvent new at: 330 @ 310 on: visualization.
+	self assert: visualization origin equals: 0 @ 0
+]
+
+{ #category : 'tests' }
 MiArchiBlVisualizationTest >> testOneBoxPerRootWhenCollapsed [
 
 	| visualization |
@@ -179,6 +230,19 @@ MiArchiBlVisualizationTest >> testOneLineWhenCollapsed [
 	line := visualization linesLayer children first geometry.
 	self assert: line from equals: (visualization centerOf: (self boxOf: package1 in: visualization)).
 	self assert: line to equals: (visualization centerOf: (self boxOf: package2 in: visualization))
+]
+
+{ #category : 'tests' }
+MiArchiBlVisualizationTest >> testPan [
+	"Dragging moves the map by the same amount, and the boxes with it"
+
+	| visualization box before |
+	visualization := self layOut: (self visualizationOf: self tree).
+	box := self boxOf: package1 in: visualization.
+	before := box boundsInSpace origin.
+	self drag: visualization from: 300 @ 300 to: 330 @ 310.
+	self assert: visualization origin equals: 30 @ 10.
+	self assert: box boundsInSpace origin equals: before + (30 @ 10)
 ]
 
 { #category : 'tests' }
@@ -208,18 +272,49 @@ MiArchiBlVisualizationTest >> testTwoLinesWhenExpanded [
 ]
 
 { #category : 'tests' }
+MiArchiBlVisualizationTest >> testZoomAroundCursor [
+	"With the cursor on the center of a box, zooming leaves that center under the cursor, and makes the box larger"
+
+	| visualization box center width |
+	visualization := self layOut: (self visualizationOf: self tree).
+	box := self boxOf: package2 in: visualization.
+	center := box boundsInSpace center.
+	width := box boundsInSpace width.
+	self wheel: 1 at: center on: visualization.
+	self assert: (box boundsInSpace center distanceTo: center) < 0.01.
+	self assert: box boundsInSpace width closeTo: width * 1.1
+]
+
+{ #category : 'tests' }
 MiArchiBlVisualizationTest >> testZoomInAndOut [
 
 	| visualization event |
-	visualization := self visualizationOf: self tree.
-	visualization element.
+	visualization := self layOut: (self visualizationOf: self tree).
 	self assert: visualization zoom equals: 1.
-	event := self wheelUp.
-	visualization zoomBy: event.
-	self assert: visualization zoom equals: 1.1.
+	event := self wheel: 1 at: 0 @ 0 on: visualization.
+	self assert: visualization zoom closeTo: 1.1.
 	self assert: event isConsumed.
-	visualization zoomBy: self wheelDown.
+	self wheel: -1 at: 0 @ 0 on: visualization.
 	self assert: visualization zoom closeTo: 1
+]
+
+{ #category : 'tests' }
+MiArchiBlVisualizationTest >> testZoomIsBounded [
+
+	| visualization |
+	visualization := self layOut: (self visualizationOf: self tree).
+	60 timesRepeat: [
+			visualization zoomBy: (BlMouseWheelEvent new
+					 vector: (BlVector x: 0 y: 1);
+					 position: 0 @ 0;
+					 yourself) ].
+	self assert: visualization zoom equals: visualization maxZoom.
+	60 timesRepeat: [
+			visualization zoomBy: (BlMouseWheelEvent new
+					 vector: (BlVector x: 0 y: -1);
+					 position: 0 @ 0;
+					 yourself) ].
+	self assert: visualization zoom equals: visualization minZoom
 ]
 
 { #category : 'running' }
@@ -233,13 +328,8 @@ MiArchiBlVisualizationTest >> visualizationOf: aTree [
 ]
 
 { #category : 'running' }
-MiArchiBlVisualizationTest >> wheelDown [
+MiArchiBlVisualizationTest >> wheel: anInteger at: aPoint on: aVisualization [
+	"anInteger > 0: wheel up (zoom in), < 0: wheel down"
 
-	^ BlMouseWheelEvent new vector: (BlVector x: 0 y: -1)
-]
-
-{ #category : 'running' }
-MiArchiBlVisualizationTest >> wheelUp [
-
-	^ BlMouseWheelEvent new vector: (BlVector x: 0 y: 1)
+	^ self fire: (BlMouseWheelEvent new vector: (BlVector x: 0 y: anInteger)) at: aPoint on: aVisualization
 ]

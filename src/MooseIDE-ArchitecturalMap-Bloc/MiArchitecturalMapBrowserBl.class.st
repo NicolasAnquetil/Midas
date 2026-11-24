@@ -9,7 +9,7 @@ I am a browser that displays an architectural map with Bloc and Toplo, as `MiArc
 	`MiApplication current architecturalMapBrowserClass: MiArchitecturalMapBrowserBl`
 
 ## Assumptions & Invariants
-- The tree is built in the calling process (`#runVisualization`), but drawn in the Bloc UI process of the space (`#showTree:`, through `#enqueueTask:`): Bloc elements must only be touched there.
+- The tree is built in the calling process (`#runVisualization`), but drawn in the Bloc UI process of the space (`#showTree:`, through `BlSpace>>#defer:`): Bloc elements must only be touched there.
 - Each run replaces the whole drawing: a new `MiArchiBlVisualization` is made and replaces the children of the space root.
 - `view` is nil until the first entities are shown.
 - Display only for now: no selection (`#selectRelatedTo:` does nothing, `#miSelectedItem` answers all the entities).
@@ -123,14 +123,14 @@ MiArchitecturalMapBrowserBl >> miSelectedItem [
 
 { #category : 'actions' }
 MiArchitecturalMapBrowserBl >> runVisualization [
-	"Build the map from the model and show it, in the UI process of Bloc"
+	"Build the tree from the model here, then show it in the UI process of the Bloc space: an element in an opened space must only be changed there (#defer:)"
 
 	| tree |
 	tree := MiArchiBlTreeBuilder new
 		        mapModel: specModel;
 		        build;
 		        yourself.
-	self space enqueueTask: (BlTaskAction new action: [ self showTree: tree ])
+	self space defer: [ self showTree: tree ]
 ]
 
 { #category : 'actions' }
