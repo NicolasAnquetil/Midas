@@ -48,6 +48,12 @@ MiArchitecturalMapTreeBlTest >> testDependencies [
 ]
 
 { #category : 'tests' }
+MiArchitecturalMapTreeBlTest >> testNoTagNodeWithoutTags [
+
+	self deny: (self tree roots anySatisfy: [ :each | each isTag ])
+]
+
+{ #category : 'tests' }
 MiArchitecturalMapTreeBlTest >> testNodeKinds [
 	"The packages and classes of the fixture are entity nodes"
 
@@ -88,6 +94,36 @@ MiArchitecturalMapTreeBlTest >> testSameLinesAsRoassal [
 ]
 
 { #category : 'tests' }
+MiArchitecturalMapTreeBlTest >> testTagNode [
+	"A shown tag is a root, before the entities, with its name and color"
+
+	| tag tagNode |
+	tag := self tagNamed: 'core' color: Color red on: class2.
+	tagNode := (self treeWithTags: { tag }) roots first.
+	self assert: tagNode class identicalTo: MiArchiBlTagNode.
+	self assert: tagNode isTag.
+	self assert: tagNode entity identicalTo: tag.
+	self assert: tagNode name equals: 'core'.
+	self assert: tagNode color equals: Color red.
+	self assert: tagNode parent isNil
+]
+
+{ #category : 'tests' }
+MiArchitecturalMapTreeBlTest >> testTaggedEntityIsUnderItsTag [
+	"A tagged entity is shown once: under its tag, labelled with its owner, and no longer under its package"
+
+	| tree tagNode package2Node |
+	tree := self treeWithTags: { (self tagNamed: 'core' color: Color red on: class2) }.
+	tagNode := tree roots first.
+	package2Node := tree roots detect: [ :each | each entity == package2 ].
+	self assert: (tagNode children collect: #entity) asArray equals: { class2 }.
+	self assert: tagNode children first class identicalTo: MiArchiBlEntityNode.
+	self assert: tagNode children first name equals: 'package2.Class2'.
+	self assert: tagNode children first parent identicalTo: tagNode.
+	self assert: (package2Node children collect: #entity) asArray equals: { class3 }
+]
+
+{ #category : 'tests' }
 MiArchitecturalMapTreeBlTest >> testVisibleDependenciesCollapsed [
 	"Collapsed packages stand for their classes: one dependency with both inheritances"
 
@@ -106,6 +142,18 @@ MiArchitecturalMapTreeBlTest >> testVisibleDependenciesExpanded [
 	self assert: (self pairsOf: tree visibleDependencies) equals: {
 			(class1 -> class2).
 			(class1 -> class3) } asSet
+]
+
+{ #category : 'tests' }
+MiArchitecturalMapTreeBlTest >> testVisibleDependenciesToTag [
+	"Collapsed, the tag stands for its tagged entity: class1 -> class2 becomes package1 -> tag"
+
+	| tag tree |
+	tag := self tagNamed: 'core' color: Color red on: class2.
+	tree := self treeWithTags: { tag }.
+	self assert: (self pairsOf: tree visibleDependencies) equals: {
+			(package1 -> tag).
+			(package1 -> package2) } asSet
 ]
 
 { #category : 'tests' }

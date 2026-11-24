@@ -13,6 +13,8 @@ I am the common fixture of the tests of the Bloc architectural map: a Famix mode
 ## Main API
 - `#mapModelOf:` a browser class: a map model of the two packages, opened on that browser.
 - `#tree`: a `MiArchiBlTreeBuilder` built from the Bloc browser's map model.
+- `#tagNamed:color:on:`: a new `FamixTag` of the model, on an entity.
+- `#treeWithTags:`: like `#tree`, with these tags shown (set through the map settings configuration).
 
 "
 Class {
@@ -88,10 +90,39 @@ MiArchitecturalMapBlAbstractTest >> setUp [
 ]
 
 { #category : 'running' }
+MiArchitecturalMapBlAbstractTest >> tagNamed: aString color: aColor on: anEntity [
+	"A new tag of the model, on anEntity"
+
+	| tag |
+	tag := FamixTag new
+		       name: aString;
+		       color: aColor;
+		       mooseModel: model;
+		       yourself.
+	tag tagEntity: anEntity.
+	^ tag
+]
+
+{ #category : 'running' }
 MiArchitecturalMapBlAbstractTest >> tree [
 
 	^ MiArchiBlTreeBuilder new
 		  mapModel: (self mapModelOf: MiArchitecturalMapBrowserBl);
+		  build;
+		  yourself
+]
+
+{ #category : 'running' }
+MiArchitecturalMapBlAbstractTest >> treeWithTags: someTags [
+	"The tree of the Bloc browser's map model when someTags are shown (set as in the map settings)"
+
+	| mapModel |
+	mapModel := self mapModelOf: MiArchitecturalMapBrowserBl.
+	mapModel updateFromConfiguration: (mapModel currentConfiguration
+			 tags: someTags;
+			 yourself).
+	^ MiArchiBlTreeBuilder new
+		  mapModel: mapModel;
 		  build;
 		  yourself
 ]

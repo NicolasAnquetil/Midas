@@ -260,6 +260,19 @@ MiArchiBlVisualizationTest >> testTagBoxHasTagColor [
 ]
 
 { #category : 'tests' }
+MiArchiBlVisualizationTest >> testTagBoxIsDrawnWithTagColor [
+	"In a map with a tag, the box of the tag is filled with its color, its entity boxes with the theme's background"
+
+	| tag visualization |
+	tag := self tagNamed: 'core' color: Color red on: class2.
+	visualization := self layOut: (self visualizationOf: (self treeWithTags: { tag })).
+	self assert: (self boxOf: tag in: visualization) background paint color equals: Color red.
+	self
+		assert: (self boxOf: package1 in: visualization) background paint color
+		equals: (space root valueOfTokenNamed: #'color-bg-container')
+]
+
+{ #category : 'tests' }
 MiArchiBlVisualizationTest >> testTwoLinesWhenExpanded [
 	"From Class1 to each of its superclasses"
 
