@@ -1,12 +1,12 @@
 "
-I draw with Bloc and Toplo the architectural map built by a `MiArchiBlTreeBuilder`: a box per visible node, a line per visible dependency, and the root boxes laid out by a `MiArchiBlLayout`. The map can be panned and zoomed with the mouse.
+I draw with Bloc and Toplo the architectural map built by a `MiArchiBlTreeBuilder`: a box per visible node, an arrow per visible dependency, and the root boxes laid out by a `MiArchiBlLayout`. The map can be panned and zoomed with the mouse.
 
 ## Collaborators & Context
 - `MiArchiBlTreeBuilder` (`tree`): gives the root `MiArchiBlNode`s (`#roots`) and the `MiArchiBlDependency`s between the visible nodes (`#visibleDependencies`).
 - `MiArchiBlLayout` subclasses (`layoutClass`): place the root boxes in `nodesLayer`. The browser chooses the layout: its `MiArchitecturalMapModel>>#layout`, by default `MiArchitecturalMapBrowserBl>>#defaultMapLayout`.
 - `tokenSource`: an element already in a space (the space root). Its Toplo theme gives the colors (`#tokenNamed:`).
 - `MiArchitecturalMapBrowserBl>>#showTree:` creates me in the Bloc UI process and puts my `#element` in its space.
-- The element tree I build: `element` (fills its parent, clips, gets the mouse) > `canvas` (frame layout with padding; moved and scaled) > `linesLayer` under `nodesLayer`.
+- The element tree I build: `element` (fills its parent, clips, gets the mouse) > `canvas` (frame layout with padding; moved and scaled) > `nodesLayer` under `linesLayer`.
 - Bloc documentation followed (github.com/pharo-graphics/Bloc, doc/): LayoutAndConstraints (position is a request; layout handlers change only what differs) and GraphicalPatterns (zoom and pan).
 
 ## Assumptions & Invariants
@@ -15,7 +15,9 @@ I draw with Bloc and Toplo the architectural map built by a `MiArchiBlTreeBuilde
 - A node's box has its label (`ToLabel`). A tag's box has the tag's color, and a box with children has a dashed border. A collapsed node's children get no box.
 - `elementsByNode` maps each node that has a box to that box. Each box also has its node in its `userData` at `#miArchitecturalMapNode`.
 - `linesLayer` and `nodesLayer` both fill the canvas, so they share their coordinates: the lines layer is never moved. Its children (one per line, filling it) are not clipped.
-- Lines go from box center to box center. They are redrawn after a layout of `nodesLayer` only if some box bounds changed (`lastBounds`), so the space can settle.
+- Lines are drawn over the boxes (the boxes are filled and nested, lines under them would be hidden), and ignore the mouse. A line goes from the border of the source box to the border of the target box, towards their centers, and ends with an arrow head (a `BlPolygonGeometry` triangle: this Bloc has no arrowheads) on the target border.
+- Lines are redrawn after a layout of `nodesLayer` only if some box bounds changed (`lastBounds`, kept as copies since `#boundsInSpace` is changed in place), so the space can settle.
+- Each line has its dependency in its `userData` at `#miArchitecturalMapDependency`.
 - Pan and zoom are kept in `origin` (where the canvas is in `element`) and `zoom`, and applied together by `#applyTransform` (absolute scale, top left origin). Zoom is around the mouse cursor, by 1.1 per wheel step, between `#minZoom` and `#maxZoom`. Dragging with the mouse pressed pans. Mouse positions are in space coordinates (`#position`, never `#screenPosition`).
 - Not thread-safe: once my element is in an opened space, use me only from its UI process (`BlSpace>>#defer:`).
 
@@ -60,6 +62,41 @@ MiArchiBlVisualization >> applyTransform [
 				scaleBy: zoom @ zoom ]
 ]
 
+{ #category : 'lines' }
+MiArchiBlVisualization >> arrowHeadAt: tipPoint from: startPoint [
+	"A filled triangle with its tip at tipPoint, pointing away from startPoint"
+
+	| direction unit normal base |
+	direction := tipPoint - startPoint.
+	unit := direction isZero
+		        ifTrue: [ 1 @ 0 ]
+		        ifFalse: [ direction / (direction x squared + direction y squared) sqrt ].
+	normal := unit y negated @ unit x.
+	base := tipPoint - (unit * self arrowHeadLength).
+	^ BlElement new
+		  constraintsDo: [ :c |
+				  c horizontal matchParent.
+				  c vertical matchParent ];
+		  geometry: (BlPolygonGeometry vertices: {
+						   tipPoint.
+						   (base + (normal * self arrowHeadWidth / 2)).
+						   (base - (normal * self arrowHeadWidth / 2)) });
+		  background: self lineColor;
+		  yourself
+]
+
+{ #category : 'lines' }
+MiArchiBlVisualization >> arrowHeadLength [
+
+	^ 8
+]
+
+{ #category : 'lines' }
+MiArchiBlVisualization >> arrowHeadWidth [
+
+	^ 7
+]
+
 { #category : 'styling' }
 MiArchiBlVisualization >> backgroundFor: aNode [
 
@@ -80,6 +117,32 @@ MiArchiBlVisualization >> borderFor: aNode [
 		  ifFalse: [ BlBorder paint: (self tokenNamed: #'color-border') width: 2 ]
 ]
 
+{ #category : 'lines' }
+MiArchiBlVisualization >> borderPointOf: aRectangle towards: aPoint [
+	"Where the segment from the center of aRectangle to aPoint crosses the border of aRectangle (the center itself when aPoint is the center)"
+
+	| center direction scale |
+	center := aRectangle center.
+	direction := aPoint - center.
+	direction isZero ifTrue: [ ^ center ].
+	scale := direction x = 0
+		         ifTrue: [ aRectangle height / 2 / direction y abs ]
+		         ifFalse: [
+				         direction y = 0
+					         ifTrue: [ aRectangle width / 2 / direction x abs ]
+					         ifFalse: [ aRectangle width / 2 / direction x abs min: aRectangle height / 2 / direction y abs ] ].
+	^ center + (direction * scale)
+]
+
+{ #category : 'lines' }
+MiArchiBlVisualization >> boundsOf: anElement [
+	"The bounds of anElement in the coordinates of the lines layer"
+
+	^ Rectangle encompassing: {
+			  (linesLayer globalPointToLocal: (anElement localPointToGlobal: 0 @ 0)).
+			  (linesLayer globalPointToLocal: (anElement localPointToGlobal: anElement extent)) }
+]
+
 { #category : 'building' }
 MiArchiBlVisualization >> build [
 	"Build and answer the element showing the map. It contains the canvas, which contains the lines layer under the nodes layer.
@@ -94,14 +157,14 @@ MiArchiBlVisualization >> build [
 
 { #category : 'building' }
 MiArchiBlVisualization >> buildCanvas [
-	"The lines under the nodes. Moved (origin) and zoomed by #applyTransform"
+	"The lines over the nodes: the boxes are filled, and nested when expanded, so lines under them would be hidden. Moved (origin) and zoomed by #applyTransform"
 
 	canvas := BlElement new
 		          layout: BlFrameLayout new;
 		          padding: (BlInsets all: 20);
 		          addChildren: {
-				          linesLayer.
-				          nodesLayer };
+				          nodesLayer.
+				          linesLayer };
 		          yourself.
 	canvas constraintsDo: [ :c |
 			c horizontal fitContent.
@@ -129,7 +192,7 @@ MiArchiBlVisualization >> buildElement [
 
 { #category : 'building' }
 MiArchiBlVisualization >> buildLinesLayer [
-	"The layer of the lines, under the nodes and out of the mouse events. It fills the canvas like the nodes layer (both are children of a frame layout with the same padding), so the two share their coordinates and the lines layer never needs to be moved"
+	"The layer of the lines, over the nodes and out of the mouse events (they go to the boxes under it). It fills the canvas like the nodes layer (both are children of a frame layout with the same padding), so the two share their coordinates and the lines layer never needs to be moved"
 
 	linesLayer := BlElement new
 		              layout: BlBasicLayout new;
@@ -149,13 +212,6 @@ MiArchiBlVisualization >> buildNodesLayer [
 	layoutClass new applyOn: nodesLayer topElementsCount: tree roots size.
 	nodesLayer addChildren: (tree roots collect: [ :each | self elementForNode: each ]).
 	nodesLayer addEventHandlerOn: BlElementLayoutComputedEvent do: [ :event | self updateLines ]
-]
-
-{ #category : 'lines' }
-MiArchiBlVisualization >> centerOf: anElement [
-	"The center of anElement in the coordinates of the lines layer"
-
-	^ linesLayer globalPointToLocal: (anElement localPointToGlobal: anElement extent / 2)
 ]
 
 { #category : 'accessing' }
@@ -222,6 +278,29 @@ MiArchiBlVisualization >> lineColor [
 	^ (self tokenNamed: #'color-text-secondary') alpha: 0.5
 ]
 
+{ #category : 'lines' }
+MiArchiBlVisualization >> lineElementFor: aDependency [
+	"A line from the border of the source box to the border of the target box, ended by an arrow head on the border of the target"
+
+	| sourceBounds targetBounds from to line |
+	sourceBounds := self boundsOf: (elementsByNode at: aDependency source).
+	targetBounds := self boundsOf: (elementsByNode at: aDependency target).
+	from := self borderPointOf: sourceBounds towards: targetBounds center.
+	to := self borderPointOf: targetBounds towards: sourceBounds center.
+	line := BlElement new
+		        constraintsDo: [ :c |
+				        c horizontal matchParent.
+				        c vertical matchParent ];
+		        clipChildren: false;
+		        geometry: (BlLineGeometry from: from to: to);
+		        outskirts: BlOutskirts centered;
+		        border: (BlBorder paint: self lineColor width: 1);
+		        addChild: (self arrowHeadAt: to from: from);
+		        yourself.
+	line userData at: #miArchitecturalMapDependency put: aDependency.
+	^ line
+]
+
 { #category : 'testing' }
 MiArchiBlVisualization >> linesLayer [
 	"The element holding the lines, under the boxes (for the tests)"
@@ -279,27 +358,17 @@ MiArchiBlVisualization >> tree: aTree [
 
 { #category : 'lines' }
 MiArchiBlVisualization >> updateLines [
-	"Draw again the lines between the boxes, only if they moved since the last time: a layout is computed often, and a handler of BlElementLayoutComputedEvent must only change what differs, or the space never settles"
+	"Draw again the lines between the boxes, only if they moved since the last time: a layout is computed often, and a handler of BlElementLayoutComputedEvent must only change what differs, or the space never settles.
+	The bounds are kept as copies (#asRectangle): #boundsInSpace answers the same cached object, changed in place by each layout"
 
 	| visible bounds |
-	bounds := elementsByNode values collect: [ :each | each boundsInSpace ].
+	bounds := elementsByNode values collect: [ :each | each boundsInSpace asRectangle ].
 	bounds = lastBounds ifTrue: [ ^ self ].
 	lastBounds := bounds.
 	visible := tree visibleDependencies select: [ :each |
 		           (elementsByNode includesKey: each source) and: [ elementsByNode includesKey: each target ] ].
 	linesLayer removeChildren.
-	linesLayer addChildren: (visible collect: [ :each |
-				 BlElement new
-					 constraintsDo: [ :c |
-							 c horizontal matchParent.
-							 c vertical matchParent ];
-					 geometry:
-						 (BlLineGeometry
-							  from: (self centerOf: (elementsByNode at: each source))
-							  to: (self centerOf: (elementsByNode at: each target)));
-					 outskirts: BlOutskirts centered;
-					 border: (BlBorder paint: self lineColor width: 1);
-					 yourself ])
+	linesLayer addChildren: (visible collect: [ :each | self lineElementFor: each ])
 ]
 
 { #category : 'testing' }

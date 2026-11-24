@@ -29,6 +29,20 @@ Class {
 }
 
 { #category : 'running' }
+MiArchiBlVisualizationTest >> assertPoint: aPoint isOnBorderOf: anElement [
+	"aPoint is in space coordinates. The bounds are copied as a Rectangle: Bloc's cached bounds are changed in place by #expandBy:"
+
+	| bounds |
+	bounds := anElement boundsInSpace asRectangle.
+	self assert: ((bounds expandBy: 0.01) containsPoint: aPoint).
+	self assert: ({
+			 bounds left.
+			 bounds right } anySatisfy: [ :x | (x - aPoint x) abs < 0.01 ]) | ({
+			 bounds top.
+			 bounds bottom } anySatisfy: [ :y | (y - aPoint y) abs < 0.01 ])
+]
+
+{ #category : 'running' }
 MiArchiBlVisualizationTest >> boxOf: anEntity in: aVisualization [
 
 	^ aVisualization elementsByNode associations
@@ -82,6 +96,16 @@ MiArchiBlVisualizationTest >> layOut: aVisualization [
 
 	space deferAndSettle: [ space root addChild: aVisualization element ].
 	^ aVisualization
+]
+
+{ #category : 'running' }
+MiArchiBlVisualizationTest >> pairsOfLinesIn: aVisualization [
+	"The (source entity -> target entity) of each line drawn"
+
+	^ (aVisualization linesLayer children collect: [ :each |
+			   | dependency |
+			   dependency := each userData at: #miArchitecturalMapDependency.
+			   dependency source entity -> dependency target entity ]) asSet
 ]
 
 { #category : 'running' }
@@ -180,14 +204,42 @@ MiArchiBlVisualizationTest >> testElementWithoutLayoutClassFails [
 ]
 
 { #category : 'tests' }
-MiArchiBlVisualizationTest >> testLineEndsAreBoxCenters [
-	"The ends of a line are the centers of the boxes, in space coordinates"
+MiArchiBlVisualizationTest >> testLineEndsAreOnBoxBorders [
+	"Lines are under the boxes: they go from border to border, so that the arrow head is visible"
 
 	| visualization line |
 	visualization := self layOut: (self visualizationOf: self tree).
 	line := visualization linesLayer children first.
-	self assert: (line localPointToGlobal: line geometry from) equals: (self boxOf: package1 in: visualization) boundsInSpace center.
-	self assert: (line localPointToGlobal: line geometry to) equals: (self boxOf: package2 in: visualization) boundsInSpace center
+	self assertPoint: (line localPointToGlobal: line geometry from) isOnBorderOf: (self boxOf: package1 in: visualization).
+	self assertPoint: (line localPointToGlobal: line geometry to) isOnBorderOf: (self boxOf: package2 in: visualization)
+]
+
+{ #category : 'tests' }
+MiArchiBlVisualizationTest >> testLineEndsWithArrowHeadOnTarget [
+	"The head is a triangle whose tip is the end of the line, on the target box"
+
+	| visualization line head |
+	visualization := self layOut: (self visualizationOf: self tree).
+	line := visualization linesLayer children first.
+	self assert: line children size equals: 1.
+	head := line children first.
+	self assert: head geometry vertices size equals: 3.
+	self assert: head geometry vertices first equals: line geometry to.
+	self assertPoint: (head localPointToGlobal: head geometry vertices first) isOnBorderOf: (self boxOf: package2 in: visualization)
+]
+
+{ #category : 'tests' }
+MiArchiBlVisualizationTest >> testLinesFollowBoxesThatMove [
+	"When the boxes move after the first drawing, the lines are drawn again"
+
+	| visualization box2 |
+	visualization := self layOut: (self visualizationOf: self tree).
+	box2 := self boxOf: package2 in: visualization.
+	space deferAndSettle: [ (self boxOf: package1 in: visualization) margin: (BlInsets all: 40) ].
+	self assert: (self pairsOfLinesIn: visualization) equals: { (package1 -> package2) } asSet.
+	self
+		assertPoint: (visualization linesLayer children first localPointToGlobal: visualization linesLayer children first geometry to)
+		isOnBorderOf: box2
 ]
 
 { #category : 'tests' }
@@ -224,12 +276,9 @@ MiArchiBlVisualizationTest >> testOneBoxPerRootWhenCollapsed [
 MiArchiBlVisualizationTest >> testOneLineWhenCollapsed [
 	"Collapsed packages stand for their classes: one line from package1 to package2"
 
-	| visualization line |
+	| visualization |
 	visualization := self layOut: (self visualizationOf: self tree).
-	self assert: visualization linesLayer children size equals: 1.
-	line := visualization linesLayer children first geometry.
-	self assert: line from equals: (visualization centerOf: (self boxOf: package1 in: visualization)).
-	self assert: line to equals: (visualization centerOf: (self boxOf: package2 in: visualization))
+	self assert: (self pairsOfLinesIn: visualization) equals: { (package1 -> package2) } asSet
 ]
 
 { #category : 'tests' }
@@ -276,12 +325,11 @@ MiArchiBlVisualizationTest >> testTagBoxIsDrawnWithTagColor [
 MiArchiBlVisualizationTest >> testTwoLinesWhenExpanded [
 	"From Class1 to each of its superclasses"
 
-	| visualization centers |
+	| visualization |
 	visualization := self layOut: (self visualizationOf: self expandedTree).
-	centers := [ :entity | visualization centerOf: (self boxOf: entity in: visualization) ].
-	self assert: (visualization linesLayer children collect: [ :each | each geometry from -> each geometry to ]) asSet equals: {
-			((centers value: class1) -> (centers value: class2)).
-			((centers value: class1) -> (centers value: class3)) } asSet
+	self assert: (self pairsOfLinesIn: visualization) equals: {
+			(class1 -> class2).
+			(class1 -> class3) } asSet
 ]
 
 { #category : 'tests' }
