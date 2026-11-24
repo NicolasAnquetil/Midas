@@ -5,7 +5,7 @@ I am the abstract superclass of the nodes of the architectural map drawn with Bl
 - Subclasses: `MiArchiBlEntityNode` (a Moose entity) and `MiArchiBlTagNode` (a `FamixTag`, with its color).
 - `MiArchiBlTreeBuilder`: creates the nodes (`#nodeForEntity:`, `#nodeForTag:`) and sets their name and children.
 - `MiArchiBlDependency`: links two nodes. `MiArchiBlTreeBuilder>>#visibleDependencies` moves dependencies up to the nodes shown, using `#visibleNode`.
-- `MiArchiBlVisualization`: draws a box for each node (`#elementForNode:`). It shows the label, uses `#color` as background (the theme's when nil), gives a dashed border to a node with children, and draws the children's boxes inside only when the node is expanded.
+- `MiArchiBlVisualization`: draws a box for each node (`#boxForNode:`). It shows the label, uses `#color` as background (the theme's when nil), gives a dashed border to a node with children, and draws the children's boxes inside only when the node is expanded.
 
 ## Assumptions & Invariants
 - I am abstract (`#isAbstract`): subclasses define `#color` and `#isTag`.

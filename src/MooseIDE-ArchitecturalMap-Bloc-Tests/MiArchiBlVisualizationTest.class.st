@@ -8,14 +8,14 @@ I test `MiArchiBlVisualization`, the Bloc drawing of the architectural map: its 
 
 ## Assumptions & Invariants
 - Each test gets a new space, opened and settled by `#setUp`, and closed by `#tearDown`.
-- Expand nodes before `#visualizationOf:` sends `#element`, because the boxes are built only once.
+- Expand nodes before `#visualizationOf:` sends `#viewport`, because the boxes are built only once.
 - The scene is only changed through `BlSpace>>#deferAndSettle:` (`#layOut:`, `#fire:at:on:`), so assertions see a settled space: layout done, lines drawn.
 - Mouse events are sent with `#fireEvent:` (they go up to the root, as with a real mouse), with a screen position different from the space position on purpose.
 
 ## Main API
 - `#visualizationOf:` a tree builder: a visualization with a flow layout and the space root as token source.
-- `#layOut:` a visualization: add its element to the space and settle.
-- `#fire:at:on:`, `#wheel:at:on:`, `#drag:from:to:`: mouse events on the element of a visualization.
+- `#layOut:` a visualization: add its viewport to the space and settle.
+- `#fire:at:on:`, `#wheel:at:on:`, `#drag:from:to:`: mouse events on the viewport of a visualization.
 
 "
 Class {
@@ -54,7 +54,7 @@ MiArchiBlVisualizationTest >> box: aBox hasHaloIn: aVisualization [
 { #category : 'running' }
 MiArchiBlVisualizationTest >> boxOf: anEntity in: aVisualization [
 
-	^ aVisualization elementsByNode associations
+	^ aVisualization boxesByNode associations
 		  detect: [ :each | each key entity == anEntity ]
 		  ifFound: [ :each | each value ]
 		  ifNone: [ nil ]
@@ -90,20 +90,20 @@ MiArchiBlVisualizationTest >> expandedTree [
 
 { #category : 'running' }
 MiArchiBlVisualizationTest >> fire: anEvent at: aPoint on: aVisualization [
-	"Fire anEvent at aPoint (space coordinates) on the element of aVisualization, as the mouse does, and wait for the space to settle. The screen position is made different on purpose: the code must use #position"
+	"Fire anEvent at aPoint (space coordinates) on the viewport under that point (as the mouse does: lines and halos ignore the mouse), and wait for the space to settle. The event bubbles up to the viewport of aVisualization. The screen position is made different on purpose: the code must use #position"
 
 	anEvent
 		position: aPoint;
 		screenPosition: aPoint + (1000 @ 1000).
-	space deferAndSettle: [ aVisualization element fireEvent: anEvent ].
+	space deferAndSettle: [ ((space root findMouseEventTargetAt: aPoint) ifNil: [ aVisualization viewport ]) fireEvent: anEvent ].
 	^ anEvent
 ]
 
 { #category : 'running' }
 MiArchiBlVisualizationTest >> layOut: aVisualization [
-	"Add the element of aVisualization to the space and wait until the space has settled: the layout is done and the lines are drawn"
+	"Add the viewport of aVisualization to the space and wait until the space has settled: the layout is done and the lines are drawn"
 
-	space deferAndSettle: [ space root addChild: aVisualization element ].
+	space deferAndSettle: [ space root addChild: aVisualization viewport ].
 	^ aVisualization
 ]
 
@@ -176,8 +176,8 @@ MiArchiBlVisualizationTest >> testBoxKnowsItsNode [
 
 	| visualization |
 	visualization := self visualizationOf: self expandedTree.
-	visualization element.
-	visualization elementsByNode keysAndValuesDo: [ :node :box |
+	visualization viewport.
+	visualization boxesByNode keysAndValuesDo: [ :node :box |
 		self assert: (box userData at: #miArchitecturalMapNode) identicalTo: node ]
 ]
 
@@ -186,8 +186,8 @@ MiArchiBlVisualizationTest >> testBoxLabelIsNodeName [
 
 	| visualization |
 	visualization := self visualizationOf: self expandedTree.
-	visualization element.
-	visualization elementsByNode keysAndValuesDo: [ :node :box | self assert: box children first text asString equals: node name ]
+	visualization viewport.
+	visualization boxesByNode keysAndValuesDo: [ :node :box | self assert: box children first text asString equals: node name ]
 ]
 
 { #category : 'tests' }
@@ -196,8 +196,8 @@ MiArchiBlVisualizationTest >> testBoxesForChildrenWhenExpanded [
 
 	| visualization nested |
 	visualization := self visualizationOf: self expandedTree.
-	visualization element.
-	self assert: visualization elementsByNode size equals: 5.
+	visualization viewport.
+	self assert: visualization boxesByNode size equals: 5.
 	nested := (self boxOf: package2 in: visualization) children second children.
 	self assert: nested asArray equals: {
 			(self boxOf: class2 in: visualization).
@@ -209,38 +209,104 @@ MiArchiBlVisualizationTest >> testDashedBorderForNodeWithChildren [
 
 	| visualization |
 	visualization := self visualizationOf: self expandedTree.
-	visualization element.
+	visualization viewport.
 	self assert: (self boxOf: package2 in: visualization) border style isDashed.
 	self deny: (self boxOf: class2 in: visualization) border style isDashed
 ]
 
-{ #category : 'tests' }
-MiArchiBlVisualizationTest >> testElementFillsParent [
+{ #category : 'tests - moving' }
+MiArchiBlVisualizationTest >> testDragBoxLeavesOtherBoxesInPlace [
+	"The layout of the map is replaced by explicit positions: package2 stays where it was"
 
-	| constraints |
-	constraints := (self visualizationOf: self tree) element constraints.
-	self assert: constraints horizontal resizer isMatchParent.
-	self assert: constraints vertical resizer isMatchParent
+	| visualization before start |
+	visualization := self layOut: (self visualizationOf: self tree).
+	before := (self boxOf: package2 in: visualization) boundsInSpace asRectangle.
+	start := (self boxOf: package1 in: visualization) boundsInSpace center.
+	self drag: visualization from: start to: start + (30 @ 60).
+	self assert: (self boxOf: package2 in: visualization) boundsInSpace asRectangle equals: before
 ]
 
-{ #category : 'tests' }
-MiArchiBlVisualizationTest >> testElementIsBuiltOnce [
+{ #category : 'tests - moving' }
+MiArchiBlVisualizationTest >> testDragBoxMovesIt [
+	"Pressing on package1 and dragging moves its box by the same amount, and does not pan the map"
 
-	| visualization |
-	visualization := self visualizationOf: self tree.
-	self assert: visualization element identicalTo: visualization element
+	| visualization box before start |
+	visualization := self layOut: (self visualizationOf: self tree).
+	box := self boxOf: package1 in: visualization.
+	before := box boundsInSpace origin.
+	start := box boundsInSpace center.
+	self drag: visualization from: start to: start + (30 @ 10).
+	self assert: box boundsInSpace origin equals: before + (30 @ 10).
+	self assert: visualization origin equals: 0 @ 0
 ]
 
-{ #category : 'tests' }
-MiArchiBlVisualizationTest >> testElementWithoutLayoutClassFails [
-	"There is no default layout: the browser always gives one"
+{ #category : 'tests - moving' }
+MiArchiBlVisualizationTest >> testDragBoxMovesItsLines [
+	"The line from package1 starts on the border of package1 where it is now"
 
-	| visualization |
-	visualization := MiArchiBlVisualization new
-		                 tree: self tree;
-		                 tokenSource: space root;
-		                 yourself.
-	self should: [ visualization element ] raise: Error
+	| visualization start line |
+	visualization := self layOut: (self visualizationOf: self tree).
+	start := (self boxOf: package1 in: visualization) boundsInSpace center.
+	self drag: visualization from: start to: start + (30 @ 60).
+	line := self lineFrom: package1 to: package2 in: visualization.
+	self assertPoint: (line localPointToGlobal: line geometry from) isOnBorderOf: (self boxOf: package1 in: visualization).
+	self assertPoint: (line localPointToGlobal: line geometry to) isOnBorderOf: (self boxOf: package2 in: visualization)
+]
+
+{ #category : 'tests - moving' }
+MiArchiBlVisualizationTest >> testDragBoxUnderZoomFollowsTheMouse [
+	"Zoomed in, the box moves on screen by what the mouse moved (not by that amount times the zoom)"
+
+	| visualization box before start |
+	visualization := self layOut: (self visualizationOf: self tree).
+	3 timesRepeat: [ self wheel: 1 at: 0 @ 0 on: visualization ].
+	box := self boxOf: package1 in: visualization.
+	before := box boundsInSpace origin.
+	start := box boundsInSpace center.
+	self drag: visualization from: start to: start + (30 @ 10).
+	self assert: (box boundsInSpace origin - (before + (30 @ 10))) r < 0.01
+]
+
+{ #category : 'tests - moving' }
+MiArchiBlVisualizationTest >> testDragNestedBoxGrowsItsParent [
+	"Expanded: Class3 (the rightmost class of package2) dragged 80 pixels to the right makes package2 80 pixels wider and still contains it; Class2 stays in place"
+
+	| visualization package2Box class2Bounds width start |
+	visualization := self layOut: (self visualizationOf: self expandedTree).
+	package2Box := self boxOf: package2 in: visualization.
+	width := package2Box boundsInSpace width.
+	class2Bounds := (self boxOf: class2 in: visualization) boundsInSpace asRectangle.
+	start := (self boxOf: class3 in: visualization) boundsInSpace center.
+	self drag: visualization from: start to: start + (80 @ 0).
+	self assert: package2Box boundsInSpace width equals: width + 80.
+	self assert: (self boxOf: class2 in: visualization) boundsInSpace asRectangle equals: class2Bounds.
+	self assert:
+		(package2Box boundsInSpace asRectangle containsRect: (self boxOf: class3 in: visualization) boundsInSpace asRectangle)
+]
+
+{ #category : 'tests - moving' }
+MiArchiBlVisualizationTest >> testDragNestedBoxStopsAtLeftAndTopOfItsParent [
+	"Expanded: Class2 (the leftmost class of package2) dragged far to the left and up stays inside package2"
+
+	| visualization package2Box start |
+	visualization := self layOut: (self visualizationOf: self expandedTree).
+	package2Box := self boxOf: package2 in: visualization.
+	start := (self boxOf: class2 in: visualization) boundsInSpace center.
+	self drag: visualization from: start to: start - (100 @ 100).
+	self assert:
+		(package2Box boundsInSpace asRectangle containsRect: (self boxOf: class2 in: visualization) boundsInSpace asRectangle)
+]
+
+{ #category : 'tests - moving' }
+MiArchiBlVisualizationTest >> testDragParentBoxMovesItsChildren [
+	"Expanded: dragging package2 by its label moves Class2 and Class3 with it"
+
+	| visualization class2Origin start |
+	visualization := self layOut: (self visualizationOf: self expandedTree).
+	class2Origin := (self boxOf: class2 in: visualization) boundsInSpace origin.
+	start := (self boxOf: package2 in: visualization) children first boundsInSpace center.
+	self drag: visualization from: start to: start + (20 @ 50).
+	self assert: (self boxOf: class2 in: visualization) boundsInSpace origin equals: class2Origin + (20 @ 50)
 ]
 
 { #category : 'tests - highlight' }
@@ -268,6 +334,31 @@ MiArchiBlVisualizationTest >> testHighlightedLineKeepsItsLook [
 	self mouseOver: (self boxOf: package1 in: visualization).
 	self assert: line border equals: border.
 	self assert: line children first background equals: headBackground
+]
+
+{ #category : 'tests - moving' }
+MiArchiBlVisualizationTest >> testLeavingTheMapEndsTheDrag [
+	"Pressed on package1, the mouse leaves the map (it may be released outside, unseen): when it comes back, moving it does not move the box"
+
+	| visualization box before start |
+	visualization := self layOut: (self visualizationOf: self tree).
+	box := self boxOf: package1 in: visualization.
+	before := box boundsInSpace origin.
+	start := box boundsInSpace center.
+	self
+		fire: (BlMouseDownEvent new
+				 button: BlMouseButton primary;
+				 yourself)
+		at: start
+		on: visualization.
+	space deferAndSettle: [
+			visualization viewport dispatchEvent: (BlMouseLeaveEvent new
+					 position: 900 @ 700;
+					 screenPosition: 1900 @ 1700;
+					 yourself) ].
+	self fire: BlMouseMoveEvent new at: start + (30 @ 10) on: visualization.
+	self assert: box boundsInSpace origin equals: before.
+	self assert: visualization origin equals: 0 @ 0
 ]
 
 { #category : 'tests' }
@@ -321,13 +412,13 @@ MiArchiBlVisualizationTest >> testLinesNotRedrawnWhenBoxesDidNotMove [
 
 { #category : 'tests - highlight' }
 MiArchiBlVisualizationTest >> testMouseLeavingTheMapRemovesHighlight [
-	"Over package1, then the mouse leaves the whole map (leave events are sent to the element itself, they do not bubble)"
+	"Over package1, then the mouse leaves the whole map (leave events are sent to the viewport itself, they do not bubble)"
 
 	| visualization |
 	visualization := self layOut: (self visualizationOf: self tree).
 	self mouseOver: (self boxOf: package1 in: visualization).
 	space deferAndSettle: [
-			visualization element dispatchEvent: (BlMouseLeaveEvent new
+			visualization viewport dispatchEvent: (BlMouseLeaveEvent new
 					 position: 900 @ 700;
 					 screenPosition: 1900 @ 1700;
 					 yourself) ].
@@ -341,7 +432,7 @@ MiArchiBlVisualizationTest >> testMouseOverBackgroundRemovesHighlight [
 	| visualization |
 	visualization := self layOut: (self visualizationOf: self tree).
 	self mouseOver: (self boxOf: package1 in: visualization).
-	self mouseOver: visualization element.
+	self mouseOver: visualization viewport.
 	self assert: visualization halosLayer children isEmpty
 ]
 
@@ -405,8 +496,8 @@ MiArchiBlVisualizationTest >> testOneBoxPerRootWhenCollapsed [
 
 	| visualization |
 	visualization := self visualizationOf: self tree.
-	visualization element.
-	self assert: (visualization elementsByNode keys collect: #entity) asSet equals: {
+	visualization viewport.
+	self assert: (visualization boxesByNode keys collect: #entity) asSet equals: {
 			package1.
 			package2 } asSet
 ]
@@ -469,6 +560,35 @@ MiArchiBlVisualizationTest >> testTwoLinesWhenExpanded [
 	self assert: (self pairsOfLinesIn: visualization) equals: {
 			(class1 -> class2).
 			(class1 -> class3) } asSet
+]
+
+{ #category : 'tests' }
+MiArchiBlVisualizationTest >> testViewportFillsParent [
+
+	| constraints |
+	constraints := (self visualizationOf: self tree) viewport constraints.
+	self assert: constraints horizontal resizer isMatchParent.
+	self assert: constraints vertical resizer isMatchParent
+]
+
+{ #category : 'tests' }
+MiArchiBlVisualizationTest >> testViewportIsBuiltOnce [
+
+	| visualization |
+	visualization := self visualizationOf: self tree.
+	self assert: visualization viewport identicalTo: visualization viewport
+]
+
+{ #category : 'tests' }
+MiArchiBlVisualizationTest >> testViewportWithoutLayoutClassFails [
+	"There is no default layout: the browser always gives one"
+
+	| visualization |
+	visualization := MiArchiBlVisualization new
+		                 tree: self tree;
+		                 tokenSource: space root;
+		                 yourself.
+	self should: [ visualization viewport ] raise: Error
 ]
 
 { #category : 'tests' }

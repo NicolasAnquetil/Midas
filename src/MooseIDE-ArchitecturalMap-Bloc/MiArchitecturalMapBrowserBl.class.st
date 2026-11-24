@@ -151,7 +151,7 @@ MiArchitecturalMapBrowserBl >> showTree: aTree [
 		        tokenSource: root;
 		        yourself.
 	root removeChildren.
-	root addChild: view element
+	root addChild: view viewport
 ]
 
 { #category : 'accessing' }
