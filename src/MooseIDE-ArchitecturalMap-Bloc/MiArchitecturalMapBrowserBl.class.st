@@ -1,13 +1,26 @@
 "
-I am a browser that displays an architectural map with Bloc and Toplo, as MiArchitecturalMapBrowser does with Roassal, on the same model (MiArchitecturalMapModel).
-Accepted entities: a MooseObject.
+I am a browser that displays an architectural map with Bloc and Toplo, as `MiArchitecturalMapBrowser` does with Roassal, on the same model (`MiArchitecturalMapModel`). I accept and follow any `MooseObject`.
 
-The model calls me back (#runVisualization after a change of the settings) and asks me the layouts it can offer (#availableMapLayouts, #defaultMapLayout: MiArchitecturalMapLayoutBl subclasses).
+## Collaborators & Context
+- `MiArchitecturalMapModel` (`specModel`): holds the entities and the settings. It calls me back (`#runVisualization` after a change of the settings) and asks me the layouts it can offer (`#availableMapLayouts`, `#defaultMapLayout`: `MiArchiBlLayout` subclasses).
+- `MiArchiBlTreeBuilder` turns the model into a tree of nodes, and `MiArchiBlVisualization` (`view`) draws it.
+- `SpBlSpaceInMorphPresenter` (`mapPresenter`): embeds the Bloc space of the map in Spec. I give the space a Toplo theme, light or dark like the Pharo theme (`#toploTheme`).
+- `MiAbstractBrowser`: I am a Midas browser (bus, follow / receive entities). I am not in the world menu: the architectural map entry opens me instead of `MiArchitecturalMapBrowser` when the application says so (`MiArchitecturalMapBrowser class>>#frontEndClass`):
+	`MiApplication current architecturalMapBrowserClass: MiArchitecturalMapBrowserBl`
 
-The map is shown in a Bloc space embedded in Spec (SpBlSpaceInMorphPresenter), drawn by a MiArchitecturalMapViewBl from a MiArchitecturalMapTreeBl. Drag to move the map, mouse wheel to zoom.
+## Assumptions & Invariants
+- The tree is built in the calling process (`#runVisualization`), but drawn in the Bloc UI process of the space (`#showTree:`, through `#enqueueTask:`): Bloc elements must only be touched there.
+- Each run replaces the whole drawing: a new `MiArchiBlVisualization` is made and replaces the children of the space root.
+- `view` is nil until the first entities are shown.
+- Display only for now: no selection (`#selectRelatedTo:` does nothing, `#miSelectedItem` answers all the entities).
 
-I am opened instead of MiArchitecturalMapBrowser when the application says so:
-	MiApplication current architecturalMapBrowserClass: MiArchitecturalMapBrowserBl.
+## Main API
+- `MiArchitecturalMapBrowserBl open`, or through the architectural map entry once chosen in the application.
+- `#followEntity:`: show the map of anEntity.
+- `#runVisualization`: rebuild and redraw the map from the model.
+- `#availableMapLayouts`, `#defaultMapLayout`: the layouts, for the model.
+- `#space`, `#view`: the Bloc space and the visualization shown.
+
 "
 Class {
 	#name : 'MiArchitecturalMapBrowserBl',
@@ -62,7 +75,7 @@ MiArchitecturalMapBrowserBl class >> title [
 { #category : 'layouts' }
 MiArchitecturalMapBrowserBl >> availableMapLayouts [
 
-	^ MiArchitecturalMapLayoutBl availableLayouts
+	^ MiArchiBlLayout availableLayouts
 ]
 
 { #category : 'testing' }
@@ -158,7 +171,7 @@ MiArchitecturalMapBrowserBl >> toploTheme [
 
 { #category : 'accessing' }
 MiArchitecturalMapBrowserBl >> view [
-	"The MiArchitecturalMapViewBl shown, nil before the first entities"
+	"The MiArchiBlVisualization shown, nil before the first entities"
 
 	^ view
 ]

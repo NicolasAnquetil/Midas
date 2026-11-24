@@ -1,5 +1,17 @@
 "
-I am a layout of the root nodes of an architectural map shown with Bloc: see my class-side #layoutDescription.
+I lay out the root nodes of the Bloc architectural map on a circle (`ToBasicCircularLayout`, from Toplo).
+
+## Collaborators & Context
+- `MiArchiBlLayout`: my superclass, see it for how layouts are chosen and applied.
+- `ToBasicCircularLayout`: does the work, inside an element of fixed size.
+
+## Assumptions & Invariants
+- The element is a square whose side is the diameter of the circle: about the perimeter the root nodes need (their number times `#nodeWidth`) divided by pi, and at least 300.
+- `#nodeWidth` (150) is an estimate: wider boxes may overlap.
+
+## Main API
+- `#applyOn:topElementsCount:`, `#nodeWidth`; class side `#layoutName` ('Circular'), `#layoutDescription`.
+
 "
 Class {
 	#name : 'MiArchiBlCircularLayout',

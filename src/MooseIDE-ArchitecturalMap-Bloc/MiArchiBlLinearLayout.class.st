@@ -1,5 +1,16 @@
 "
-I am a layout of the root nodes of an architectural map shown with Bloc: see my class-side #layoutDescription.
+I lay out the root nodes of the Bloc architectural map in one column (`BlLinearLayout vertical`).
+
+## Collaborators & Context
+- `MiArchiBlLayout`: my superclass, see it for how layouts are chosen and applied.
+- `BlLinearLayout`: does the work.
+
+## Assumptions & Invariants
+- The element is as large as its content. I do not need the number of root nodes.
+
+## Main API
+- `#applyOn:topElementsCount:`; class side `#layoutName` ('Linear'), `#layoutDescription`.
+
 "
 Class {
 	#name : 'MiArchiBlLinearLayout',

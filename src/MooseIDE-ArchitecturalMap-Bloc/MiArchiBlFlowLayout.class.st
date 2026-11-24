@@ -1,5 +1,16 @@
 "
-I am a layout of the root nodes of an architectural map shown with Bloc: see my class-side #layoutDescription.
+I lay out the root nodes of the Bloc architectural map in rows, from left to right, wrapping at a fixed width (`BlFlowLayout horizontal`). I am the default layout of `MiArchitecturalMapBrowserBl`.
+
+## Collaborators & Context
+- `MiArchiBlLayout`: my superclass, see it for how layouts are chosen and applied.
+- `BlFlowLayout`: does the work.
+
+## Assumptions & Invariants
+- The element is `#maxWidth` (800) wide and as tall as its content. I do not need the number of root nodes.
+
+## Main API
+- `#applyOn:topElementsCount:`, `#maxWidth`; class side `#layoutName` ('Flow'), `#layoutDescription`.
+
 "
 Class {
 	#name : 'MiArchiBlFlowLayout',

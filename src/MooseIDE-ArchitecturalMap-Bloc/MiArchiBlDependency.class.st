@@ -1,6 +1,20 @@
 "
-I am a dependency of an architectural map shown with Bloc: from a `source` node to a `target` node (`MiArchiBlNode`), with the Famix associations behind it.
-One association between entities (`MiArchiBlTreeBuilder>>#dependencies`), or all those between two visible nodes (`MiArchiBlTreeBuilder>>#visibleDependencies`).
+I am a dependency of the Bloc architectural map: from a `source` node to a `target` node (`MiArchiBlNode`), with the Famix associations behind it.
+
+## Collaborators & Context
+- `MiArchiBlTreeBuilder`: creates me in two forms. `#dependencies` gives one dependency per association between two entities of the map (`#association:`). `#visibleDependencies` gives one dependency per pair of visible nodes, with all the associations between their descendants (`#associations:`).
+- `MiArchiBlVisualization>>#updateLines`: draws a line for each visible dependency, between the boxes of my source and target.
+- The associations are Famix associations, as answered by `MiArchitecturalMapModel>>#getDependenciesFor:`.
+
+## Assumptions & Invariants
+- `source` and `target` are nodes of the same tree. A visible dependency never goes from a node to itself.
+- `#associations` is never nil (empty by default). `#association` assumes there is at least one.
+- I am a plain value: built once, then only read.
+
+## Main API
+- `MiArchiBlDependency new source: aNode; target: aNode; association: anAssociation; yourself` (or `associations: aCollection`)
+- `#source`, `#target`, `#associations`, `#association` (the first one).
+
 "
 Class {
 	#name : 'MiArchiBlDependency',

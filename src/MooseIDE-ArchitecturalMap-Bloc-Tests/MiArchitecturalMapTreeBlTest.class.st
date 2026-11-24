@@ -1,5 +1,17 @@
 "
-I test the tree of the Bloc architectural map (MiArchitecturalMapTreeBl), against what the Roassal builder (MiArchitecturalMapBuilder) shows for the same model: two packages, class1 (in package1) inheriting from class2 and class3 (in package2).
+I test the tree of the Bloc architectural map (`MiArchiBlTreeBuilder`): its roots, the children of the nodes, the dependencies between entities, and the dependencies lifted to the visible nodes. I also check that the visible dependencies are the lines of the Roassal map (`MiArchitecturalMapBuilder`) for the same model.
+
+## Collaborators & Context
+- `MiArchitecturalMapBlAbstractTest`: the fixture (package1 holding Class1, package2 holding Class2 and Class3, Class1 inheriting from both) and `#tree`.
+- `MiArchiBlNode` (`#visibleNode`, `#isExpanded:`), `MiArchiBlDependency`.
+- `MiArchitecturalMapBrowser` and `MiArchitecturalMapBuilder`: the Roassal map, as the reference.
+
+## Assumptions & Invariants
+- `#tree` builds a new tree on each send, all nodes collapsed: expand the nodes of the tree kept in a variable.
+
+## Main API
+- `#pairsOf:` dependencies: their (source entity -> target entity) pairs, as a set.
+
 "
 Class {
 	#name : 'MiArchitecturalMapTreeBlTest',
