@@ -12,14 +12,14 @@ I am a browser that displays an architectural map with Bloc and Toplo, as `MiArc
 - The tree is built in the calling process (`#runVisualization`), but drawn in the Bloc UI process of the space (`#showTree:`, through `BlSpace>>#defer:`): Bloc elements must only be touched there.
 - Each run replaces the whole drawing: a new `MiArchiBlVisualization` is made and replaces the children of the space root.
 - `view` is nil until the first entities are shown.
-- Display only for now: no selection (`#selectRelatedTo:` does nothing, `#miSelectedItem` answers all the entities).
+- The selection is made in the map (`MiArchiBlVisualization`), which tells me (`#selectEntities:`); I keep it in the model (`MiArchitecturalMapModel>>#selectedEntities:`). `#miSelectedItem` answers the selected entities, all the entities if none. Each new drawing of the map starts with nothing selected. `#selectRelatedTo:` does nothing.
 
 ## Main API
 - `MiArchitecturalMapBrowserBl open`, or through the architectural map entry once chosen in the application.
 - `#followEntity:`: show the map of anEntity.
 - `#runVisualization`: rebuild and redraw the map from the model.
 - `#availableMapLayouts`, `#defaultMapLayout`: the layouts, for the model.
-- `#inspectEntity:`, `#propagateEntity:`: for the menu of the boxes of the map.
+- `#inspectEntity:`, `#propagateEntity:`: for the menu of the boxes of the map. `#selectEntities:`: for the selection in the map.
 - `#space`, `#view`: the Bloc space and the visualization shown.
 
 "
@@ -126,8 +126,10 @@ MiArchitecturalMapBrowserBl >> inspectEntity: anEntity [
 
 { #category : 'actions' }
 MiArchitecturalMapBrowserBl >> miSelectedItem [
+	"The entities selected in the map, all the entities if none is selected"
 
-	^ specModel entities ifNil: [ #(  ) ]
+	specModel entities ifNil: [ ^ #(  ) ].
+	^ specModel miSelectedItem
 ]
 
 { #category : 'actions' }
@@ -150,6 +152,13 @@ MiArchitecturalMapBrowserBl >> runVisualization [
 ]
 
 { #category : 'actions' }
+MiArchitecturalMapBrowserBl >> selectEntities: someEntities [
+	"Told by the map when its selection changes: the model keeps it (#miSelectedItem)"
+
+	specModel selectedEntities: someEntities
+]
+
+{ #category : 'actions' }
 MiArchitecturalMapBrowserBl >> selectRelatedTo: anEntity [
 	"Not yet: the map only displays"
 
@@ -158,6 +167,7 @@ MiArchitecturalMapBrowserBl >> selectRelatedTo: anEntity [
 
 { #category : 'building' }
 MiArchitecturalMapBrowserBl >> showTree: aTree [
+	"A new drawing of the map: nothing is selected in it, so nothing is in the model either"
 
 	| root |
 	root := self space root.
@@ -167,6 +177,7 @@ MiArchitecturalMapBrowserBl >> showTree: aTree [
 		        tokenSource: root;
 		        browser: self;
 		        yourself.
+	specModel selectedEntities: #(  ).
 	root removeChildren.
 	root addChild: view viewport
 ]

@@ -52,6 +52,15 @@ MiArchiBlVisualizationTest >> box: aBox hasHaloIn: aVisualization [
 ]
 
 { #category : 'running' }
+MiArchiBlVisualizationTest >> box: aBox hasSelectionRingIn: aVisualization [
+	"The mark of a selected box is a light brown ring, 3 pixels wide, around it, in the selection layer (same bounds, drawn outside them)"
+
+	^ aVisualization selectionLayer children anySatisfy: [ :each |
+			  each boundsInSpace asRectangle = aBox boundsInSpace asRectangle and: [
+				  each border paint color = Color lightBrown and: [ each border width = 3 ] ] ]
+]
+
+{ #category : 'running' }
 MiArchiBlVisualizationTest >> boxOf: anEntity in: aVisualization [
 
 	^ aVisualization boxes detect: [ :each | (aVisualization nodeOf: each) entity == anEntity ] ifNone: [ nil ]
@@ -68,6 +77,24 @@ MiArchiBlVisualizationTest >> choose: aLabel in: aMenu [
 				BlMouseDownEvent primary.
 				BlMouseUpEvent primary }
 		at: item boundsInSpace center
+]
+
+{ #category : 'running' }
+MiArchiBlVisualizationTest >> click: aBox [
+	"A click (primary press and release, in one go) on the label of aBox, through the space"
+
+	self clickAt: aBox children first boundsInSpace center
+]
+
+{ #category : 'running' }
+MiArchiBlVisualizationTest >> clickAt: aPoint [
+	"A click (primary press and release, in one go) at aPoint, through the space"
+
+	self
+		mouseAll: {
+				BlMouseDownEvent primary.
+				BlMouseUpEvent primary }
+		at: aPoint
 ]
 
 { #category : 'running' }
@@ -189,6 +216,15 @@ MiArchiBlVisualizationTest >> pairsOfLinesIn: aVisualization [
 ]
 
 { #category : 'running' }
+MiArchiBlVisualizationTest >> recordingVisualizationOf: aTree [
+	"A visualization of aTree laid out in the space, with a MiArchiBlRecordingBrowser as browser (#browser)"
+
+	^ self layOut: ((self visualizationOf: aTree)
+			   browser: MiArchiBlRecordingBrowser new;
+			   yourself)
+]
+
+{ #category : 'running' }
 MiArchiBlVisualizationTest >> rightClick: aBox [
 	"Right click on the label of aBox (not over a child box). Answer the context menu it opened, nil if none"
 
@@ -220,6 +256,23 @@ MiArchiBlVisualizationTest >> setUp [
 	space
 		show;
 		settle
+]
+
+{ #category : 'running' }
+MiArchiBlVisualizationTest >> shiftClick: aBox [
+	"A click with the shift key pressed on the label of aBox, through the space"
+
+	| events |
+	events := {
+		          BlMouseDownEvent primary.
+		          BlMouseUpEvent primary }.
+	events do: [ :each |
+			each modifiers: (BlKeyModifiers
+					 shift: true
+					 ctrl: false
+					 alt: false
+					 cmd: false) ].
+	self mouseAll: events at: aBox children first boundsInSpace center
 ]
 
 { #category : 'running' }
@@ -407,6 +460,40 @@ MiArchiBlVisualizationTest >> testCircularLayoutMakesRoomForExpandedBox [
 	roots do: [ :each | self assert: ((self boxOf: package1 in: visualization) parent boundsInSpace asRectangle containsRect: each) ]
 ]
 
+{ #category : 'tests - selection' }
+MiArchiBlVisualizationTest >> testClickBackgroundClearsSelection [
+	"package1 selected, then a click on the background: nothing selected"
+
+	| visualization |
+	visualization := self recordingVisualizationOf: self tree.
+	self click: (self boxOf: package1 in: visualization).
+	self clickAt: 700 @ 500.
+	self assert: visualization browser requests last equals: #select -> #(  )
+]
+
+{ #category : 'tests - selection' }
+MiArchiBlVisualizationTest >> testClickSelectsBox [
+	"A click on package1 selects it: the browser is told package1 is selected"
+
+	| visualization |
+	visualization := self recordingVisualizationOf: self tree.
+	self click: (self boxOf: package1 in: visualization).
+	self assert: visualization browser requests asArray equals: { (#select -> { package1 }) }
+]
+
+{ #category : 'tests - selection' }
+MiArchiBlVisualizationTest >> testCollapseUnselectsHiddenChildren [
+	"Expanded tree: Class2 and package1 selected, then package2 collapsed: Class2 has no box any more, it leaves the selection; package1 stays selected"
+
+	| visualization |
+	visualization := self recordingVisualizationOf: self expandedTree.
+	self click: (self boxOf: class2 in: visualization).
+	self shiftClick: (self boxOf: package1 in: visualization).
+	self choose: 'Collapse' in: (self rightClick: (self boxOf: package2 in: visualization)).
+	self assert: visualization browser requests last equals: #select -> { package1 }.
+	self assert: visualization selectionLayer children size equals: 1
+]
+
 { #category : 'tests' }
 MiArchiBlVisualizationTest >> testDashedBorderForNodeWithChildren [
 
@@ -468,6 +555,17 @@ MiArchiBlVisualizationTest >> testDragBoxUnderZoomFollowsTheMouse [
 	start := box boundsInSpace center.
 	self drag: visualization from: start to: start + (30 @ 10).
 	self assert: (box boundsInSpace origin - (before + (30 @ 10))) r < 0.01
+]
+
+{ #category : 'tests - selection' }
+MiArchiBlVisualizationTest >> testDragDoesNotSelect [
+	"Dragging package1 moves it, and selects nothing"
+
+	| visualization start |
+	visualization := self recordingVisualizationOf: self tree.
+	start := (self boxOf: package1 in: visualization) children first boundsInSpace center.
+	self drag: visualization from: start to: start + (30 @ 40).
+	self assert: visualization browser requests isEmpty
 ]
 
 { #category : 'tests - moving' }
@@ -541,6 +639,18 @@ MiArchiBlVisualizationTest >> testExpandKeepsBoxesMovedByHand [
 	self assert: package2Box boundsInSpace origin equals: package2Origin.
 	self assert: (self boxOf: package1 in: visualization) boundsInSpace origin equals: package1Origin.
 	self assert: (package2Box parent boundsInSpace asRectangle containsRect: package2Box boundsInSpace asRectangle)
+]
+
+{ #category : 'tests - selection' }
+MiArchiBlVisualizationTest >> testExpandKeepsSelection [
+	"package2 selected, then expanded: still selected, with its ring around its bigger box"
+
+	| visualization |
+	visualization := self recordingVisualizationOf: self tree.
+	self click: (self boxOf: package2 in: visualization).
+	self choose: 'Expand' in: (self rightClick: (self boxOf: package2 in: visualization)).
+	self assert: visualization browser requests last equals: #select -> { package2 }.
+	self assert: (self box: (self boxOf: package2 in: visualization) hasSelectionRingIn: visualization)
 ]
 
 { #category : 'tests - links' }
@@ -890,6 +1000,37 @@ MiArchiBlVisualizationTest >> testRightClickNestedBoxOpensOnlyItsMenu [
 	self deny: (labels includes: 'Expand').
 	self deny: (labels includes: 'Collapse').
 	self assert: (self boxOf: package1 in: visualization) currentContextMenu isNil
+]
+
+{ #category : 'tests - selection' }
+MiArchiBlVisualizationTest >> testSelectedBoxHasRingThatFollowsIt [
+	"package1 clicked: a light brown ring around it, none around package2; package1 dragged: the ring is around it where it is now"
+
+	| visualization start |
+	visualization := self recordingVisualizationOf: self tree.
+	self click: (self boxOf: package1 in: visualization).
+	self assert: (self box: (self boxOf: package1 in: visualization) hasSelectionRingIn: visualization).
+	self assert: visualization selectionLayer children size equals: 1.
+	start := (self boxOf: package1 in: visualization) children first boundsInSpace center.
+	self drag: visualization from: start to: start + (30 @ 40).
+	self assert: (self box: (self boxOf: package1 in: visualization) hasSelectionRingIn: visualization)
+]
+
+{ #category : 'tests - selection' }
+MiArchiBlVisualizationTest >> testShiftClickAddsAndRemoves [
+	"package1 clicked, package2 shift-clicked: both selected; package1 shift-clicked again: only package2"
+
+	| visualization |
+	visualization := self recordingVisualizationOf: self tree.
+	self click: (self boxOf: package1 in: visualization).
+	self shiftClick: (self boxOf: package2 in: visualization).
+	self shiftClick: (self boxOf: package1 in: visualization).
+	self assert: visualization browser requests asArray equals: {
+			(#select -> { package1 }).
+			(#select -> {
+				 package1.
+				 package2 }).
+			(#select -> { package2 }) }
 ]
 
 { #category : 'tests - links' }

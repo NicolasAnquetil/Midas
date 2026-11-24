@@ -2,7 +2,7 @@
 I draw with Bloc and Toplo the architectural map built by a `MiArchiBlTreeBuilder`: a box per visible node, an arrow per visible dependency, and the root boxes laid out by a `MiArchiBlLayout`. The map can be panned and zoomed with the mouse.
 
 ## Collaborators & Context
-- `browser` (a `MiArchitecturalMapBrowserBl`, optional): inspects and propagates entities for the menu of the boxes.
+- `browser` (a `MiArchitecturalMapBrowserBl`, optional): told the selected entities; inspects and propagates entities for the menu of the boxes.
 - Vocabulary: a *node* is model data (a `MiArchiBlNode` of the tree, for an entity or a tag); a *box* is the Bloc element drawn for a node (`#boxOf:`, `#nodeOf:`); the *viewport* is the outermost Bloc element, the one shown, holding everything else.
 - `MiArchiBlTreeBuilder` (`tree`): gives the root `MiArchiBlNode`s (`#roots`) and the `MiArchiBlDependency`s between the visible nodes (`#visibleDependencies`).
 - `MiArchiBlLayout` subclasses (`layoutClass`): place the root boxes in `boxesLayer`. The browser chooses the layout: its `MiArchitecturalMapModel>>#layout`.
@@ -21,6 +21,7 @@ I draw with Bloc and Toplo the architectural map built by a `MiArchiBlTreeBuilde
 - Each line has its dependency in its `userData` at `#miArchitecturalMapDependency`.
 - Pan and zoom are kept in `origin` (where the canvas is in `viewport`) and `zoom`, and applied together by `#applyTransform` (absolute scale, top left origin). Zoom is around the mouse cursor, by 1.1 per wheel step, between `#minZoom` and `#maxZoom`. Dragging the background pans. Mouse positions are in space coordinates (`#position`, never `#screenPosition`).
 - Moving boxes: dragging a box moves it, dragging the background pans. Drags are Bloc drag events (`BlDragStartEvent`, `BlDragEvent`, `BlDragEndEvent`): the space starts one after a press and a move of a few pixels, sends it to the element that consumed the drag start (the innermost box, see `#beDraggable:`, or else `viewport`), and ends it at the release. `lastDragPosition` is the mouse position at the previous drag event, for the move since then (`#dragDeltaOf:`). At the first move of a child, its container stops laying out its children (`#freezeLayoutOf:` replaces its layout by a `MiArchiBlFittingBasicLayout` with each child where it was): from then on it is as big as needed to contain all of them. So a parent box grows to contain a moved child, or a child drawn again bigger.
+- Selection: a click on a box selects it alone, a shift-click adds it to the selection or removes it (`#beSelectable:`, `#clickOn:shift:`), a click on the background clears it. Bloc sends no click after a drag, so moving a box selects nothing. `selectedNodes` keeps the selection in the order of the clicks; each change is told to `browser` (`#selectEntities:`, the entities of the nodes), and marks the boxes with a light brown ring (`#selectionColor`) in `selectionLayer`, drawn again when boxes move (`#updateSelectionRings`). A selected node whose box disappears (a child of a collapsed node) leaves the selection (`#unselectNodesWithoutBox`).
 - Menu: each box is a Toplo element with a context menu (`#giveMenuTo:for:`), opened by a right click. Its items are chosen when it opens (`#menuItemsFor:`), in order:
   - Expand or Collapse, for a node with children: changes the node (`#isExpanded:`, `#toggle:`).
   - Relayout children, for an expanded node: its children go back to their grid (`#relayoutChildrenOf:`).
@@ -33,6 +34,7 @@ I draw with Bloc and Toplo the architectural map built by a `MiArchiBlTreeBuilde
 
 ## Main API
 - `#browser:` the browser showing the map (optional).
+- `#selectNodes:` some nodes: make them the selection, as clicks do. `#selectedNodes`.
 - `#toggle:` a node: expand or collapse it, as its menu does. `#relayoutChildrenOf:` a node: lay out its children again. `#relayoutAll`: lay out all the boxes again.
 - `MiArchiBlVisualization new tree: aTreeBuilder; layoutClass: aLayoutClass; tokenSource: aSpaceRoot; yourself`
 - `#viewport`: the Bloc element to add to the space (built on first send). It shows the map: everything I draw is inside it.
@@ -60,7 +62,9 @@ Class {
 		'lastDragPosition',
 		'browser',
 		'hiddenIncoming',
-		'hiddenOutgoing'
+		'hiddenOutgoing',
+		'selectedNodes',
+		'selectionLayer'
 	],
 	#category : 'MooseIDE-ArchitecturalMap-Bloc-browser',
 	#package : 'MooseIDE-ArchitecturalMap-Bloc',
@@ -129,6 +133,15 @@ MiArchiBlVisualization >> beDraggable: aBox [
 		addEventHandlerOn: BlDragEndEvent do: [ :event | self endDrag: event ]
 ]
 
+{ #category : 'selection' }
+MiArchiBlVisualization >> beSelectable: aBox [
+	"A click on aBox selects it, with shift it is added to (or removed from) the selection (#clickOn:shift:). The click stops there: the boxes around and the background do not get it. Bloc sends no click after a drag, so moving a box does not change the selection"
+
+	aBox addEventHandlerOn: BlPrimaryClickEvent do: [ :event |
+			event consume.
+			self clickOn: (self nodeOf: event currentTarget) shift: event modifiers isShift ]
+]
+
 { #category : 'styling' }
 MiArchiBlVisualization >> borderFor: aNode [
 	"Dashed for a node with children, as in Roassal (MiArchitecturalMapBuilder>>borderFor:)"
@@ -183,7 +196,7 @@ MiArchiBlVisualization >> boxContaining: anElement [
 
 { #category : 'building' }
 MiArchiBlVisualization >> boxForNode: aNode [
-	"The box of aNode: its label, then (when expanded) the container of the boxes of its children (#childrenContainerFor:). It knows its node (#nodeOf:), can be dragged (#beDraggable:), and has a context menu (#giveMenuTo:for:). A Toplo element, for the menu"
+	"The box of aNode: its label, then (when expanded) the container of the boxes of its children (#childrenContainerFor:). It knows its node (#nodeOf:), can be dragged (#beDraggable:) and selected (#beSelectable:), and has a context menu (#giveMenuTo:for:). A Toplo element, for the menu"
 
 	| box |
 	box := ToElement new
@@ -199,6 +212,7 @@ MiArchiBlVisualization >> boxForNode: aNode [
 			c vertical fitContent ].
 	box userData at: #miArchitecturalMapNode put: aNode.
 	self beDraggable: box.
+	self beSelectable: box.
 	self giveMenuTo: box for: aNode.
 	self keepRightClicksIn: box.
 	(aNode isExpanded and: [ aNode hasChildren ]) ifTrue: [ box addChild: (self childrenContainerFor: aNode) ].
@@ -227,6 +241,12 @@ MiArchiBlVisualization >> boxes [
 ]
 
 { #category : 'accessing' }
+MiArchiBlVisualization >> browser [
+
+	^ browser
+]
+
+{ #category : 'accessing' }
 MiArchiBlVisualization >> browser: aBrowser [
 	"The browser showing me (a MiArchitecturalMapBrowserBl): the menu of a box asks it to inspect or propagate the entity of the node (#inspectEntity:, #propagateEntity:). Optional: without browser, these items do nothing"
 
@@ -235,10 +255,11 @@ MiArchiBlVisualization >> browser: aBrowser [
 
 { #category : 'building' }
 MiArchiBlVisualization >> build [
-	"Build and answer the viewport showing the map. It contains the canvas, which contains, from bottom to top, the boxes layer, the halos layer and the lines layer.
+	"Build and answer the viewport showing the map. It contains the canvas, which contains, from bottom to top, the boxes layer, the selection layer, the halos layer and the lines layer.
 	The order matters: the canvas needs the layers, the viewport needs the canvas"
 
 	self buildBoxesLayer.
+	self buildSelectionLayer.
 	self buildHalosLayer.
 	self buildLinesLayer.
 	self buildCanvas.
@@ -257,13 +278,14 @@ MiArchiBlVisualization >> buildBoxesLayer [
 
 { #category : 'building' }
 MiArchiBlVisualization >> buildCanvas [
-	"The lines over the nodes: the boxes are filled, and nested when expanded, so lines under them would be hidden. The halos of the highlighted lines are between them. Moved (origin) and zoomed by #applyTransform"
+	"The lines over the nodes: the boxes are filled, and nested when expanded, so lines under them would be hidden. The rings of the selected boxes and the halos of the highlight are between them. Moved (origin) and zoomed by #applyTransform"
 
 	canvas := BlElement new
 		          layout: BlFrameLayout new;
 		          padding: (BlInsets all: 20);
 		          addChildren: {
 				          boxesLayer.
+				          selectionLayer.
 				          halosLayer.
 				          linesLayer };
 		          yourself.
@@ -274,16 +296,9 @@ MiArchiBlVisualization >> buildCanvas [
 
 { #category : 'building' }
 MiArchiBlVisualization >> buildHalosLayer [
-	"The halos of the highlighted lines: over the boxes, under the lines. Like the lines layer, it fills the canvas and ignores the mouse"
+	"The halos of the highlighted lines and boxes: over the boxes, under the lines"
 
-	halosLayer := BlElement new
-		              layout: BlBasicLayout new;
-		              clipChildren: false;
-		              preventMeAndChildrenMouseEvents;
-		              yourself.
-	halosLayer constraintsDo: [ :c |
-			c horizontal matchParent.
-			c vertical matchParent ]
+	halosLayer := self newOverlayLayer
 ]
 
 { #category : 'building' }
@@ -301,8 +316,15 @@ MiArchiBlVisualization >> buildLinesLayer [
 ]
 
 { #category : 'building' }
+MiArchiBlVisualization >> buildSelectionLayer [
+	"The rings of the selected boxes: over the boxes, under the halos and the lines"
+
+	selectionLayer := self newOverlayLayer
+]
+
+{ #category : 'building' }
 MiArchiBlVisualization >> buildViewport [
-	"The viewport shown: it fills its parent and clips the canvas. It receives the mouse: wheel to zoom, drag on the background to pan (the zoom and pan pattern of the Bloc guide on graphical patterns), over to highlight the dependencies of the box under the mouse, leave to remove the highlight, right click on the background for its menu (a Toplo element for it, #giveMenuToViewport).
+	"The viewport shown: it fills its parent and clips the canvas. It receives the mouse: wheel to zoom, drag on the background to pan (the zoom and pan pattern of the Bloc guide on graphical patterns), over to highlight the dependencies of the box under the mouse, leave to remove the highlight, click on the background to clear the selection (a click on a box stops at the box, #beSelectable:), right click on the background for its menu (a Toplo element for it, #giveMenuToViewport).
 	Drags are Bloc drag events: the space turns a press followed by a move of a few pixels into them, sends them to the element that took the drag start, and ends them at the release, wherever it happens. A drag on a box is taken by the box (#beDraggable:), so it does not reach the viewport"
 
 	viewport := ToElement new
@@ -319,7 +341,8 @@ MiArchiBlVisualization >> buildViewport [
 		addEventHandlerOn: BlDragEvent do: [ :event | self panBy: (self dragDeltaOf: event) ];
 		addEventHandlerOn: BlDragEndEvent do: [ :event | self endDrag: event ];
 		addEventHandlerOn: BlMouseOverEvent do: [ :event | self highlight: (self nodeUnder: event) ];
-		addEventHandlerOn: BlMouseLeaveEvent do: [ :event | self highlight: nil ].
+		addEventHandlerOn: BlMouseLeaveEvent do: [ :event | self highlight: nil ];
+		addEventHandlerOn: BlPrimaryClickEvent do: [ :event | self selectNodes: #(  ) ].
 	self giveMenuToViewport
 ]
 
@@ -333,6 +356,15 @@ MiArchiBlVisualization >> childrenContainerFor: aNode [
 	^ container
 		  addChildren: (aNode children collect: [ :each | self boxForNode: each ]);
 		  yourself
+]
+
+{ #category : 'selection' }
+MiArchiBlVisualization >> clickOn: aNode shift: aBoolean [
+
+	aBoolean ifFalse: [ ^ self selectNodes: { aNode } ].
+	(selectedNodes includes: aNode)
+		ifTrue: [ self selectNodes: (selectedNodes copyWithout: aNode) ]
+		ifFalse: [ self selectNodes: (selectedNodes copyWith: aNode) ]
 ]
 
 { #category : 'interactions' }
@@ -399,17 +431,9 @@ MiArchiBlVisualization >> haloColor [
 
 { #category : 'highlight' }
 MiArchiBlVisualization >> haloForBox: aBox [
-	"A translucent yellow ring around aBox, drawn just outside its bounds (a gaussian shadow is too faint on a light background)"
+	"A translucent yellow ring around aBox (a gaussian shadow is too faint on a light background)"
 
-	| bounds |
-	bounds := self boundsOf: aBox.
-	^ BlElement new
-		  geometry: (BlRoundedRectangleGeometry cornerRadius: 3);
-		  border: (BlBorder paint: (self haloColor alpha: 0.7) width: 3);
-		  outskirts: BlOutskirts outside;
-		  position: bounds origin;
-		  extent: bounds extent;
-		  yourself
+	^ self ringAround: aBox paint: (self haloColor alpha: 0.7)
 ]
 
 { #category : 'highlight' }
@@ -480,7 +504,8 @@ MiArchiBlVisualization >> initialize [
 	origin := 0 @ 0.
 	zoom := 1.
 	hiddenIncoming := IdentitySet new.
-	hiddenOutgoing := IdentitySet new
+	hiddenOutgoing := IdentitySet new.
+	selectedNodes := OrderedCollection new
 ]
 
 { #category : 'lines' }
@@ -621,6 +646,20 @@ MiArchiBlVisualization >> move: aBox by: aPoint [
 	aBox position: (aBox measuredBounds position + aPoint max: aBox margin left @ aBox margin top)
 ]
 
+{ #category : 'building' }
+MiArchiBlVisualization >> newOverlayLayer [
+	"A layer drawn over the boxes: like the lines layer, it fills the canvas (so it shares the coordinates of the boxes) and ignores the mouse"
+
+	^ BlElement new
+		  layout: BlBasicLayout new;
+		  clipChildren: false;
+		  preventMeAndChildrenMouseEvents;
+		  constraintsDo: [ :c |
+				  c horizontal matchParent.
+				  c vertical matchParent ];
+		  yourself
+]
+
 { #category : 'boxes' }
 MiArchiBlVisualization >> nodeOf: anElement [
 	"The node of anElement if it is a box, nil otherwise"
@@ -661,13 +700,14 @@ MiArchiBlVisualization >> placeOf: aBox [
 
 { #category : 'expanding' }
 MiArchiBlVisualization >> redrawBoxOf: aNode [
-	"Draw the box of aNode again, in the place of the old one: the other boxes are not drawn again, so they stay where they are (even moved by hand). The new box keeps the position of the old one (used if its container was frozen by a move, #freezeLayoutOf:), and its children are laid out from scratch"
+	"Draw the box of aNode again, in the place of the old one: the other boxes are not drawn again, so they stay where they are (even moved by hand). The new box keeps the position of the old one (used if its container was frozen by a move, #freezeLayoutOf:), and its children are laid out from scratch. Selected nodes that are not shown any more leave the selection"
 
 	| oldBox newBox |
 	oldBox := self boxOf: aNode.
 	newBox := self boxForNode: aNode.
 	newBox position: oldBox position.
-	oldBox parent replaceChild: oldBox with: newBox
+	oldBox parent replaceChild: oldBox with: newBox.
+	self unselectNodesWithoutBox
 ]
 
 { #category : 'lines' }
@@ -691,6 +731,50 @@ MiArchiBlVisualization >> relayoutChildrenOf: aNode [
 	"Lay out the children of aNode (expanded) again in their grid, forgetting where they were moved by hand (also inside them): draw the box of aNode again (#redrawBoxOf:)"
 
 	self redrawBoxOf: aNode
+]
+
+{ #category : 'highlight' }
+MiArchiBlVisualization >> ringAround: aBox paint: aPaint [
+	"A ring of aPaint, 3 pixels wide, drawn just outside the bounds of aBox, for an overlay layer"
+
+	| bounds |
+	bounds := self boundsOf: aBox.
+	^ BlElement new
+		  geometry: (BlRoundedRectangleGeometry cornerRadius: 3);
+		  border: (BlBorder paint: aPaint width: 3);
+		  outskirts: BlOutskirts outside;
+		  position: bounds origin;
+		  extent: bounds extent;
+		  yourself
+]
+
+{ #category : 'selection' }
+MiArchiBlVisualization >> selectNodes: someNodes [
+	"Make someNodes the selection: mark their boxes (#updateSelectionRings), and tell the browser their entities (#selectEntities:)"
+
+	selectedNodes := someNodes asOrderedCollection.
+	self updateSelectionRings.
+	browser ifNotNil: [ browser selectEntities: (selectedNodes collect: [ :each | each entity ]) ]
+]
+
+{ #category : 'accessing' }
+MiArchiBlVisualization >> selectedNodes [
+	"The selected nodes, in the order they were selected"
+
+	^ selectedNodes
+]
+
+{ #category : 'selection' }
+MiArchiBlVisualization >> selectionColor [
+
+	^ Color lightBrown
+]
+
+{ #category : 'testing' }
+MiArchiBlVisualization >> selectionLayer [
+	"The element holding the rings of the selected boxes (for the tests)"
+
+	^ selectionLayer
 ]
 
 { #category : 'menu' }
@@ -744,12 +828,21 @@ MiArchiBlVisualization >> tree: aTree [
 	tree := aTree
 ]
 
+{ #category : 'selection' }
+MiArchiBlVisualization >> unselectNodesWithoutBox [
+	"The selected nodes that have no box any more (children of a node just collapsed) leave the selection (#selectNodes:, so the browser is told). Nothing if all are still shown"
+
+	| shown |
+	shown := selectedNodes select: [ :each | (self boxOf: each) isNotNil ].
+	shown size = selectedNodes size ifFalse: [ self selectNodes: shown ]
+]
+
 { #category : 'lines' }
 MiArchiBlVisualization >> updateLines [
 	"Draw again the lines between the boxes, only if they moved since the last time: a layout is computed often, and a handler of BlElementLayoutComputedEvent must only change what differs, or the space never settles.
 	The bounds are compared in the coordinates of the lines layer (#placeOf:): zoom and pan move the canvas as a whole, they change where the boxes are in the space but not there, so they redraw nothing.
 	The lines hidden from the menu of a box are not drawn (#isDrawn:).
-	The halos follow the old lines and boxes: they are removed. Boxes move only while dragged, and the end of a drag highlights again (#endDrag:)"
+	The rings of the selected boxes are drawn again where the boxes are. The halos follow the old lines and boxes: they are removed. Boxes move only while dragged, and the end of a drag highlights again (#endDrag:)"
 
 	| bounds |
 	bounds := self boxes collect: [ :each | self placeOf: each ].
@@ -758,7 +851,16 @@ MiArchiBlVisualization >> updateLines [
 	linesLayer removeChildren.
 	linesLayer addChildren:
 		((self shownDependencies select: [ :each | self isDrawn: each ]) collect: [ :each | self lineElementFor: each ]).
-	halosLayer removeChildren
+	halosLayer removeChildren.
+	self updateSelectionRings
+]
+
+{ #category : 'selection' }
+MiArchiBlVisualization >> updateSelectionRings [
+	"A ring of #selectionColor around the box of each selected node, where the box is now"
+
+	selectionLayer removeChildren.
+	selectionLayer addChildren: (selectedNodes collect: [ :each | self ringAround: (self boxOf: each) paint: self selectionColor ])
 ]
 
 { #category : 'accessing' }

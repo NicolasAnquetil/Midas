@@ -42,8 +42,23 @@ MiArchitecturalMapBrowserBlTest >> testFrontEndClassDefault [
 
 { #category : 'tests' }
 MiArchitecturalMapBrowserBlTest >> testMiSelectedItemWithSelection [
+	"returns selected entities: entity1 and entity3 selected in the map (through its visualization, in the UI process of its space)"
 
-	self skip: 'No selection in the Bloc map yet'
+	browser followEntity: {
+			entity1.
+			entity2.
+			entity3 }.
+	browser space deferAndSettle: [
+			| view |
+			view := browser view.
+			view selectNodes: ((view boxes collect: [ :each | view nodeOf: each ]) select: [ :each |
+						 {
+							 entity1.
+							 entity3 } includes: each entity ]) ].
+
+	self assertCollection: browser miSelectedItem hasSameElements: {
+			entity1.
+			entity3 }
 ]
 
 { #category : 'tests' }

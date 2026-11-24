@@ -48,3 +48,9 @@ MiArchiBlRecordingBrowser >> requests [
 
 	^ requests
 ]
+
+{ #category : 'actions' }
+MiArchiBlRecordingBrowser >> selectEntities: someEntities [
+
+	requests add: #select -> someEntities asArray
+]

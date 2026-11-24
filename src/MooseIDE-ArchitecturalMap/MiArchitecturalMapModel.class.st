@@ -3,6 +3,7 @@ I am a model of a hierarchical map.
 I am responsible for:
 - holding a property list
 - holding elements to display on the hierarchical map.
+- holding the entities selected in the map (`#selectedEntities`), cleared with new entities. `#miSelectedItem` answers them, all the entities if none.
 "
 Class {
 	#name : 'MiArchitecturalMapModel',
@@ -20,7 +21,8 @@ Class {
 		'hideMegamorphicInvocations',
 		'megamorphicTreshold',
 		'showDirectoriesAsRootNodes',
-		'weightedLinks'
+		'weightedLinks',
+		'selectedEntities'
 	],
 	#category : 'MooseIDE-ArchitecturalMap',
 	#package : 'MooseIDE-ArchitecturalMap'
@@ -279,8 +281,10 @@ MiArchitecturalMapModel >> entities [
 
 { #category : 'accessing' }
 MiArchitecturalMapModel >> entities: aCollection [
+	"New entities: a new map, nothing selected in it"
 
 	entities := aCollection.
+	selectedEntities := nil.
 	self recomputeRootNodes.
 	self recomputeDefaultSettings
 ]
@@ -329,8 +333,9 @@ MiArchitecturalMapModel >> layout [
 
 { #category : 'accessing' }
 MiArchitecturalMapModel >> miSelectedItem [
+	"The entities selected in the map, all the entities if none is selected"
 
-	^ self entities
+	^ self selectedEntities ifEmpty: [ self entities ]
 ]
 
 { #category : 'settings management' }
@@ -366,6 +371,20 @@ MiArchitecturalMapModel >> selectRelatedTo: anEntity [
 
 	browser selectRelatedTo: anEntity 
 
+]
+
+{ #category : 'accessing' }
+MiArchitecturalMapModel >> selectedEntities [
+	"The entities selected in the map, empty if none"
+
+	^ selectedEntities ifNil: [ #(  ) ]
+]
+
+{ #category : 'accessing' }
+MiArchitecturalMapModel >> selectedEntities: aCollection [
+	"Told by the map when its selection changes"
+
+	selectedEntities := aCollection
 ]
 
 { #category : 'settings management' }
