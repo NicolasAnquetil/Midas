@@ -27,12 +27,13 @@ I draw with Bloc and Toplo the architectural map built by a `MiArchiBlTreeBuilde
   Both draw only that box again, in place of the old one (`#redrawBoxOf:`): the other boxes stay where they are, even if moved by hand.
   - Hide or Show the incoming, outgoing or all links (`#linkItemsFor:`), only the items that would change something. A link is incoming (outgoing) for a box if its line ends (starts) at this very box, not at a box inside it. The nodes whose links are hidden are kept in `hiddenIncoming` and `hiddenOutgoing`; their lines are not drawn (`#isDrawn:`), and no box moves.
   - Inspect and Propagate the entity of the node: asked to `browser` (`#inspectEntity:`, `#propagateEntity:`), nothing without browser.
-  A right press stops at the innermost box (`#keepRightClicksIn:`), so a box inside another does not open the menu of the outer one.
+  A right press stops at the innermost box (`#keepRightClicksIn:`), so a box inside another does not open the menu of the outer one, nor the menu of the background.
+- Menu of the background: `viewport` is a Toplo element too, with one item, Relayout all (`#giveMenuToViewport`, `#relayoutAll`): all the boxes are drawn again, placed by the layout of the map and the grids of the children, forgetting the moves by hand. Expansion, hidden links, zoom and pan are kept.
 - Highlight: the mouse over a box (`BlMouseOverEvent`, which bubbles, handled on `viewport`) highlights the node of the innermost box under it (`#nodeUnder:`). Its dependencies both ways and the boxes at their other end get a halo (`#haloColor`), and keep their own look: both are drawn in `halosLayer` (over the boxes, under the lines): a box gets a translucent yellow ring just outside its bounds (`#haloForBox:). Over the background, or when the mouse leaves `viewport` (`BlMouseLeaveEvent`), nothing is highlighted. Only one node at a time is highlighted, and no state is kept: the halos are the highlight. Redrawing the lines removes them (they follow the old lines and boxes); since boxes move only while dragged, the end of a drag highlights again what is under the mouse (`#endDrag:`, `#highlightAt:`). While a box is dragged, nothing is highlighted.
 
 ## Main API
 - `#browser:` the browser showing the map (optional).
-- `#toggle:` a node: expand or collapse it, as its menu does. `#relayoutChildrenOf:` a node: lay out its children again.
+- `#toggle:` a node: expand or collapse it, as its menu does. `#relayoutChildrenOf:` a node: lay out its children again. `#relayoutAll`: lay out all the boxes again.
 - `MiArchiBlVisualization new tree: aTreeBuilder; layoutClass: aLayoutClass; tokenSource: aSpaceRoot; yourself`
 - `#viewport`: the Bloc element to add to the space (built on first send). It shows the map: everything I draw is inside it.
 - `#boxes`: all the boxes drawn. `#boxOf:` a node: its box, nil if it is not shown. `#nodeOf:` a box: its node (nil for any other element).
@@ -247,11 +248,10 @@ MiArchiBlVisualization >> build [
 
 { #category : 'building' }
 MiArchiBlVisualization >> buildBoxesLayer [
-	"The boxes of the root nodes, placed by the layout. The lines follow them each time a layout is computed"
+	"The layer of the boxes (#fillBoxesLayer). The lines follow the boxes each time a layout is computed"
 
 	boxesLayer := BlElement new.
-	layoutClass new applyOn: boxesLayer topElementsCount: tree roots size.
-	boxesLayer addChildren: (tree roots collect: [ :each | self boxForNode: each ]).
+	self fillBoxesLayer.
 	boxesLayer addEventHandlerOn: BlElementLayoutComputedEvent do: [ :event | self updateLines ]
 ]
 
@@ -302,10 +302,10 @@ MiArchiBlVisualization >> buildLinesLayer [
 
 { #category : 'building' }
 MiArchiBlVisualization >> buildViewport [
-	"The viewport shown: it fills its parent and clips the canvas. It receives the mouse: wheel to zoom, drag on the background to pan (the zoom and pan pattern of the Bloc guide on graphical patterns), over to highlight the dependencies of the box under the mouse, leave to remove the highlight.
+	"The viewport shown: it fills its parent and clips the canvas. It receives the mouse: wheel to zoom, drag on the background to pan (the zoom and pan pattern of the Bloc guide on graphical patterns), over to highlight the dependencies of the box under the mouse, leave to remove the highlight, right click on the background for its menu (a Toplo element for it, #giveMenuToViewport).
 	Drags are Bloc drag events: the space turns a press followed by a move of a few pixels into them, sends them to the element that took the drag start, and ends them at the release, wherever it happens. A drag on a box is taken by the box (#beDraggable:), so it does not reach the viewport"
 
-	viewport := BlElement new
+	viewport := ToElement new
 		            layout: BlBasicLayout new;
 		            clipChildren: true;
 		            addChild: canvas;
@@ -319,7 +319,8 @@ MiArchiBlVisualization >> buildViewport [
 		addEventHandlerOn: BlDragEvent do: [ :event | self panBy: (self dragDeltaOf: event) ];
 		addEventHandlerOn: BlDragEndEvent do: [ :event | self endDrag: event ];
 		addEventHandlerOn: BlMouseOverEvent do: [ :event | self highlight: (self nodeUnder: event) ];
-		addEventHandlerOn: BlMouseLeaveEvent do: [ :event | self highlight: nil ]
+		addEventHandlerOn: BlMouseLeaveEvent do: [ :event | self highlight: nil ].
+	self giveMenuToViewport
 ]
 
 { #category : 'building' }
@@ -354,6 +355,14 @@ MiArchiBlVisualization >> endDrag: aDragEndEvent [
 	self highlightAt: aDragEndEvent position
 ]
 
+{ #category : 'building' }
+MiArchiBlVisualization >> fillBoxesLayer [
+	"The boxes of the root nodes, placed by the layout of the map, each with its children in their grid"
+
+	layoutClass new applyOn: boxesLayer topElementsCount: tree roots size.
+	boxesLayer addChildren: (tree roots collect: [ :each | self boxForNode: each ])
+]
+
 { #category : 'moving' }
 MiArchiBlVisualization >> freezeLayoutOf: aContainer [
 	"Replace the layout of aContainer (flow, grid...) by explicit positions: each child stays where the layout put it. Done once, at the first move of one of its children. From then on, aContainer is as big as needed to contain its children (MiArchiBlFittingBasicLayout): it grows when one is moved, or drawn again bigger"
@@ -373,6 +382,13 @@ MiArchiBlVisualization >> giveMenuTo: aBox for: aNode [
 	"The context menu of aBox (opened by a right click, by Toplo). Its items are chosen when it opens (#menuItemsFor:), so they follow the state of aNode"
 
 	aBox contextMenuBuilder: [ :menu :request | (self menuItemsFor: aNode) do: [ :each | menu addItem: each ] ]
+]
+
+{ #category : 'menu' }
+MiArchiBlVisualization >> giveMenuToViewport [
+	"The context menu of the background of the map (a right click on a box opens the menu of the box instead, #keepRightClicksIn:): Relayout all"
+
+	viewport contextMenuBuilder: [ :menu :request | menu addItem: (self menuItem: 'Relayout all' do: [ self relayoutAll ]) ]
 ]
 
 { #category : 'styling' }
@@ -660,6 +676,14 @@ MiArchiBlVisualization >> redrawLines [
 
 	lastBounds := nil.
 	self updateLines
+]
+
+{ #category : 'menu' }
+MiArchiBlVisualization >> relayoutAll [
+	"Draw all the boxes again, placed by the layout of the map and the grids of the children, forgetting where they were moved by hand. The nodes stay expanded or collapsed, the hidden links stay hidden; zoom and pan do not change"
+
+	boxesLayer removeChildren.
+	self fillBoxesLayer
 ]
 
 { #category : 'expanding' }

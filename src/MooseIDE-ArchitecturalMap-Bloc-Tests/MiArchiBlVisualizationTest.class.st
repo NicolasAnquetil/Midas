@@ -190,17 +190,22 @@ MiArchiBlVisualizationTest >> pairsOfLinesIn: aVisualization [
 
 { #category : 'running' }
 MiArchiBlVisualizationTest >> rightClick: aBox [
-	"Press and release the secondary button over the label of aBox (not over a child box), through the space, as a quick right click does. Answer the context menu it opened, nil if none.
+	"Right click on the label of aBox (not over a child box). Answer the context menu it opened, nil if none"
+
+	^ self rightClickAt: aBox children first boundsInSpace center menuOf: aBox
+]
+
+{ #category : 'running' }
+MiArchiBlVisualizationTest >> rightClickAt: aPoint menuOf: anElement [
+	"Press and release the secondary button at aPoint (space coordinates), through the space, as a quick right click does. Answer the context menu of anElement, nil if none is opened.
 	Both are sent in one go: Toplo closes a menu released more than 300 ms after it popped up (a press held, then released), and settling the space between the two may take that long"
 
-	| point |
-	point := aBox children first boundsInSpace center.
 	self
 		mouseAll: {
 				BlMouseDownEvent secondary.
 				BlMouseUpEvent secondary }
-		at: point.
-	^ aBox currentContextMenu
+		at: aPoint.
+	^ anElement currentContextMenu
 ]
 
 { #category : 'running' }
@@ -650,6 +655,19 @@ MiArchiBlVisualizationTest >> testLinkItemsOnlyThoseThatChangeSomething [
 ]
 
 { #category : 'tests - menu' }
+MiArchiBlVisualizationTest >> testMenuOfBackground [
+	"A right click on the background opens a menu with Relayout all; a right click on a box opens the menu of the box only"
+
+	| visualization menu |
+	visualization := self layOut: (self visualizationOf: self tree).
+	menu := self rightClickAt: 700 @ 500 menuOf: visualization viewport.
+	self assert: (self labelsOf: menu) asArray equals: #( 'Relayout all' ).
+	space deferAndSettle: [ menu close ].
+	self rightClick: (self boxOf: package1 in: visualization).
+	self assert: visualization viewport currentContextMenu isNil
+]
+
+{ #category : 'tests - menu' }
 MiArchiBlVisualizationTest >> testMenuOfBoxes [
 	"The whole menus, in order. package2 expanded: package2 has no links drawn to its own box (they go to its classes); Class2 has an incoming link. package1 collapsed: no Relayout children"
 
@@ -805,6 +823,23 @@ MiArchiBlVisualizationTest >> testPanDoesNotRedrawLines [
 	line := self lineFrom: package1 to: package2 in: visualization.
 	self drag: visualization from: 700 @ 500 to: 720 @ 520.
 	self assert: (self lineFrom: package1 to: package2 in: visualization) identicalTo: line
+]
+
+{ #category : 'tests - menu' }
+MiArchiBlVisualizationTest >> testRelayoutAllPutsBoxesBack [
+	"Expanded tree: package1 and Class3 dragged; Relayout all, from the menu of the background, puts them back where the layouts put them"
+
+	| visualization package1Origin class3Origin start |
+	visualization := self layOut: (self visualizationOf: self expandedTree).
+	package1Origin := (self boxOf: package1 in: visualization) boundsInSpace origin.
+	class3Origin := (self boxOf: class3 in: visualization) boundsInSpace origin.
+	start := (self boxOf: package1 in: visualization) children first boundsInSpace center.
+	self drag: visualization from: start to: start + (0 @ 60).
+	start := (self boxOf: class3 in: visualization) boundsInSpace center.
+	self drag: visualization from: start to: start + (80 @ 0).
+	self choose: 'Relayout all' in: (self rightClickAt: 700 @ 500 menuOf: visualization viewport).
+	self assert: (self boxOf: package1 in: visualization) boundsInSpace origin equals: package1Origin.
+	self assert: (self boxOf: class3 in: visualization) boundsInSpace origin equals: class3Origin
 ]
 
 { #category : 'tests - menu' }

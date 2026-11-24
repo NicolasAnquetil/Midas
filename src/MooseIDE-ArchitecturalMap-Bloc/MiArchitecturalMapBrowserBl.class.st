@@ -107,10 +107,11 @@ MiArchitecturalMapBrowserBl >> followEntity: anEntity [
 
 { #category : 'initialization' }
 MiArchitecturalMapBrowserBl >> initializePresenters [
+	"The theme is given to the space in its own process (BlSpace>>#defer:): its pulse loop already runs, and installing the theme adds event handlers to the root that the loop may use at once (a focus event reached the skin state generator of the root before it knew its element: 'isEnabled sent to nil'). Deferred blocks run in order, so the theme is there before the map is drawn (#runVisualization defers too)"
 
 	super initializePresenters.
 	mapPresenter := self instantiate: SpBlSpaceInMorphPresenter.
-	self space toTheme: self toploTheme.
+	self space defer: [ self space toTheme: self toploTheme ].
 	self layout: (SpBoxLayout newTopToBottom
 			 add: mapPresenter;
 			 yourself)
