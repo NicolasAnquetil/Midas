@@ -3,10 +3,10 @@ I lay out the root nodes of the Bloc architectural map on a circle (`ToBasicCirc
 
 ## Collaborators & Context
 - `MiArchiBlLayout`: my superclass, see it for how layouts are chosen and applied.
-- `ToBasicCircularLayout`: does the work, inside an element of fixed size.
+- `MiArchiBlInsetCircularLayout` (a `ToBasicCircularLayout` of Toplo): does the work, inside an element of fixed size, keeping the boxes inside it.
 
 ## Assumptions & Invariants
-- The element is a square whose side is the diameter of the circle: about the perimeter the root nodes need (their number times `#nodeWidth`) divided by pi, and at least 300.
+- The circle of the centers of the boxes has a diameter of about the perimeter the root nodes need (their number times `#nodeWidth`) divided by pi, and at least 300. The element is a square larger by `#nodeWidth`, so that the boxes on the circle are inside it (the circle is inset by half the biggest box).
 - `#nodeWidth` (150) is an estimate: wider boxes may overlap.
 
 ## Main API
@@ -35,14 +35,14 @@ MiArchiBlCircularLayout class >> layoutName [
 
 { #category : 'layout' }
 MiArchiBlCircularLayout >> applyOn: anElement topElementsCount: anInteger [
-	"The circle fills anElement: its diameter is about the perimeter needed by the nodes divided by pi"
+	"The circle of the centers of the nodes has a diameter of about the perimeter needed by the nodes divided by pi. anElement is larger by #nodeWidth (the estimated width of a box), so the boxes on the circle are inside it (MiArchiBlInsetCircularLayout insets the circle by half the biggest box)"
 
 	| diameter |
 	diameter := (anInteger * self nodeWidth / Float pi) rounded max: 300.
-	anElement layout: ToBasicCircularLayout new.
+	anElement layout: MiArchiBlInsetCircularLayout new.
 	anElement constraintsDo: [ :c |
-			c horizontal exact: diameter.
-			c vertical exact: diameter ]
+			c horizontal exact: diameter + self nodeWidth.
+			c vertical exact: diameter + self nodeWidth ]
 ]
 
 { #category : 'layout' }

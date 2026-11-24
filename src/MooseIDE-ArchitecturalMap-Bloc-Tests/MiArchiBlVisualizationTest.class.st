@@ -314,6 +314,21 @@ MiArchiBlVisualizationTest >> testChooseExpandShowsChildrenInTheBox [
 	self assert: (class1Box allParentsInclude: (self boxOf: package1 in: visualization))
 ]
 
+{ #category : 'tests - boxes' }
+MiArchiBlVisualizationTest >> testCircularLayoutKeepsBoxesInside [
+	"On the circle, the leftmost and rightmost boxes are inside the layer of the boxes (which clips them), not half out"
+
+	| visualization layerBounds |
+	visualization := MiArchiBlVisualization new
+		                 tree: self tree;
+		                 layoutClass: MiArchiBlCircularLayout;
+		                 tokenSource: space root;
+		                 yourself.
+	self layOut: visualization.
+	layerBounds := (self boxOf: package1 in: visualization) parent boundsInSpace asRectangle.
+	visualization boxes do: [ :each | self assert: (layerBounds containsRect: each boundsInSpace asRectangle) ]
+]
+
 { #category : 'tests' }
 MiArchiBlVisualizationTest >> testDashedBorderForNodeWithChildren [
 
