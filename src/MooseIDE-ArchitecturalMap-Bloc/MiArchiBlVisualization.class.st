@@ -19,10 +19,12 @@ I draw with Bloc and Toplo the architectural map built by a `MiArchiBlTreeBuilde
 - Lines are redrawn after a layout of `boxesLayer` only if some box bounds changed (`lastBounds`), so the space can settle. The bounds are taken in the coordinates of the lines layer (`#placeOf:`), so zoom and pan, which move the canvas as a whole, redraw nothing: only moving boxes does.
 - Each line has its dependency in its `userData` at `#miArchitecturalMapDependency`.
 - Pan and zoom are kept in `origin` (where the canvas is in `viewport`) and `zoom`, and applied together by `#applyTransform` (absolute scale, top left origin). Zoom is around the mouse cursor, by 1.1 per wheel step, between `#minZoom` and `#maxZoom`. Dragging the background pans. Mouse positions are in space coordinates (`#position`, never `#screenPosition`).
-- Moving boxes: dragging a box moves it, dragging the background pans. Drags are Bloc drag events (`BlDragStartEvent`, `BlDragEvent`, `BlDragEndEvent`): the space starts one after a press and a move of a few pixels, sends it to the element that consumed the drag start (the innermost box, see `#beDraggable:`, or else `viewport`), and ends it at the release. `lastDragPosition` is the mouse position at the previous drag event, for the move since then (`#dragDeltaOf:`). At the first move of a child, its container stops laying out its children (`#freezeLayoutOf:` replaces its layout by a `BlBasicLayout` with each child where it was), and after each move gets the size that contains all of them (`#fitToChildren:`). So a parent box grows to contain a moved child.
+- Moving boxes: dragging a box moves it, dragging the background pans. Drags are Bloc drag events (`BlDragStartEvent`, `BlDragEvent`, `BlDragEndEvent`): the space starts one after a press and a move of a few pixels, sends it to the element that consumed the drag start (the innermost box, see `#beDraggable:`, or else `viewport`), and ends it at the release. `lastDragPosition` is the mouse position at the previous drag event, for the move since then (`#dragDeltaOf:`). At the first move of a child, its container stops laying out its children (`#freezeLayoutOf:` replaces its layout by a `MiArchiBlFittingBasicLayout` with each child where it was): from then on it is as big as needed to contain all of them. So a parent box grows to contain a moved child, or a child drawn again bigger.
+- Expand and collapse: a box whose node has children is a Toplo element with a context menu (`#giveMenuTo:for:`), opened by a right click: one item, Expand or Collapse according to the node. Choosing it changes the node (`#isExpanded:`) and draws only that box again, in place of the old one (`#toggle:`): the other boxes stay where they are, even if moved by hand. A right press stops at the innermost box (`#keepRightClicksIn:`), so a box inside another does not open the menu of the outer one.
 - Highlight: the mouse over a box (`BlMouseOverEvent`, which bubbles, handled on `viewport`) highlights the node of the innermost box under it (`#nodeUnder:`). Its dependencies both ways and the boxes at their other end get a halo (`#haloColor`), and keep their own look: both are drawn in `halosLayer` (over the boxes, under the lines): a box gets a translucent yellow ring just outside its bounds (`#haloForBox:). Over the background, or when the mouse leaves `viewport` (`BlMouseLeaveEvent`), nothing is highlighted. Only one node at a time is highlighted, and no state is kept: the halos are the highlight. Redrawing the lines removes them (they follow the old lines and boxes); since boxes move only while dragged, the end of a drag highlights again what is under the mouse (`#endDrag:`, `#highlightAt:`). While a box is dragged, nothing is highlighted.
 
 ## Main API
+- `#toggle:` a node: expand or collapse it, as its menu does.
 - `MiArchiBlVisualization new tree: aTreeBuilder; layoutClass: aLayoutClass; tokenSource: aSpaceRoot; yourself`
 - `#viewport`: the Bloc element to add to the space (built on first send). It shows the map: everything I draw is inside it.
 - `#boxes`: all the boxes drawn. `#boxOf:` a node: its box, nil if it is not shown. `#nodeOf:` a box: its node (nil for any other element).
@@ -169,10 +171,10 @@ MiArchiBlVisualization >> boxContaining: anElement [
 
 { #category : 'building' }
 MiArchiBlVisualization >> boxForNode: aNode [
-	"The box of aNode: its label, then (when expanded) the boxes of its children. It knows its node (#nodeOf:), and can be dragged (#beDraggable:)"
+	"The box of aNode: its label, then (when expanded) the boxes of its children. It knows its node (#nodeOf:), can be dragged (#beDraggable:), and has a context menu if aNode has children (#giveMenuTo:for:). A Toplo element, for the menu"
 
 	| box |
-	box := BlElement new
+	box := ToElement new
 		       layout: BlLinearLayout vertical;
 		       padding: (BlInsets all: 6);
 		       margin: (BlInsets all: 8);
@@ -185,6 +187,8 @@ MiArchiBlVisualization >> boxForNode: aNode [
 			c vertical fitContent ].
 	box userData at: #miArchitecturalMapNode put: aNode.
 	self beDraggable: box.
+	aNode hasChildren ifTrue: [ self giveMenuTo: box for: aNode ].
+	self keepRightClicksIn: box.
 	(aNode isExpanded and: [ aNode hasChildren ]) ifTrue: [
 			box addChild: (BlElement new
 					 layout: BlFlowLayout horizontal;
@@ -328,28 +332,29 @@ MiArchiBlVisualization >> endDrag: aDragEndEvent [
 ]
 
 { #category : 'moving' }
-MiArchiBlVisualization >> fitToChildren: aContainer [
-	"Give aContainer the size that contains all its children and their margins (a basic layout does not fit positioned children). Read from #measuredBounds: a moved child has its new position there at once, #position answers it only after the next layout"
-
-	| corner |
-	corner := aContainer children
-		          inject: 0 @ 0
-		          into: [ :max :each |
-		          max max: each measuredBounds position + each measuredBounds extent + (each margin right @ each margin bottom) ].
-	aContainer constraintsDo: [ :c |
-			c horizontal exact: corner x.
-			c vertical exact: corner y ]
-]
-
-{ #category : 'moving' }
 MiArchiBlVisualization >> freezeLayoutOf: aContainer [
-	"Replace the layout of aContainer (flow, grid...) by explicit positions: each child stays where the layout put it. Done once, at the first move of one of its children"
+	"Replace the layout of aContainer (flow, grid...) by explicit positions: each child stays where the layout put it. Done once, at the first move of one of its children. From then on, aContainer is as big as needed to contain its children (MiArchiBlFittingBasicLayout): it grows when one is moved, or drawn again bigger"
 
 	| positions |
-	(aContainer layout isKindOf: BlBasicLayout) ifTrue: [ ^ self ].
+	(aContainer layout isKindOf: MiArchiBlFittingBasicLayout) ifTrue: [ ^ self ].
 	positions := aContainer children collect: [ :each | each -> each position ].
-	aContainer layout: BlBasicLayout new.
+	aContainer layout: MiArchiBlFittingBasicLayout new.
+	aContainer constraintsDo: [ :c |
+			c horizontal fitContent.
+			c vertical fitContent ].
 	positions do: [ :each | each key position: each value ]
+]
+
+{ #category : 'expanding' }
+MiArchiBlVisualization >> giveMenuTo: aBox for: aNode [
+	"The context menu of aBox (opened by a right click, by Toplo): Expand if aNode is collapsed, Collapse if it is expanded"
+
+	aBox contextMenuBuilder: [ :menu :request |
+			menu addItem: ((ToMenuItem new labelText: (aNode isExpanded
+							   ifTrue: [ 'Collapse' ]
+							   ifFalse: [ 'Expand' ]))
+					 clickAction: [ self toggle: aNode ];
+					 yourself) ]
 ]
 
 { #category : 'styling' }
@@ -434,6 +439,13 @@ MiArchiBlVisualization >> initialize [
 	zoom := 1
 ]
 
+{ #category : 'expanding' }
+MiArchiBlVisualization >> keepRightClicksIn: aBox [
+	"A right press on aBox stops there: it does not go up to the boxes around aBox, which would open their menus. Installed after the menu of aBox, which sees the press first"
+
+	aBox addEventHandlerOn: BlMouseDownEvent do: [ :event | event button = BlMouseButton secondary ifTrue: [ event consume ] ]
+]
+
 { #category : 'accessing' }
 MiArchiBlVisualization >> layoutClass: aLayoutClass [
 	"A subclass of MiArchiBlLayout (required before #viewport)"
@@ -493,11 +505,8 @@ MiArchiBlVisualization >> minZoom [
 MiArchiBlVisualization >> move: aBox by: aPoint [
 	"Move aBox by aPoint (in the coordinates of its parent, so unzoomed) from where it is. Its parent stops laying out its children: they stay where they are. The parent grows to the right and down to contain the moved box; to the left and up, the box stops at the edge of its parent (keeping its margin)"
 
-	| container |
-	container := aBox parent.
-	self freezeLayoutOf: container.
-	aBox position: (aBox measuredBounds position + aPoint max: aBox margin left @ aBox margin top).
-	self fitToChildren: container
+	self freezeLayoutOf: aBox parent.
+	aBox position: (aBox measuredBounds position + aPoint max: aBox margin left @ aBox margin top)
 ]
 
 { #category : 'boxes' }
@@ -546,6 +555,18 @@ MiArchiBlVisualization >> startDrag: aDragStartEvent [
 	lastDragPosition := aDragStartEvent position
 ]
 
+{ #category : 'expanding' }
+MiArchiBlVisualization >> toggle: aNode [
+	"Expand aNode if it is collapsed, collapse it otherwise, and draw its box again, in the place of the old one: the other boxes are not drawn again, so they stay where they are (even moved by hand). If the container of the box was frozen by a move (#freezeLayoutOf:), the new box keeps the position of the old one, and the container fits it"
+
+	| oldBox newBox |
+	oldBox := self boxOf: aNode.
+	aNode isExpanded: aNode isExpanded not.
+	newBox := self boxForNode: aNode.
+	newBox position: oldBox position.
+	oldBox parent replaceChild: oldBox with: newBox
+]
+
 { #category : 'styling' }
 MiArchiBlVisualization >> tokenNamed: aSymbol [
 
@@ -574,7 +595,7 @@ MiArchiBlVisualization >> updateLines [
 	| boxes shownNodes bounds |
 	boxes := self boxes.
 	bounds := boxes collect: [ :each | self placeOf: each ].
-	bounds = lastBounds ifTrue: [ ^ self ].
+	(bounds = lastBounds) ifTrue: [ ^ self ].
 	lastBounds := bounds.
 	shownNodes := (boxes collect: [ :each | self nodeOf: each ]) asIdentitySet.
 	linesLayer removeChildren.

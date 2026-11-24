@@ -58,6 +58,19 @@ MiArchiBlVisualizationTest >> boxOf: anEntity in: aVisualization [
 ]
 
 { #category : 'running' }
+MiArchiBlVisualizationTest >> choose: aLabel in: aMenu [
+	"Click (primary press and release, in one go) the item of aMenu labelled aLabel, where it is drawn, through the space"
+
+	| item |
+	item := aMenu items asArray detect: [ :each | each labelText asString = aLabel ].
+	self
+		mouseAll: {
+				BlMouseDownEvent primary.
+				BlMouseUpEvent primary }
+		at: item boundsInSpace center
+]
+
+{ #category : 'running' }
 MiArchiBlVisualizationTest >> drag: aVisualization from: startPoint to: endPoint [
 	"Press the primary button at startPoint, move to endPoint and release it there, through the space (so as drag events when the move is longer than the drag threshold of Bloc, a few pixels)"
 
@@ -85,6 +98,12 @@ MiArchiBlVisualizationTest >> fire: anEvent at: aPoint on: aVisualization [
 		screenPosition: aPoint + (1000 @ 1000).
 	space deferAndSettle: [ ((space root findMouseEventTargetAt: aPoint) ifNil: [ aVisualization viewport ]) fireEvent: anEvent ].
 	^ anEvent
+]
+
+{ #category : 'running' }
+MiArchiBlVisualizationTest >> labelsOf: aMenu [
+
+	^ aMenu items collect: [ :each | each labelText asString ]
 ]
 
 { #category : 'running' }
@@ -119,13 +138,22 @@ MiArchiBlVisualizationTest >> lineFrom: sourceEntity to: targetEntity in: aVisua
 MiArchiBlVisualizationTest >> mouse: anEvent at: aPoint [
 	"Send anEvent (a mouse down, move or up) at aPoint (space coordinates) to the space, as its host does, and wait for the space to settle. The space picks the element under aPoint, and turns a press followed by moves into drag events (as in BlMouseProcessingTest). The screen position is made different on purpose: the code must use #position"
 
-	anEvent
-		position: aPoint;
-		screenPosition: aPoint + (1000 @ 1000).
-	space deferAndSettle: [
-			anEvent fillFromTime: space time.
-			space eventListener handleEvent: anEvent ].
+	self mouseAll: { anEvent } at: aPoint.
 	^ anEvent
+]
+
+{ #category : 'running' }
+MiArchiBlVisualizationTest >> mouseAll: someEvents at: aPoint [
+	"Send someEvents one after the other at aPoint, without waiting in between, then wait for the space to settle (see #mouse:at:)"
+
+	someEvents do: [ :each |
+			each
+				position: aPoint;
+				screenPosition: aPoint + (1000 @ 1000) ].
+	space deferAndSettle: [
+			someEvents do: [ :each |
+					each fillFromTime: space time.
+					space eventListener handleEvent: each ] ]
 ]
 
 { #category : 'running' }
@@ -147,6 +175,21 @@ MiArchiBlVisualizationTest >> pairsOfLinesIn: aVisualization [
 			   | dependency |
 			   dependency := each userData at: #miArchitecturalMapDependency.
 			   dependency source entity -> dependency target entity ]) asSet
+]
+
+{ #category : 'running' }
+MiArchiBlVisualizationTest >> rightClick: aBox [
+	"Press and release the secondary button over the label of aBox (not over a child box), through the space, as a quick right click does. Answer the context menu it opened, nil if none.
+	Both are sent in one go: Toplo closes a menu released more than 300 ms after it popped up (a press held, then released), and settling the space between the two may take that long"
+
+	| point |
+	point := aBox children first boundsInSpace center.
+	self
+		mouseAll: {
+				BlMouseDownEvent secondary.
+				BlMouseUpEvent secondary }
+		at: point.
+	^ aBox currentContextMenu
 ]
 
 { #category : 'running' }
@@ -203,6 +246,42 @@ MiArchiBlVisualizationTest >> testBoxesForChildrenWhenExpanded [
 	self assert: nested asArray equals: {
 			(self boxOf: class2 in: visualization).
 			(self boxOf: class3 in: visualization) }
+]
+
+{ #category : 'tests - expand' }
+MiArchiBlVisualizationTest >> testChooseCollapseHidesChildren [
+	"In the expanded tree, Collapse on package2 removes the boxes of Class2 and Class3; the dependencies of Class1 now end on package2"
+
+	| visualization |
+	visualization := self layOut: (self visualizationOf: self expandedTree).
+	self choose: 'Collapse' in: (self rightClick: (self boxOf: package2 in: visualization)).
+	self assert: (self boxOf: class2 in: visualization) isNil.
+	self assert: (self boxOf: class3 in: visualization) isNil.
+	self assert: (self pairsOfLinesIn: visualization) equals: { (class1 -> package2) } asSet
+]
+
+{ #category : 'tests - expand' }
+MiArchiBlVisualizationTest >> testChooseExpandMovesLinesToChildren [
+	"After Expand on package1, the dependency to package2 starts from Class1, on the border of its box"
+
+	| visualization line |
+	visualization := self layOut: (self visualizationOf: self tree).
+	self choose: 'Expand' in: (self rightClick: (self boxOf: package1 in: visualization)).
+	self assert: (self pairsOfLinesIn: visualization) equals: { (class1 -> package2) } asSet.
+	line := self lineFrom: class1 to: package2 in: visualization.
+	self assertPoint: (line localPointToGlobal: line geometry from) isOnBorderOf: (self boxOf: class1 in: visualization)
+]
+
+{ #category : 'tests - expand' }
+MiArchiBlVisualizationTest >> testChooseExpandShowsChildrenInTheBox [
+	"Expand in the menu of package1 draws the box of Class1 in the box of package1"
+
+	| visualization class1Box |
+	visualization := self layOut: (self visualizationOf: self tree).
+	self choose: 'Expand' in: (self rightClick: (self boxOf: package1 in: visualization)).
+	class1Box := self boxOf: class1 in: visualization.
+	self assert: class1Box isNotNil.
+	self assert: (class1Box allParentsInclude: (self boxOf: package1 in: visualization))
 ]
 
 { #category : 'tests' }
@@ -322,6 +401,23 @@ MiArchiBlVisualizationTest >> testDraggedBoxIsHighlightedAtRelease [
 	self assert: (self line: (self lineFrom: package1 to: package2 in: visualization) hasHaloIn: visualization).
 	self assert: (self box: (self boxOf: package1 in: visualization) hasHaloIn: visualization).
 	self assert: visualization halosLayer children size equals: 2
+]
+
+{ #category : 'tests - expand' }
+MiArchiBlVisualizationTest >> testExpandKeepsBoxesMovedByHand [
+	"package2 dragged down, then expanded: package2 stays where it was dropped, package1 too, and the layer of the boxes grows to contain the bigger package2"
+
+	| visualization start package1Origin package2Origin package2Box |
+	visualization := self layOut: (self visualizationOf: self tree).
+	start := (self boxOf: package2 in: visualization) boundsInSpace center.
+	self drag: visualization from: start to: start + (0 @ 80).
+	package1Origin := (self boxOf: package1 in: visualization) boundsInSpace origin.
+	package2Origin := (self boxOf: package2 in: visualization) boundsInSpace origin.
+	self choose: 'Expand' in: (self rightClick: (self boxOf: package2 in: visualization)).
+	package2Box := self boxOf: package2 in: visualization.
+	self assert: package2Box boundsInSpace origin equals: package2Origin.
+	self assert: (self boxOf: package1 in: visualization) boundsInSpace origin equals: package1Origin.
+	self assert: (package2Box parent boundsInSpace asRectangle containsRect: package2Box boundsInSpace asRectangle)
 ]
 
 { #category : 'tests - highlight' }
@@ -525,6 +621,37 @@ MiArchiBlVisualizationTest >> testPanDoesNotRedrawLines [
 	line := self lineFrom: package1 to: package2 in: visualization.
 	self drag: visualization from: 700 @ 500 to: 720 @ 520.
 	self assert: (self lineFrom: package1 to: package2 in: visualization) identicalTo: line
+]
+
+{ #category : 'tests - expand' }
+MiArchiBlVisualizationTest >> testRightClickBoxWithoutChildrenOpensNoMenu [
+	"Class1 has no children: no menu, neither its own nor the one of package1 around it"
+
+	| visualization |
+	visualization := self layOut: (self visualizationOf: self expandedTree).
+	self assert: (self rightClick: (self boxOf: class1 in: visualization)) isNil.
+	self assert: (self boxOf: package1 in: visualization) currentContextMenu isNil
+]
+
+{ #category : 'tests - expand' }
+MiArchiBlVisualizationTest >> testRightClickCollapsedBoxOffersExpand [
+	"package1 has a child and is collapsed: its menu has one item, Expand"
+
+	| visualization menu |
+	visualization := self layOut: (self visualizationOf: self tree).
+	menu := self rightClick: (self boxOf: package1 in: visualization).
+	self assert: menu isNotNil.
+	self assert: (self labelsOf: menu) asArray equals: #( 'Expand' )
+]
+
+{ #category : 'tests - expand' }
+MiArchiBlVisualizationTest >> testRightClickExpandedBoxOffersCollapse [
+	"In the expanded tree, package2 shows its classes: its menu has one item, Collapse"
+
+	| visualization menu |
+	visualization := self layOut: (self visualizationOf: self expandedTree).
+	menu := self rightClick: (self boxOf: package2 in: visualization).
+	self assert: (self labelsOf: menu) asArray equals: #( 'Collapse' )
 ]
 
 { #category : 'tests' }
