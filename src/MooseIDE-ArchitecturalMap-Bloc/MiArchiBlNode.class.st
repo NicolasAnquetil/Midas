@@ -1,22 +1,24 @@
 "
-I am a node of the architectural map drawn with Bloc. I stand for one Moose entity, or for a tag (`FamixTag`), and I know my place in the tree, my label, my color and whether my children are shown.
+I am the abstract superclass of the nodes of the architectural map drawn with Bloc. A node stands for a model object, and I hold what all nodes share: their place in the tree, their label, and whether their children are shown.
 
 ## Collaborators & Context
-- `MiArchiBlTreeBuilder`: creates me (`#nodeForEntity:`, `#nodeForTag:`) and sets my name, color and children.
-- `MiArchiBlDependency`: links two nodes. `MiArchiBlTreeBuilder>>#visibleDependencies` moves dependencies up to the nodes shown, using my `#visibleNode`.
-- `MiArchiBlVisualization`: draws a box for me (`#elementForNode:`). It shows my label, uses my color as background, gives me a dashed border when I have children, and draws my children's boxes inside mine only when I am expanded.
+- Subclasses: `MiArchiBlEntityNode` (a Moose entity) and `MiArchiBlTagNode` (a `FamixTag`, with its color).
+- `MiArchiBlTreeBuilder`: creates the nodes (`#nodeForEntity:`, `#nodeForTag:`) and sets their name and children.
+- `MiArchiBlDependency`: links two nodes. `MiArchiBlTreeBuilder>>#visibleDependencies` moves dependencies up to the nodes shown, using `#visibleNode`.
+- `MiArchiBlVisualization`: draws a box for each node (`#elementForNode:`). It shows the label, uses `#color` as background (the theme's when nil), gives a dashed border to a node with children, and draws the children's boxes inside only when the node is expanded.
 
 ## Assumptions & Invariants
-- `entity` is a Moose entity or a tag. `#isTag` asks the entity.
-- `color` is the tag's color for a tag node, nil for an entity node (the visualization then uses the theme's background).
-- `parent` and `children` agree: `#children:` sets me as the parent of each child. The root has no parent. I do not sort my children: the tree builder gives them sorted by name.
-- I am collapsed at first (`isExpanded` is false). A collapsed node hides its descendants, and their dependencies are drawn on it.
-- No thread safety: I am built by the tree builder, then read by the visualization in the Bloc UI process.
+- I am abstract (`#isAbstract`): subclasses define `#color` and `#isTag`.
+- `entity` is the model object of the node: a Moose entity or a tag.
+- `parent` and `children` agree: `#children:` sets me as the parent of each child. The root has no parent. I do not sort the children: the tree builder gives them sorted by name.
+- A node is collapsed at first (`isExpanded` is false). A collapsed node hides its descendants, and their dependencies are drawn on it.
+- No thread safety: the nodes are built by the tree builder, then read by the visualization in the Bloc UI process.
 
 ## Main API
-- `MiArchiBlNode new entity: anEntity; name: aString; color: aColorOrNil; children: someNodes; yourself`
-- `#entity`, `#name`, `#color`, `#parent`, `#children`, `#hasChildren`, `#isTag`
-- `#isExpanded`, `#isExpanded:`: whether my children are shown.
+- Creation is through a subclass: `MiArchiBlEntityNode new entity: anEntity; name: aString; children: someNodes; yourself`
+- `#entity`, `#name`, `#parent`, `#children`, `#hasChildren`
+- `#color`, `#isTag`: subclass responsibilities.
+- `#isExpanded`, `#isExpanded:`: whether the children are shown.
 - `#visibleNode`: the node drawn for me. That is myself if all my ancestors are expanded, otherwise my highest collapsed ancestor.
 - `#withAllParents`: me and my ancestors, the root last.
 
@@ -27,7 +29,6 @@ Class {
 	#instVars : [
 		'entity',
 		'name',
-		'color',
 		'parent',
 		'children',
 		'isExpanded'
@@ -36,6 +37,12 @@ Class {
 	#package : 'MooseIDE-ArchitecturalMap-Bloc',
 	#tag : 'data'
 }
+
+{ #category : 'testing' }
+MiArchiBlNode class >> isAbstract [
+
+	^ self == MiArchiBlNode
+]
 
 { #category : 'accessing' }
 MiArchiBlNode >> children [
@@ -52,15 +59,9 @@ MiArchiBlNode >> children: aCollection [
 
 { #category : 'accessing' }
 MiArchiBlNode >> color [
-	"The color of a tag, nil for an entity"
+	"The background color of my box, nil for the default one"
 
-	^ color
-]
-
-{ #category : 'accessing' }
-MiArchiBlNode >> color: aColor [
-
-	color := aColor
+	^ self subclassResponsibility
 ]
 
 { #category : 'accessing' }
@@ -101,10 +102,10 @@ MiArchiBlNode >> isExpanded: aBoolean [
 	isExpanded := aBoolean
 ]
 
-{ #category : 'testing' }
+{ #category : 'accessing' }
 MiArchiBlNode >> isTag [
 
-	^ entity isTag
+	^ self subclassResponsibility
 ]
 
 { #category : 'accessing' }

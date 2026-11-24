@@ -183,16 +183,16 @@ MiArchiBlVisualizationTest >> testOneLineWhenCollapsed [
 
 { #category : 'tests' }
 MiArchiBlVisualizationTest >> testTagBoxHasTagColor [
-	"A node with a color (a tag) has it as background, the others the background token of the theme"
+	"A tag node has its color as background, an entity node the background token of the theme"
 
 	| visualization |
 	visualization := self visualizationOf: self tree.
 	self
-		assert: (visualization backgroundFor: (MiArchiBlNode new
+		assert: (visualization backgroundFor: (MiArchiBlTagNode new
 					  color: Color red;
 					  yourself))
 		equals: Color red.
-	self assert: (visualization backgroundFor: MiArchiBlNode new) equals: (space root valueOfTokenNamed: #'color-bg-container')
+	self assert: (visualization backgroundFor: MiArchiBlEntityNode new) equals: (space root valueOfTokenNamed: #'color-bg-container')
 ]
 
 { #category : 'tests' }

@@ -3,7 +3,7 @@ I build, from a `MiArchitecturalMapModel`, the tree of `MiArchiBlNode` and the `
 
 ## Collaborators & Context
 - `MiArchitecturalMapModel` (`mapModel`): gives the root entities (`#rootNodes`), the tags (`#tags`), the children of an entity (`#childrenFor:`), its dependencies (`#getDependenciesFor:`) and whether received entities are hidden (`#hideReceivedEntities`).
-- `MiArchiBlNode`: a node of the tree, for a Moose entity or a tag (`FamixTag`).
+- `MiArchiBlEntityNode` (for a Moose entity) and `MiArchiBlTagNode` (for a `FamixTag`): the nodes of the tree, subclasses of `MiArchiBlNode`.
 - `MiArchiBlDependency`: a dependency from a source node to a target node, with its associations.
 - `MiArchitecturalMapBrowserBl>>#runVisualization` creates and builds me; the browser then draws my `roots` and `#visibleDependencies` with Bloc.
 
@@ -90,7 +90,7 @@ MiArchiBlTreeBuilder >> nodeForEntity: anEntity [
 
 	| node |
 	nodesByMooseID at: anEntity mooseID ifPresent: [ :existing | ^ existing parent ifNil: [ existing ] ifNotNil: [ nil ] ].
-	node := MiArchiBlNode new
+	node := MiArchiBlEntityNode new
 		        entity: anEntity;
 		        name: anEntity fullDisplayString;
 		        yourself.
@@ -116,7 +116,7 @@ MiArchiBlTreeBuilder >> nodeForTag: aTag [
 									 nextPutAll: owner name;
 									 nextPut: $. ].
 						 stream nextPutAll: child entity name ]) ].
-	^ MiArchiBlNode new
+	^ MiArchiBlTagNode new
 		  entity: aTag;
 		  name: (String streamContents: [ :stream | aTag displayStringOn: stream ]);
 		  color: aTag color;

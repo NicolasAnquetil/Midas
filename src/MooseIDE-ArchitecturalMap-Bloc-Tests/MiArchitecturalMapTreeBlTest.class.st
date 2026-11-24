@@ -48,6 +48,16 @@ MiArchitecturalMapTreeBlTest >> testDependencies [
 ]
 
 { #category : 'tests' }
+MiArchitecturalMapTreeBlTest >> testNodeKinds [
+	"The packages and classes of the fixture are entity nodes"
+
+	| roots |
+	roots := self tree roots.
+	self assert: (roots allSatisfy: [ :each | each class == MiArchiBlEntityNode ]).
+	self assert: (roots second children allSatisfy: [ :each | each class == MiArchiBlEntityNode and: [ each isTag not ] ])
+]
+
+{ #category : 'tests' }
 MiArchitecturalMapTreeBlTest >> testRoots [
 
 	self assert: (self tree roots collect: #entity) asArray equals: {
