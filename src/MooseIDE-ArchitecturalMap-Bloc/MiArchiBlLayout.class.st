@@ -60,7 +60,7 @@ MiArchiBlLayout class >> layoutName [
 { #category : 'layout' }
 MiArchiBlLayout >> applyOn: anElement topElementsCount: anInteger [
 	"Lay out the root nodes of the map.
-	anElement is the element that will hold one child element per root node (nodesLayer in MiArchiBlVisualization>>#buildNodesLayer). Set its Bloc layout (e.g. a BlGridLayout) and its size constraints (e.g. fitContent).
+	anElement is the element that will hold one child element per root node (boxesLayer in MiArchiBlVisualization>>#buildBoxesLayer). Set its Bloc layout (e.g. a BlGridLayout) and its size constraints (e.g. fitContent).
 	anInteger is the number of root nodes. It is given because this method is called before the children are added to anElement, so they cannot be counted there. Some layouts need it, e.g. MiArchiBlGridLayout uses it to choose its number of columns."
 
 	self subclassResponsibility

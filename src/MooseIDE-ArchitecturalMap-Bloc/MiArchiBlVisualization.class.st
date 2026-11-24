@@ -2,31 +2,31 @@
 I draw with Bloc and Toplo the architectural map built by a `MiArchiBlTreeBuilder`: a box per visible node, an arrow per visible dependency, and the root boxes laid out by a `MiArchiBlLayout`. The map can be panned and zoomed with the mouse.
 
 ## Collaborators & Context
-- Vocabulary: a *node* is model data (a `MiArchiBlNode` of the tree, for an entity or a tag); a *box* is the Bloc element drawn for a node (`boxesByNode`); the *viewport* is the outermost Bloc element, the one shown, holding everything else.
+- Vocabulary: a *node* is model data (a `MiArchiBlNode` of the tree, for an entity or a tag); a *box* is the Bloc element drawn for a node (`#boxOf:`, `#nodeOf:`); the *viewport* is the outermost Bloc element, the one shown, holding everything else.
 - `MiArchiBlTreeBuilder` (`tree`): gives the root `MiArchiBlNode`s (`#roots`) and the `MiArchiBlDependency`s between the visible nodes (`#visibleDependencies`).
-- `MiArchiBlLayout` subclasses (`layoutClass`): place the root boxes in `nodesLayer`. The browser chooses the layout: its `MiArchitecturalMapModel>>#layout`.
+- `MiArchiBlLayout` subclasses (`layoutClass`): place the root boxes in `boxesLayer`. The browser chooses the layout: its `MiArchitecturalMapModel>>#layout`.
 - `tokenSource`: an element already in a space (the space root). Its Toplo theme gives the colors (`#tokenNamed:`).
 - `MiArchitecturalMapBrowserBl>>#showTree:` creates me in the Bloc UI process and puts my `#viewport` in its space.
-- The Bloc elements I build: `viewport` (fills its parent, clips, gets the mouse) > `canvas` (frame layout with padding; moved and scaled) > from bottom to top `nodesLayer`, `halosLayer`, `linesLayer`.
+- The Bloc elements I build: `viewport` (fills its parent, clips, gets the mouse) > `canvas` (frame layout with padding; moved and scaled) > from bottom to top `boxesLayer`, `halosLayer`, `linesLayer`.
 
 ## Assumptions & Invariants
 - `tree`, `layoutClass` and `tokenSource` must all be set before `#viewport` is first sent.
 - I am built once and lazily, the first time `#viewport` is sent. To show a changed tree (expand/collapse, other layout), make a new visualization.
 - A node's box has its label (`ToLabel`). A box with children has a dashed border. A collapsed node's children get no box.
-- `boxesByNode` maps each node that has a box to that box. Each box also has its node in its `userData` at `#miArchitecturalMapNode`.
-- `linesLayer` and `nodesLayer` both fill the canvas, so they share their coordinates.
+- Each box has its node in its `userData` at `#miArchitecturalMapNode`: that is the only link from boxes to nodes. Boxes are found by walking `boxesLayer` (`#boxes`, `#boxOf:`), not kept in a dictionary: a map has few boxes, and there is nothing to keep in sync when boxes are rebuilt.
+- `linesLayer` and `boxesLayer` both fill the canvas, so they share their coordinates.
 - Lines are drawn over the boxes (the boxes are filled and nested, lines under them would be hidden). A line goes from the border of the source box to the border of the target box, towards their centers, and ends with an arrow head (a `BlPolygonGeometry` triangle: this Bloc has no arrowheads) on the target border.
-- Lines are redrawn after a layout of `nodesLayer` only if some box bounds changed (`lastBounds`, kept as copies since `#boundsInSpace` is changed in place), so the space can settle.
+- Lines are redrawn after a layout of `boxesLayer` only if some box bounds changed (`lastBounds`), so the space can settle. The bounds are taken in the coordinates of the lines layer (`#placeOf:`), so zoom and pan, which move the canvas as a whole, redraw nothing: only moving boxes does.
 - Each line has its dependency in its `userData` at `#miArchitecturalMapDependency`.
 - Pan and zoom are kept in `origin` (where the canvas is in `viewport`) and `zoom`, and applied together by `#applyTransform` (absolute scale, top left origin). Zoom is around the mouse cursor, by 1.1 per wheel step, between `#minZoom` and `#maxZoom`. Dragging the background pans. Mouse positions are in space coordinates (`#position`, never `#screenPosition`).
-- Moving boxes: pressing on a box and dragging moves it (`draggedBox`), pressing on the background pans. At the first move of a child, its container stops laying out its children (`#freezeLayoutOf:` replaces its layout by a `BlBasicLayout` with each child where it was), and after each move gets the size that contains all of them (`#fitToChildren:`). So a parent box grows to contain a moved child.
-- Highlight: the mouse over a box (`BlMouseOverEvent`, which bubbles, handled on `viewport`) highlights the node of the innermost box under it (`#nodeUnder:`). Its dependencies both ways and the boxes at their other end get a halo (`#haloColor`), and keep their own look: both are drawn in `halosLayer` (over the boxes, under the lines): a box gets a translucent yellow ring just outside its bounds (`#haloForBox:). Over the background, or when the mouse leaves `viewport` (`BlMouseLeaveEvent`), nothing is highlighted. Only one node at a time (`highlightedNode`) is highlighted; the highlight is reapplied when the lines are redrawn.
+- Moving boxes: dragging a box moves it, dragging the background pans. Drags are Bloc drag events (`BlDragStartEvent`, `BlDragEvent`, `BlDragEndEvent`): the space starts one after a press and a move of a few pixels, sends it to the element that consumed the drag start (the innermost box, see `#beDraggable:`, or else `viewport`), and ends it at the release. `lastDragPosition` is the mouse position at the previous drag event, for the move since then (`#dragDeltaOf:`). At the first move of a child, its container stops laying out its children (`#freezeLayoutOf:` replaces its layout by a `BlBasicLayout` with each child where it was), and after each move gets the size that contains all of them (`#fitToChildren:`). So a parent box grows to contain a moved child.
+- Highlight: the mouse over a box (`BlMouseOverEvent`, which bubbles, handled on `viewport`) highlights the node of the innermost box under it (`#nodeUnder:`). Its dependencies both ways and the boxes at their other end get a halo (`#haloColor`), and keep their own look: both are drawn in `halosLayer` (over the boxes, under the lines): a box gets a translucent yellow ring just outside its bounds (`#haloForBox:). Over the background, or when the mouse leaves `viewport` (`BlMouseLeaveEvent`), nothing is highlighted. Only one node at a time is highlighted, and no state is kept: the halos are the highlight. Redrawing the lines removes them (they follow the old lines and boxes); since boxes move only while dragged, the end of a drag highlights again what is under the mouse (`#endDrag:`, `#highlightAt:`). While a box is dragged, nothing is highlighted.
 
 ## Main API
 - `MiArchiBlVisualization new tree: aTreeBuilder; layoutClass: aLayoutClass; tokenSource: aSpaceRoot; yourself`
 - `#viewport`: the Bloc element to add to the space (built on first send). It shows the map: everything I draw is inside it.
-- `#boxesByNode`: the box (a Bloc element) of each displayed node.
-- `#zoomBy:` a wheel event, `#startDragAt:` / `#dragTo:` / `#endDrag` (move a box or pan), `#highlight:` a node or nil: the mouse interactions.
+- `#boxes`: all the boxes drawn. `#boxOf:` a node: its box, nil if it is not shown. `#nodeOf:` a box: its node (nil for any other element).
+- `#zoomBy:` a wheel event, `#startDrag:` / `#dragDeltaOf:` / `#endDrag:` drag events (move a box or pan), `#panBy:` a point, `#highlight:` a node or nil: the mouse interactions.
 - `#move:by:` a box and a delta in the coordinates of its parent.
 - For the tests: `#linesLayer`, `#halosLayer`, `#origin`, `#zoom`.
 
@@ -43,13 +43,10 @@ Class {
 		'lastBounds',
 		'zoom',
 		'origin',
-		'dragFrom',
-		'highlightedNode',
 		'halosLayer',
-		'draggedBox',
-		'boxesByNode',
 		'viewport',
-		'boxesLayer'
+		'boxesLayer',
+		'lastDragPosition'
 	],
 	#category : 'MooseIDE-ArchitecturalMap-Bloc-browser',
 	#package : 'MooseIDE-ArchitecturalMap-Bloc',
@@ -108,6 +105,16 @@ MiArchiBlVisualization >> backgroundFor: aNode [
 	^ aNode color ifNil: [ self tokenNamed: #'color-bg-container' ]
 ]
 
+{ #category : 'interactions' }
+MiArchiBlVisualization >> beDraggable: aBox [
+	"Dragging aBox moves it within its parent (#move:by:), by the move of the mouse divided by the zoom, so it follows the mouse"
+
+	aBox
+		addEventHandlerOn: BlDragStartEvent do: [ :event | self startDrag: event ];
+		addEventHandlerOn: BlDragEvent do: [ :event | self move: event currentTarget by: (self dragDeltaOf: event) / zoom ];
+		addEventHandlerOn: BlDragEndEvent do: [ :event | self endDrag: event ]
+]
+
 { #category : 'styling' }
 MiArchiBlVisualization >> borderFor: aNode [
 	"Dashed for a node with children, as in Roassal (MiArchitecturalMapBuilder>>borderFor:)"
@@ -148,9 +155,21 @@ MiArchiBlVisualization >> boundsOf: anElement [
 			  (linesLayer globalPointToLocal: (anElement localPointToGlobal: anElement extent)) }
 ]
 
+{ #category : 'boxes' }
+MiArchiBlVisualization >> boxContaining: anElement [
+	"The innermost box containing anElement (a box, its label...), anElement itself if it is a box, nil if it is not in a box"
+
+	| current |
+	current := anElement.
+	[ current isNil or: [ current == viewport ] ] whileFalse: [
+			(self nodeOf: current) ifNotNil: [ ^ current ].
+			current := current parent ].
+	^ nil
+]
+
 { #category : 'building' }
 MiArchiBlVisualization >> boxForNode: aNode [
-	"The box of aNode: its label, then (when expanded) the boxes of its children"
+	"The box of aNode: its label, then (when expanded) the boxes of its children. It knows its node (#nodeOf:), and can be dragged (#beDraggable:)"
 
 	| box |
 	box := BlElement new
@@ -165,6 +184,7 @@ MiArchiBlVisualization >> boxForNode: aNode [
 			c horizontal fitContent.
 			c vertical fitContent ].
 	box userData at: #miArchitecturalMapNode put: aNode.
+	self beDraggable: box.
 	(aNode isExpanded and: [ aNode hasChildren ]) ifTrue: [
 			box addChild: (BlElement new
 					 layout: BlFlowLayout horizontal;
@@ -173,19 +193,33 @@ MiArchiBlVisualization >> boxForNode: aNode [
 							 c vertical fitContent ];
 					 addChildren: (aNode children collect: [ :each | self boxForNode: each ]);
 					 yourself) ].
-	boxesByNode at: aNode put: box.
 	^ box
 ]
 
-{ #category : 'accessing' }
-MiArchiBlVisualization >> boxesByNode [
+{ #category : 'boxes' }
+MiArchiBlVisualization >> boxOf: aNode [
+	"The box drawn for aNode, nil if aNode is not shown (a child of a collapsed node)"
 
-	^ boxesByNode
+	^ boxesLayer allChildrenBreadthFirstDetect: [ :each | (self nodeOf: each) == aNode ] ifFound: [ :box | box ] ifNone: [ nil ]
+]
+
+{ #category : 'boxes' }
+MiArchiBlVisualization >> boxUnder: aMouseEvent [
+	"The innermost box under the mouse, nil on the background. Mouse events bubble up from the Bloc element under the mouse (a box, its label...)"
+
+	^ self boxContaining: aMouseEvent target
+]
+
+{ #category : 'boxes' }
+MiArchiBlVisualization >> boxes [
+	"All the boxes drawn, found in the boxes layer: the elements that know their node. A map has few boxes, so they are looked up rather than kept in a dictionary"
+
+	^ boxesLayer allChildrenBreadthFirstSelect: [ :each | (self nodeOf: each) isNotNil ]
 ]
 
 { #category : 'building' }
 MiArchiBlVisualization >> build [
-	"Build and answer the viewport showing the map. It contains the canvas, which contains, from bottom to top, the nodes layer, the halos layer and the lines layer.
+	"Build and answer the viewport showing the map. It contains the canvas, which contains, from bottom to top, the boxes layer, the halos layer and the lines layer.
 	The order matters: the canvas needs the layers, the viewport needs the canvas"
 
 	self buildBoxesLayer.
@@ -239,7 +273,7 @@ MiArchiBlVisualization >> buildHalosLayer [
 
 { #category : 'building' }
 MiArchiBlVisualization >> buildLinesLayer [
-	"The layer of the lines, over the nodes and out of the mouse events (they go to the boxes under it). It fills the canvas like the nodes layer (both are children of a frame layout with the same padding), so the two share their coordinates and the lines layer never needs to be moved"
+	"The layer of the lines, over the boxes and out of the mouse events (they go to the boxes under it). It fills the canvas like the boxes layer (both are children of a frame layout with the same padding), so the two share their coordinates and the lines layer never needs to be moved"
 
 	linesLayer := BlElement new
 		              layout: BlBasicLayout new;
@@ -253,47 +287,44 @@ MiArchiBlVisualization >> buildLinesLayer [
 
 { #category : 'building' }
 MiArchiBlVisualization >> buildViewport [
-	"The viewport shown: it fills its parent and clips the canvas. It receives the mouse: wheel to zoom, drag on a box to move it, drag on the background to pan (the zoom and pan pattern of the Bloc guide on graphical patterns), over to highlight the dependencies of the box under the mouse. Leaving the viewport removes the highlight and ends a drag (the button may be released outside, unseen)"
+	"The viewport shown: it fills its parent and clips the canvas. It receives the mouse: wheel to zoom, drag on the background to pan (the zoom and pan pattern of the Bloc guide on graphical patterns), over to highlight the dependencies of the box under the mouse, leave to remove the highlight.
+	Drags are Bloc drag events: the space turns a press followed by a move of a few pixels into them, sends them to the element that took the drag start, and ends them at the release, wherever it happens. A drag on a box is taken by the box (#beDraggable:), so it does not reach the viewport"
 
 	viewport := BlElement new
-		           layout: BlBasicLayout new;
-		           clipChildren: true;
-		           addChild: canvas;
-		           yourself.
+		            layout: BlBasicLayout new;
+		            clipChildren: true;
+		            addChild: canvas;
+		            yourself.
 	viewport constraintsDo: [ :c |
 			c horizontal matchParent.
 			c vertical matchParent ].
 	viewport
 		addEventHandlerOn: BlMouseWheelEvent do: [ :event | self zoomBy: event ];
-		addEventHandlerOn: BlMouseDownEvent do: [ :event | self startDragAt: event ];
-		addEventHandlerOn: BlMouseMoveEvent do: [ :event | self dragTo: event ];
-		addEventHandlerOn: BlMouseUpEvent do: [ :event | self endDrag ];
+		addEventHandlerOn: BlDragStartEvent do: [ :event | self startDrag: event ];
+		addEventHandlerOn: BlDragEvent do: [ :event | self panBy: (self dragDeltaOf: event) ];
+		addEventHandlerOn: BlDragEndEvent do: [ :event | self endDrag: event ];
 		addEventHandlerOn: BlMouseOverEvent do: [ :event | self highlight: (self nodeUnder: event) ];
-		addEventHandlerOn: BlMouseLeaveEvent do: [ :event |
-				self endDrag.
-				self highlight: nil ]
+		addEventHandlerOn: BlMouseLeaveEvent do: [ :event | self highlight: nil ]
 ]
 
 { #category : 'interactions' }
-MiArchiBlVisualization >> dragTo: aMoveEvent [
-	"While the mouse is pressed, move the pressed box, or pan the map. Positions in space coordinates, not screen ones (which change when the window moves)"
+MiArchiBlVisualization >> dragDeltaOf: aDragEvent [
+	"How far the mouse moved since the previous drag event (or the press), in space coordinates, not screen ones (which change when the window moves). Consumed: a box handles its own drag, its parents do not"
 
 	| delta |
-	dragFrom ifNil: [ ^ self ].
-	delta := aMoveEvent position - dragFrom.
-	dragFrom := aMoveEvent position.
-	draggedBox
-		ifNil: [
-				origin := origin + delta.
-				self applyTransform ]
-		ifNotNil: [ self move: draggedBox by: delta / zoom ]
+	aDragEvent consume.
+	delta := aDragEvent position - lastDragPosition.
+	lastDragPosition := aDragEvent position.
+	^ delta
 ]
 
 { #category : 'interactions' }
-MiArchiBlVisualization >> endDrag [
+MiArchiBlVisualization >> endDrag: aDragEndEvent [
+	"The boxes may have moved, removing the halos (#updateLines): highlight again what is under the mouse at the release"
 
-	dragFrom := nil.
-	draggedBox := nil
+	aDragEndEvent consume.
+	lastDragPosition := nil.
+	self highlightAt: aDragEndEvent position
 ]
 
 { #category : 'moving' }
@@ -369,17 +400,35 @@ MiArchiBlVisualization >> halosLayer [
 
 { #category : 'highlight' }
 MiArchiBlVisualization >> highlight: aNodeOrNil [
-	"Show the dependencies of aNodeOrNil (none for nil)"
+	"The dependencies of aNodeOrNil (both ways) and the boxes at their other end get a yellow halo in the halos layer; the lines and boxes keep their look. For nil, nothing is highlighted"
 
-	highlightedNode := aNodeOrNil.
-	self updateHighlight
+	| remoteNodes |
+	halosLayer removeChildren.
+	aNodeOrNil ifNil: [ ^ self ].
+	remoteNodes := IdentitySet new.
+	linesLayer children do: [ :line |
+			| dependency |
+			dependency := line userData at: #miArchitecturalMapDependency.
+			(dependency source == aNodeOrNil or: [ dependency target == aNodeOrNil ]) ifTrue: [
+					remoteNodes add: (dependency source == aNodeOrNil
+							 ifTrue: [ dependency target ]
+							 ifFalse: [ dependency source ]).
+					halosLayer addChild: (self haloForLine: line) ] ].
+	remoteNodes do: [ :node | halosLayer addChild: (self haloForBox: (self boxOf: node)) ]
+]
+
+{ #category : 'highlight' }
+MiArchiBlVisualization >> highlightAt: aPoint [
+	"Highlight the node of the innermost box at aPoint (space coordinates), as the mouse coming over it would, or nothing on the background"
+
+	self highlight:
+		((self boxContaining: (viewport space root findMouseEventTargetAt: aPoint)) ifNotNil: [ :box | self nodeOf: box ])
 ]
 
 { #category : 'initialization' }
 MiArchiBlVisualization >> initialize [
 
 	super initialize.
-	boxesByNode := IdentityDictionary new.
 	lastBounds := #(  ).
 	origin := 0 @ 0.
 	zoom := 1
@@ -403,8 +452,8 @@ MiArchiBlVisualization >> lineElementFor: aDependency [
 	"A line from the border of the source box to the border of the target box, ended by an arrow head on the border of the target"
 
 	| sourceBounds targetBounds from to line |
-	sourceBounds := self boundsOf: (boxesByNode at: aDependency source).
-	targetBounds := self boundsOf: (boxesByNode at: aDependency target).
+	sourceBounds := self boundsOf: (self boxOf: aDependency source).
+	targetBounds := self boundsOf: (self boxOf: aDependency target).
 	from := self borderPointOf: sourceBounds towards: targetBounds center.
 	to := self borderPointOf: targetBounds towards: sourceBounds center.
 	line := BlElement new
@@ -451,16 +500,18 @@ MiArchiBlVisualization >> move: aBox by: aPoint [
 	self fitToChildren: container
 ]
 
+{ #category : 'boxes' }
+MiArchiBlVisualization >> nodeOf: anElement [
+	"The node of anElement if it is a box, nil otherwise"
+
+	^ anElement userData at: #miArchitecturalMapNode ifAbsent: [ nil ]
+]
+
 { #category : 'highlight' }
 MiArchiBlVisualization >> nodeUnder: aMouseEvent [
-	"The node of the innermost box under the mouse, nil on the background. Over events bubble up from the Bloc element under the mouse (a box, its label...): walk up from it to the first box"
+	"The node of the innermost box under the mouse, nil on the background"
 
-	| current |
-	current := aMouseEvent target.
-	[ current isNil or: [ current == viewport ] ] whileFalse: [
-			(current userData at: #miArchitecturalMapNode ifAbsent: [ nil ]) ifNotNil: [ :node | ^ node ].
-			current := current parent ].
-	^ nil
+	^ (self boxUnder: aMouseEvent) ifNotNil: [ :box | self nodeOf: box ]
 ]
 
 { #category : 'testing' }
@@ -471,11 +522,28 @@ MiArchiBlVisualization >> origin [
 ]
 
 { #category : 'interactions' }
-MiArchiBlVisualization >> startDragAt: aMouseDownEvent [
-	"Pressed on a box: it will be moved. On the background: the map will be panned"
+MiArchiBlVisualization >> panBy: aPoint [
+	"Move the map by aPoint, in space coordinates"
 
-	dragFrom := aMouseDownEvent position.
-	draggedBox := (self nodeUnder: aMouseDownEvent) ifNotNil: [ :node | boxesByNode at: node ]
+	origin := origin + aPoint.
+	self applyTransform
+]
+
+{ #category : 'lines' }
+MiArchiBlVisualization >> placeOf: aBox [
+	"The bounds of aBox in the coordinates of the lines layer, rounded to a hundredth of a pixel: the conversion goes out through the zoom of the canvas and back, which adds floating point noise (8.000000000000004 for 8) that must not count as a move"
+
+	| bounds |
+	bounds := self boundsOf: aBox.
+	^ (bounds origin roundTo: 0.01) corner: (bounds corner roundTo: 0.01)
+]
+
+{ #category : 'interactions' }
+MiArchiBlVisualization >> startDrag: aDragStartEvent [
+	"A drag starts on a box or on the background. Consuming the event makes the element handling it (a box, or the viewport) the target of the next drag events, as decided by the mouse processor of the space; it also stops the event there, so only the innermost box under the mouse moves"
+
+	aDragStartEvent consume.
+	lastDragPosition := aDragStartEvent position
 ]
 
 { #category : 'styling' }
@@ -497,40 +565,23 @@ MiArchiBlVisualization >> tree: aTree [
 	tree := aTree
 ]
 
-{ #category : 'highlight' }
-MiArchiBlVisualization >> updateHighlight [
-	"The dependencies of highlightedNode (both ways) and the boxes at their other end get a yellow halo in the halos layer; the lines and boxes keep their look"
-
-	| remoteNodes |
-	remoteNodes := IdentitySet new.
-	halosLayer removeChildren.
-	highlightedNode ifNil: [ ^ self ].
-	linesLayer children do: [ :line |
-			| dependency |
-			dependency := line userData at: #miArchitecturalMapDependency.
-			(dependency source == highlightedNode or: [ dependency target == highlightedNode ]) ifTrue: [
-					remoteNodes add: (dependency source == highlightedNode
-							 ifTrue: [ dependency target ]
-							 ifFalse: [ dependency source ]).
-					halosLayer addChild: (self haloForLine: line) ] ].
-	remoteNodes do: [ :node | halosLayer addChild: (self haloForBox: (boxesByNode at: node)) ]
-]
-
 { #category : 'lines' }
 MiArchiBlVisualization >> updateLines [
 	"Draw again the lines between the boxes, only if they moved since the last time: a layout is computed often, and a handler of BlElementLayoutComputedEvent must only change what differs, or the space never settles.
-	The bounds are kept as copies (#asRectangle): #boundsInSpace answers the same cached object, changed in place by each layout.
-	The new lines show the current highlight"
+	The bounds are compared in the coordinates of the lines layer (#placeOf:): zoom and pan move the canvas as a whole, they change where the boxes are in the space but not there, so they redraw nothing.
+	The halos follow the old lines and boxes: they are removed. Boxes move only while dragged, and the end of a drag highlights again (#endDrag:)"
 
-	| visible bounds |
-	bounds := boxesByNode values collect: [ :each | each boundsInSpace asRectangle ].
+	| boxes shownNodes bounds |
+	boxes := self boxes.
+	bounds := boxes collect: [ :each | self placeOf: each ].
 	bounds = lastBounds ifTrue: [ ^ self ].
 	lastBounds := bounds.
-	visible := tree visibleDependencies select: [ :each |
-		           (boxesByNode includesKey: each source) and: [ boxesByNode includesKey: each target ] ].
+	shownNodes := (boxes collect: [ :each | self nodeOf: each ]) asIdentitySet.
 	linesLayer removeChildren.
-	linesLayer addChildren: (visible collect: [ :each | self lineElementFor: each ]).
-	highlightedNode ifNotNil: [ self updateHighlight ]
+	linesLayer addChildren:
+		((tree visibleDependencies select: [ :each | (shownNodes includes: each source) and: [ shownNodes includes: each target ] ])
+			 collect: [ :each | self lineElementFor: each ]).
+	halosLayer removeChildren
 ]
 
 { #category : 'accessing' }

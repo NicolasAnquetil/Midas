@@ -54,28 +54,16 @@ MiArchiBlVisualizationTest >> box: aBox hasHaloIn: aVisualization [
 { #category : 'running' }
 MiArchiBlVisualizationTest >> boxOf: anEntity in: aVisualization [
 
-	^ aVisualization boxesByNode associations
-		  detect: [ :each | each key entity == anEntity ]
-		  ifFound: [ :each | each value ]
-		  ifNone: [ nil ]
+	^ aVisualization boxes detect: [ :each | (aVisualization nodeOf: each) entity == anEntity ] ifNone: [ nil ]
 ]
 
 { #category : 'running' }
 MiArchiBlVisualizationTest >> drag: aVisualization from: startPoint to: endPoint [
+	"Press the primary button at startPoint, move to endPoint and release it there, through the space (so as drag events when the move is longer than the drag threshold of Bloc, a few pixels)"
 
-	self
-		fire: (BlMouseDownEvent new
-				 button: BlMouseButton primary;
-				 yourself)
-		at: startPoint
-		on: aVisualization.
-	self fire: BlMouseMoveEvent new at: endPoint on: aVisualization.
-	self
-		fire: (BlMouseUpEvent new
-				 button: BlMouseButton primary;
-				 yourself)
-		at: endPoint
-		on: aVisualization
+	self mouse: BlMouseDownEvent primary at: startPoint.
+	self mouse: BlMouseMoveEvent primary at: endPoint.
+	self mouse: BlMouseUpEvent primary at: endPoint
 ]
 
 { #category : 'running' }
@@ -128,6 +116,19 @@ MiArchiBlVisualizationTest >> lineFrom: sourceEntity to: targetEntity in: aVisua
 ]
 
 { #category : 'running' }
+MiArchiBlVisualizationTest >> mouse: anEvent at: aPoint [
+	"Send anEvent (a mouse down, move or up) at aPoint (space coordinates) to the space, as its host does, and wait for the space to settle. The space picks the element under aPoint, and turns a press followed by moves into drag events (as in BlMouseProcessingTest). The screen position is made different on purpose: the code must use #position"
+
+	anEvent
+		position: aPoint;
+		screenPosition: aPoint + (1000 @ 1000).
+	space deferAndSettle: [
+			anEvent fillFromTime: space time.
+			space eventListener handleEvent: anEvent ].
+	^ anEvent
+]
+
+{ #category : 'running' }
 MiArchiBlVisualizationTest >> mouseOver: aBox [
 	"The mouse comes over aBox: the event bubbles up from it, as with a real mouse"
 
@@ -173,12 +174,12 @@ MiArchiBlVisualizationTest >> tearDown [
 
 { #category : 'tests' }
 MiArchiBlVisualizationTest >> testBoxKnowsItsNode [
+	"Each box drawn knows its node, and the visualization finds the box of a node"
 
 	| visualization |
 	visualization := self visualizationOf: self expandedTree.
 	visualization viewport.
-	visualization boxesByNode keysAndValuesDo: [ :node :box |
-		self assert: (box userData at: #miArchitecturalMapNode) identicalTo: node ]
+	visualization boxes do: [ :box | self assert: (visualization boxOf: (visualization nodeOf: box)) identicalTo: box ]
 ]
 
 { #category : 'tests' }
@@ -187,7 +188,7 @@ MiArchiBlVisualizationTest >> testBoxLabelIsNodeName [
 	| visualization |
 	visualization := self visualizationOf: self expandedTree.
 	visualization viewport.
-	visualization boxesByNode keysAndValuesDo: [ :node :box | self assert: box children first text asString equals: node name ]
+	visualization boxes do: [ :box | self assert: box children first text asString equals: (visualization nodeOf: box) name ]
 ]
 
 { #category : 'tests' }
@@ -197,7 +198,7 @@ MiArchiBlVisualizationTest >> testBoxesForChildrenWhenExpanded [
 	| visualization nested |
 	visualization := self visualizationOf: self expandedTree.
 	visualization viewport.
-	self assert: visualization boxesByNode size equals: 5.
+	self assert: visualization boxes size equals: 5.
 	nested := (self boxOf: package2 in: visualization) children second children.
 	self assert: nested asArray equals: {
 			(self boxOf: class2 in: visualization).
@@ -310,15 +311,16 @@ MiArchiBlVisualizationTest >> testDragParentBoxMovesItsChildren [
 ]
 
 { #category : 'tests - highlight' }
-MiArchiBlVisualizationTest >> testHighlightKeptWhenLinesAreRedrawn [
-	"Boxes move while the mouse is over package1: the new line to package2 has a halo along it, and package2 has its ring where it is now"
+MiArchiBlVisualizationTest >> testDraggedBoxIsHighlightedAtRelease [
+	"The mouse was over package1, then package2 is dragged: at the release the mouse is over package2, so the line from package1 has a halo where it is now, and package1 gets the ring"
 
-	| visualization |
+	| visualization start |
 	visualization := self layOut: (self visualizationOf: self tree).
 	self mouseOver: (self boxOf: package1 in: visualization).
-	space deferAndSettle: [ (self boxOf: package1 in: visualization) margin: (BlInsets all: 40) ].
+	start := (self boxOf: package2 in: visualization) boundsInSpace center.
+	self drag: visualization from: start to: start + (40 @ 60).
 	self assert: (self line: (self lineFrom: package1 to: package2 in: visualization) hasHaloIn: visualization).
-	self assert: (self box: (self boxOf: package2 in: visualization) hasHaloIn: visualization).
+	self assert: (self box: (self boxOf: package1 in: visualization) hasHaloIn: visualization).
 	self assert: visualization halosLayer children size equals: 2
 ]
 
@@ -334,31 +336,6 @@ MiArchiBlVisualizationTest >> testHighlightedLineKeepsItsLook [
 	self mouseOver: (self boxOf: package1 in: visualization).
 	self assert: line border equals: border.
 	self assert: line children first background equals: headBackground
-]
-
-{ #category : 'tests - moving' }
-MiArchiBlVisualizationTest >> testLeavingTheMapEndsTheDrag [
-	"Pressed on package1, the mouse leaves the map (it may be released outside, unseen): when it comes back, moving it does not move the box"
-
-	| visualization box before start |
-	visualization := self layOut: (self visualizationOf: self tree).
-	box := self boxOf: package1 in: visualization.
-	before := box boundsInSpace origin.
-	start := box boundsInSpace center.
-	self
-		fire: (BlMouseDownEvent new
-				 button: BlMouseButton primary;
-				 yourself)
-		at: start
-		on: visualization.
-	space deferAndSettle: [
-			visualization viewport dispatchEvent: (BlMouseLeaveEvent new
-					 position: 900 @ 700;
-					 screenPosition: 1900 @ 1700;
-					 yourself) ].
-	self fire: BlMouseMoveEvent new at: start + (30 @ 10) on: visualization.
-	self assert: box boundsInSpace origin equals: before.
-	self assert: visualization origin equals: 0 @ 0
 ]
 
 { #category : 'tests' }
@@ -487,7 +464,22 @@ MiArchiBlVisualizationTest >> testMoveWithoutPressDoesNotPan [
 
 	| visualization |
 	visualization := self layOut: (self visualizationOf: self tree).
-	self fire: BlMouseMoveEvent new at: 330 @ 310 on: visualization.
+	self mouse: BlMouseMoveEvent new at: 330 @ 310.
+	self assert: visualization origin equals: 0 @ 0
+]
+
+{ #category : 'tests - moving' }
+MiArchiBlVisualizationTest >> testMovingAfterReleaseMovesNothing [
+	"package1 dragged and released: moving the mouse afterwards, button up, neither moves it nor pans"
+
+	| visualization box start dropped |
+	visualization := self layOut: (self visualizationOf: self tree).
+	box := self boxOf: package1 in: visualization.
+	start := box boundsInSpace center.
+	self drag: visualization from: start to: start + (30 @ 10).
+	dropped := box boundsInSpace origin.
+	self mouse: BlMouseMoveEvent new at: start + (60 @ 40).
+	self assert: box boundsInSpace origin equals: dropped.
 	self assert: visualization origin equals: 0 @ 0
 ]
 
@@ -497,7 +489,7 @@ MiArchiBlVisualizationTest >> testOneBoxPerRootWhenCollapsed [
 	| visualization |
 	visualization := self visualizationOf: self tree.
 	visualization viewport.
-	self assert: (visualization boxesByNode keys collect: #entity) asSet equals: {
+	self assert: (visualization boxes collect: [ :each | (visualization nodeOf: each) entity ]) asSet equals: {
 			package1.
 			package2 } asSet
 ]
@@ -522,6 +514,17 @@ MiArchiBlVisualizationTest >> testPan [
 	self drag: visualization from: 300 @ 300 to: 330 @ 310.
 	self assert: visualization origin equals: 30 @ 10.
 	self assert: box boundsInSpace origin equals: before + (30 @ 10)
+]
+
+{ #category : 'tests - lines' }
+MiArchiBlVisualizationTest >> testPanDoesNotRedrawLines [
+	"The lines are in the canvas, which the pan moves as a whole: they stay the same elements"
+
+	| visualization line |
+	visualization := self layOut: (self visualizationOf: self tree).
+	line := self lineFrom: package1 to: package2 in: visualization.
+	self drag: visualization from: 700 @ 500 to: 720 @ 520.
+	self assert: (self lineFrom: package1 to: package2 in: visualization) identicalTo: line
 ]
 
 { #category : 'tests' }
@@ -603,6 +606,17 @@ MiArchiBlVisualizationTest >> testZoomAroundCursor [
 	self wheel: 1 at: center on: visualization.
 	self assert: (box boundsInSpace center distanceTo: center) < 0.01.
 	self assert: box boundsInSpace width closeTo: width * 1.1
+]
+
+{ #category : 'tests - lines' }
+MiArchiBlVisualizationTest >> testZoomDoesNotRedrawLines [
+	"The lines are in the canvas, which the zoom scales as a whole: they stay the same elements"
+
+	| visualization line |
+	visualization := self layOut: (self visualizationOf: self tree).
+	line := self lineFrom: package1 to: package2 in: visualization.
+	self wheel: 1 at: 100 @ 100 on: visualization.
+	self assert: (self lineFrom: package1 to: package2 in: visualization) identicalTo: line
 ]
 
 { #category : 'tests' }
