@@ -26,13 +26,6 @@ Class {
 	#tag : 'browser'
 }
 
-{ #category : 'world menu' }
-MiArchitecturalMapBrowserBl class >> buildItemInMenu: aMenu action: aBlock [
-	"Not listed with the other browsers: the entry of the architectural map opens me when the application says so (MiArchitecturalMapBrowser class>>frontEndClass)"
-
-	^ nil
-]
-
 { #category : 'accessing' }
 MiArchitecturalMapBrowserBl class >> defaultPreferredExtent [
 
@@ -70,6 +63,15 @@ MiArchitecturalMapBrowserBl >> availableMapLayouts [
 	^ MiBlLayout availableLayouts
 ]
 
+{ #category : 'building' }
+MiArchitecturalMapBrowserBl >> buildTree [
+
+	^ MiArchiBlTreeBuilder new
+		  mapModel: specModel;
+		  build;
+		  yourself
+]
+
 { #category : 'testing' }
 MiArchitecturalMapBrowserBl >> canFollowEntity: anEntity [
 
@@ -96,25 +98,6 @@ MiArchitecturalMapBrowserBl >> followEntity: anEntity [
 	self runVisualization
 ]
 
-{ #category : 'initialization' }
-MiArchitecturalMapBrowserBl >> initializePresenters [
-	"The theme is given to the space in its own process (BlSpace>>#defer:): its pulse loop already runs, and installing the theme adds event handlers to the root that the loop may use at once (a focus event reached the skin state generator of the root before it knew its element: 'isEnabled sent to nil'). Deferred blocks run in order, so the theme is there before the map is drawn (#runVisualization defers too)"
-
-	super initializePresenters.
-	mapPresenter := self instantiate: SpBlSpaceInMorphPresenter.
-	self space defer: [ self space toTheme: self toploTheme ].
-	self layout: (SpBoxLayout newTopToBottom
-			 add: mapPresenter;
-			 yourself)
-]
-
-{ #category : 'actions' }
-MiArchitecturalMapBrowserBl >> inspectEntity: anEntity [
-	"Asked by the menu of a box of the map"
-
-	MiInspectorBrowser inspect: anEntity
-]
-
 { #category : 'accessing' }
 MiArchitecturalMapBrowserBl >> miSelectedItem [
 	"The entities selected in the map, all the entities if none is selected"
@@ -123,23 +106,13 @@ MiArchitecturalMapBrowserBl >> miSelectedItem [
 	^ specModel miSelectedItem
 ]
 
-{ #category : 'actions' }
-MiArchitecturalMapBrowserBl >> propagateEntity: anEntity [
-	"Asked by the menu of a box of the map: propagate anEntity on my buses, as the other maps do, without receiving it back"
+{ #category : 'building' }
+MiArchitecturalMapBrowserBl >> newVisualizationOn: aTree [
 
-	self freezeDuring: [ anEntity miPropagateOn: self buses ]
-]
-
-{ #category : 'actions' }
-MiArchitecturalMapBrowserBl >> runVisualization [
-	"Build the tree from the model here, then show it in the UI process of the Bloc space: an element in an opened space must only be changed there (#defer:)"
-
-	| tree |
-	tree := MiArchiBlTreeBuilder new
-		        mapModel: specModel;
-		        build;
-		        yourself.
-	self space defer: [ self showTree: tree ]
+	^ MiArchiBlVisualization new
+		  tree: aTree;
+		  layoutClass: specModel layout;
+		  yourself
 ]
 
 { #category : 'actions' }
@@ -154,43 +127,4 @@ MiArchitecturalMapBrowserBl >> selectRelatedTo: anEntity [
 	"Not yet: the map only displays"
 
 	
-]
-
-{ #category : 'building' }
-MiArchitecturalMapBrowserBl >> showTree: aTree [
-	"A new drawing of the map: nothing is selected in it, so nothing is in the model either"
-
-	| root |
-	root := self space root.
-	view := MiArchiBlVisualization new
-		        tree: aTree;
-		        layoutClass: specModel layout;
-		        tokenSource: root;
-		        browser: self;
-		        yourself.
-	specModel selectedEntities: #(  ).
-	root removeChildren.
-	root addChild: view viewport
-]
-
-{ #category : 'accessing' }
-MiArchitecturalMapBrowserBl >> space [
-
-	^ mapPresenter space
-]
-
-{ #category : 'styling' }
-MiArchitecturalMapBrowserBl >> toploTheme [
-	"A Toplo theme light or dark as the Pharo one"
-
-	^ Smalltalk ui theme backgroundColor luminance < 0.5
-		  ifTrue: [ ToRawDarkTheme new ]
-		  ifFalse: [ ToRawTheme new ]
-]
-
-{ #category : 'accessing' }
-MiArchitecturalMapBrowserBl >> view [
-	"The MiArchiBlVisualization shown, nil before the first entities"
-
-	^ view
 ]
