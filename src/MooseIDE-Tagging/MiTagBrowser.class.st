@@ -194,13 +194,7 @@ MiTagBrowser >> initializeLayout [
 { #category : 'initialization' }
 MiTagBrowser >> initializePresenters [
 
-	separator := SpRoassalPresenter new.
-	separator canvas
-		color: (Color
-			r: 40
-			g: 40
-			b: 40
-			range: 255) translucent.
+	separator := self newLabel addStyle: 'vRule'.
 
 	tagManagementPage := MiTagManagementPage newApplication: self application owner: self model: specModel.
 

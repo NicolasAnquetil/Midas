@@ -143,7 +143,8 @@ BaselineOfMooseIDE >> definePackages: spec [
 		with: [
 			spec requires:
 					#( 'MooseIDE-ArchitecturalMap' 'MooseIDE-ButterflyMap' 'MooseIDE-ClassBlueprint' 'MooseIDE-CoUsageMap'
-					   'MooseIDE-DistributionMap' 'MooseIDE-HeatMap' 'MooseIDE-Visualization' 'MooseIDE-Famix' ) ];
+					   'MooseIDE-DistributionMap' 'MooseIDE-HeatMap' 'MooseIDE-Visualization' 'MooseIDE-Famix'
+					   'MooseIDE-DSM' 'MooseIDE-LayerVisualization' 'MooseIDE-Meta' 'MooseIDE-QueriesDashboard' ) ];
 		package: 'MooseIDE-Roassal-Tests' with: [ spec requires: #( 'MooseIDE-Roassal' ) ];
 		package: 'MooseIDE-Bloc'
 		with: [ spec requires: #( 'MooseIDE-ArchitecturalMap-Bloc' 'MooseIDE-ButterflyMap-Bloc' 'MooseIDE-NewTools' ) ];

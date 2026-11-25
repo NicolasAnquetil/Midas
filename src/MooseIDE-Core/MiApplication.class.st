@@ -322,6 +322,7 @@ MiApplication >> mooseStyleSheet [
 				#backgroundColor: #0000001F
 			}
 		],
+		.vRule [ Draw { #color: #0000001F, #backgroundColor: #0000001F } ],
 		.itemList [
 			Container { #borderWidth: 1, #borderColor: #00000020 },
 			Draw { #backgroundColor: #00000010 },

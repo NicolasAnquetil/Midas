@@ -14,9 +14,9 @@ Class {
 		'getterCode',
 		'setterCode'
 	],
-	#category : 'MooseIDE-Meta-MetaBrowser',
-	#package : 'MooseIDE-Meta',
-	#tag : 'MetaBrowser'
+	#category : 'MooseIDE-Roassal-browsers',
+	#package : 'MooseIDE-Roassal',
+	#tag : 'browsers'
 }
 
 { #category : 'accessing' }

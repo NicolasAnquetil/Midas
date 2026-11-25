@@ -25,8 +25,9 @@ Class {
 	#instVars : [
 		'mainPresenter'
 	],
-	#category : 'MooseIDE-DSM',
-	#package : 'MooseIDE-DSM'
+	#category : 'MooseIDE-Roassal-browsers',
+	#package : 'MooseIDE-Roassal',
+	#tag : 'browsers'
 }
 
 { #category : 'world menu' }

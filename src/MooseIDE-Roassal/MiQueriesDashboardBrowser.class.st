@@ -11,9 +11,9 @@ Class {
 		'queryPresenters',
 		'titlePresenter'
 	],
-	#category : 'MooseIDE-QueriesDashboard-Browser',
-	#package : 'MooseIDE-QueriesDashboard',
-	#tag : 'Browser'
+	#category : 'MooseIDE-Roassal-browsers',
+	#package : 'MooseIDE-Roassal',
+	#tag : 'browsers'
 }
 
 { #category : 'accessing' }

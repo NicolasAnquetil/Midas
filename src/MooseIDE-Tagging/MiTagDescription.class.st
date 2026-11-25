@@ -18,11 +18,7 @@ Class {
 MiTagDescription >> initializeLayout [
 
 	| sep |
-	(sep := SpRoassalPresenter new) canvas color: (Color
-			 r: 80
-			 g: 80
-			 b: 80
-			 range: 255) translucent.
+	sep := self newLabel addStyle: 'hSep'.
 	self layout: (SpBoxLayout newTopToBottom
 			 spacing: 1;
 			 add: (SpBoxLayout newLeftToRight

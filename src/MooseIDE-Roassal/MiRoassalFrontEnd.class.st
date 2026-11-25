@@ -3,7 +3,7 @@ I am the Roassal front-end of Midas: the browsers drawn with Roassal, plus the c
 
 ## Collaborators & Context
 - `MiFrontEnd`: my superclass, which offers my `#specificBrowserClasses` with the common browsers, under their names.
-- My browsers are in my package, MooseIDE-Roassal: `MiAbstractVisualizationBrowser` and its subclasses (architectural map, butterfly map, class blueprint, co-usage map, distribution map, heat map, system complexity, UML). Their models and Roassal builders stay in the packages of the tools.
+- My browsers are in my package, MooseIDE-Roassal: `MiAbstractVisualizationBrowser` and its subclasses (architectural map, butterfly map, class blueprint, co-usage map, distribution map, heat map, system complexity, UML), and the browsers that draw with Roassal without being one: DSM (`MiDSMBrowser`), meta browser (`MiMetaBrowser`, a UML map), layer visualization (`MiLayerVisualizationBrowser`), queries dashboard (`MiQueriesDashboardBrowser`, its results are Roassal shapes). Their models and Roassal builders stay in the packages of the tools.
 
 ## Assumptions & Invariants
 - I list all the concrete browsers of my package, and only them.
@@ -38,7 +38,11 @@ MiRoassalFrontEnd >> specificBrowserClasses [
 		  MiClassBlueprintBrowser.
 		  MiCoUsageMapBrowser.
 		  MiDistributionMapBrowser.
+		  MiDSMBrowser.
 		  MiHeatMapBrowser.
+		  MiLayerVisualizationBrowser.
+		  MiMetaBrowser.
+		  MiQueriesDashboardBrowser.
 		  MiSystemComplexityBrowser.
 		  MiUMLBrowser }
 ]

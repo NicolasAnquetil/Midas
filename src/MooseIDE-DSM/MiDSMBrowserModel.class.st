@@ -227,7 +227,7 @@ MiDSMBrowserModel >> miSelectedItem [
 MiDSMBrowserModel >> openDetailedDSMOn: aTuple [
 	"creating a new (detailed) DSM from	aTuple = fromEntity -> toEntity"
 
-	^ (MiDSMBrowser
+	^ (browser class
 		   openWithX: aTuple key model containedEntities
 		   withY: aTuple value model containedEntities)
 		  withWindowDo: [ :window |

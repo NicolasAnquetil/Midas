@@ -11,9 +11,9 @@ Class {
 	#instVars : [
 		'visualization'
 	],
-	#category : 'MooseIDE-LayerVisualization-Presenters',
-	#package : 'MooseIDE-LayerVisualization',
-	#tag : 'Presenters'
+	#category : 'MooseIDE-Roassal-browsers',
+	#package : 'MooseIDE-Roassal',
+	#tag : 'browsers'
 }
 
 { #category : 'accessing' }

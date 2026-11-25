@@ -116,11 +116,7 @@ MiTagAbstractForm >> initializeLayout [
 
 	colorPickerWidth := 240.
 	
-	(sep := SpRoassalPresenter new) canvas color: (Color
-			 r: 40
-			 g: 40
-			 b: 40
-			 range: 255) translucent.
+	sep := self newLabel addStyle: 'vRule'.
 
 	colorPickerLayout := SpBoxLayout newTopToBottom
 		add: (SpBoxLayout newLeftToRight
