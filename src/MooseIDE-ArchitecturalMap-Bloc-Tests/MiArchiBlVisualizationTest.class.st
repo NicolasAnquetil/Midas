@@ -3,7 +3,7 @@ I test `MiArchiBlVisualization`, the Bloc drawing of the architectural map: its 
 
 ## Collaborators & Context
 - `MiArchitecturalMapBlAbstractTest`: the fixture (two packages, Class1 inheriting from Class2 and Class3) and `#tree`.
-- `MiArchiBlTreeBuilder`, `MiArchiBlNode`: the tree drawn. Expanding nodes (`#isExpanded:`) before drawing chooses what is shown.
+- `MiArchiBlTreeBuilder`, `MiBlNode`: the tree drawn. Expanding nodes (`#isExpanded:`) before drawing chooses what is shown.
 - `BlSpace` (`space`) on the headless host (`BlHeadlessHost`), as in the Bloc guide TestingInteractions (github.com/pharo-graphics/Bloc, doc/). Its root, with a `ToRawTheme`, is the `tokenSource`.
 
 ## Assumptions & Invariants
@@ -157,7 +157,7 @@ MiArchiBlVisualizationTest >> lineFrom: sourceEntity to: targetEntity in: aVisua
 
 	^ aVisualization linesLayer children detect: [ :each |
 			  | dependency |
-			  dependency := each userData at: #miArchitecturalMapDependency.
+			  dependency := each userData at: #miBlDependency.
 			  dependency source entity == sourceEntity and: [ dependency target entity == targetEntity ] ]
 ]
 
@@ -211,7 +211,7 @@ MiArchiBlVisualizationTest >> pairsOfLinesIn: aVisualization [
 
 	^ (aVisualization linesLayer children collect: [ :each |
 			   | dependency |
-			   dependency := each userData at: #miArchitecturalMapDependency.
+			   dependency := each userData at: #miBlDependency.
 			   dependency source entity -> dependency target entity ]) asSet
 ]
 
@@ -418,7 +418,7 @@ MiArchiBlVisualizationTest >> testCircularLayoutKeepsBoxesInside [
 	| visualization layerBounds |
 	visualization := MiArchiBlVisualization new
 		                 tree: self tree;
-		                 layoutClass: MiArchiBlCircularLayout;
+		                 layoutClass: MiBlCircularLayout;
 		                 tokenSource: space root;
 		                 yourself.
 	self layOut: visualization.
@@ -451,7 +451,7 @@ MiArchiBlVisualizationTest >> testCircularLayoutMakesRoomForExpandedBox [
 		        yourself.
 	visualization := self layOut: (MiArchiBlVisualization new
 			                  tree: tree;
-			                  layoutClass: MiArchiBlCircularLayout;
+			                  layoutClass: MiBlCircularLayout;
 			                  tokenSource: space root;
 			                  yourself).
 	self choose: 'Expand' in: (self rightClick: (self boxOf: package2 in: visualization)).
@@ -1220,7 +1220,7 @@ MiArchiBlVisualizationTest >> visualizationOf: aTree [
 
 	^ MiArchiBlVisualization new
 		  tree: aTree;
-		  layoutClass: MiArchiBlFlowLayout;
+		  layoutClass: MiBlFlowLayout;
 		  tokenSource: space root;
 		  yourself
 ]
