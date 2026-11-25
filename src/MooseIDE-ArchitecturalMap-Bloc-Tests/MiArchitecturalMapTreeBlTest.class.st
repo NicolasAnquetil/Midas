@@ -3,7 +3,7 @@ I test the tree of the Bloc architectural map (`MiArchiBlTreeBuilder`): its root
 
 ## Collaborators & Context
 - `MiArchitecturalMapBlAbstractTest`: the fixture (package1 holding Class1, package2 holding Class2 and Class3, Class1 inheriting from both) and `#tree`.
-- `MiArchiBlNode` (`#visibleNode`, `#isExpanded:`), `MiArchiBlDependency`.
+- `MiBlNode` (`#visibleNode`, `#isExpanded:`), `MiBlDependency`.
 - `MiArchitecturalMapBrowser` and `MiArchitecturalMapBuilder`: the Roassal map, as the reference.
 
 ## Assumptions & Invariants

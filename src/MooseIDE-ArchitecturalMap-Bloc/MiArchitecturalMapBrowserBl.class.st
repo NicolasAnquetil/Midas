@@ -67,7 +67,7 @@ MiArchitecturalMapBrowserBl class >> title [
 { #category : 'layouts' }
 MiArchitecturalMapBrowserBl >> availableMapLayouts [
 
-	^ MiArchiBlLayout availableLayouts
+	^ MiBlLayout availableLayouts
 ]
 
 { #category : 'testing' }
@@ -85,7 +85,7 @@ MiArchitecturalMapBrowserBl >> canReceiveEntity: anEntity [
 { #category : 'layouts' }
 MiArchitecturalMapBrowserBl >> defaultMapLayout [
 
-	^ MiArchiBlFlowLayout
+	^ MiBlFlowLayout
 ]
 
 { #category : 'actions' }

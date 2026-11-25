@@ -17,7 +17,7 @@ MiArchitecturalMapBrowserBlTest >> browserClass [
 { #category : 'tests' }
 MiArchitecturalMapBrowserBlTest >> testAvailableLayoutsAreTheBlocOnes [
 
-	self assert: browser specModel availableLayouts equals: MiArchiBlLayout availableLayouts.
+	self assert: browser specModel availableLayouts equals: MiBlLayout availableLayouts.
 	self assert: (browser specModel availableLayouts allSatisfy: [ :each | each layoutName isString ])
 ]
 
