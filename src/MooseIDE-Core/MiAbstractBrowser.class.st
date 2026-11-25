@@ -173,6 +173,13 @@ MiAbstractBrowser class >> famixMenuRoot [
 	^ #Famix
 ]
 
+{ #category : 'front-end' }
+MiAbstractBrowser class >> frontEndClass [
+	"The browser class opened when I am asked to open: chosen by the front-end of the application, myself by default"
+
+	^ self currentApplication frontEnd browserClassFor: self
+]
+
 { #category : 'world menu' }
 MiAbstractBrowser class >> helpMessage [
 
@@ -351,13 +358,22 @@ MiAbstractBrowser class >> openOnEntities: anEntity [
 { #category : 'instance creation' }
 MiAbstractBrowser class >> openRunning: aBlock [
 	"Open a browser window, then initializes running aBlock (possibly in a separate process)
-	 aBlock takes as parameter the new browser"
+	 aBlock takes as parameter the new browser.
+	 The front-end of the application may open another class instead of me (#frontEndClass)"
 
 	| instance |
+	self frontEndClass == self ifFalse: [ ^ self frontEndClass openRunning: aBlock ].
 	instance := self on: self newModel.
 	instance open.
 	instance application scheduleBrowser: instance construction: aBlock.
-	^instance
+	^ instance
+]
+
+{ #category : 'front-end' }
+MiAbstractBrowser class >> replacedBrowserClass [
+	"The browser I am opened instead of, when I am one of the browser classes of the front-end of the application (MiFrontEnd). nil: I replace none"
+
+	^ nil
 ]
 
 { #category : 'keymaps' }

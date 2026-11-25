@@ -22,22 +22,19 @@ MiArchitecturalMapBrowserBlTest >> testAvailableLayoutsAreTheBlocOnes [
 ]
 
 { #category : 'tests' }
-MiArchitecturalMapBrowserBlTest >> testFrontEndClassChosenInApplication [
+MiArchitecturalMapBrowserBlTest >> testFrontEndClassDefault [
+	"The default front-end opens the Roassal map"
 
-	| app previous |
-	app := MiArchitecturalMapBrowser currentApplication.
-	previous := app architecturalMapBrowserClass.
-	[
-		app architecturalMapBrowserClass: MiArchitecturalMapBrowserBl.
-		self assert: MiArchitecturalMapBrowser frontEndClass identicalTo: MiArchitecturalMapBrowserBl ] ensure: [
-		app architecturalMapBrowserClass: previous ]
+	self withFrontEnd: MiFrontEnd new do: [ self assert: MiArchitecturalMapBrowser frontEndClass identicalTo: MiArchitecturalMapBrowser ]
 ]
 
 { #category : 'tests' }
-MiArchitecturalMapBrowserBlTest >> testFrontEndClassDefault [
+MiArchitecturalMapBrowserBlTest >> testFrontEndClassInBlocFrontEnd [
+	"The Bloc front-end opens me instead of the Roassal map, and opens me as myself"
 
-	MiArchitecturalMapBrowser currentApplication architecturalMapBrowserClass: nil.
-	self assert: MiArchitecturalMapBrowser frontEndClass identicalTo: MiArchitecturalMapBrowser
+	self withFrontEnd: MiBlocFrontEnd new do: [
+			self assert: MiArchitecturalMapBrowser frontEndClass identicalTo: self browserClass.
+			self assert: self browserClass frontEndClass identicalTo: self browserClass ]
 ]
 
 { #category : 'tests' }
@@ -80,4 +77,16 @@ MiArchitecturalMapBrowserBlTest >> testMiSelectedItemWithoutSelection [
 MiArchitecturalMapBrowserBlTest >> testShowLoadingMessage [
 
 	self skip: 'No loading message in the Bloc map yet'
+]
+
+{ #category : 'running' }
+MiArchitecturalMapBrowserBlTest >> withFrontEnd: aFrontEnd do: aBlock [
+	"Run aBlock with aFrontEnd as the front-end of the application, then put back the previous one"
+
+	| app previous |
+	app := MiArchitecturalMapBrowser currentApplication.
+	previous := app frontEnd.
+	[
+		app frontEnd: aFrontEnd.
+		aBlock value ] ensure: [ app frontEnd: previous ]
 ]

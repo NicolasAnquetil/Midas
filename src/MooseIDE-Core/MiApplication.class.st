@@ -14,8 +14,7 @@ Class {
 		'mooseModelsTag',
 		'currentModelsBrowser',
 		'visualizationTimeout',
-		'architecturalMapBrowserClass',
-		'butterflyMapBrowserClass'
+		'frontEnd'
 	],
 	#classVars : [
 		'Current'
@@ -90,19 +89,6 @@ MiApplication >> allBrowsers: aMiClass [
 	^self browsers select: [ :aBrowser | aBrowser isKindOf: aMiClass ]
 ]
 
-{ #category : 'settings' }
-MiApplication >> architecturalMapBrowserClass [
-	"The browser class (front-end) opened for an architectural map. nil: the default one (see MiArchitecturalMapBrowser class>>frontEndClass)"
-
-	^ architecturalMapBrowserClass
-]
-
-{ #category : 'settings' }
-MiApplication >> architecturalMapBrowserClass: aBrowserClass [
-
-	architecturalMapBrowserClass := aBrowserClass
-]
-
 { #category : 'queries' }
 MiApplication >> availableQueries [
 
@@ -145,19 +131,6 @@ MiApplication >> busNamed: aName [
 { #category : 'accessing' }
 MiApplication >> buses [
 	^ buses
-]
-
-{ #category : 'settings' }
-MiApplication >> butterflyMapBrowserClass [
-	"The browser class (front-end) opened for a butterfly map. nil: the default one (see MiButterflyMapBrowser class>>frontEndClass)"
-
-	^ butterflyMapBrowserClass
-]
-
-{ #category : 'settings' }
-MiApplication >> butterflyMapBrowserClass: aBrowserClass [
-
-	butterflyMapBrowserClass := aBrowserClass
 ]
 
 { #category : 'brokerage' }
@@ -254,6 +227,19 @@ MiApplication >> deleteBusNamed: aName [
 	buses
 		detect: [ :bus | bus name = aName ]
 		ifFound: [ :bus | self deleteBus: bus ]
+]
+
+{ #category : 'settings' }
+MiApplication >> frontEnd [
+	"The front-end in use: it says which browser class to open for a browser (MiAbstractBrowser class>>#frontEndClass). The default one opens every browser as itself"
+
+	^ frontEnd ifNil: [ frontEnd := MiFrontEnd new ]
+]
+
+{ #category : 'settings' }
+MiApplication >> frontEnd: aFrontEnd [
+
+	frontEnd := aFrontEnd
 ]
 
 { #category : 'accessing' }

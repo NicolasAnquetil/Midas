@@ -54,27 +54,19 @@ MiButterflyMapBrowserBlTest >> testFollowEntityDrawsTheMap [
 ]
 
 { #category : 'tests' }
-MiButterflyMapBrowserBlTest >> testFrontEndClassChosenInApplication [
+MiButterflyMapBrowserBlTest >> testFrontEndClassDefault [
+	"The default front-end opens the Roassal map"
 
-	| app previous |
-	app := MiButterflyMapBrowser currentApplication.
-	previous := app butterflyMapBrowserClass.
-	[
-		app butterflyMapBrowserClass: MiButterflyMapBrowserBl.
-		self assert: MiButterflyMapBrowser frontEndClass identicalTo: MiButterflyMapBrowserBl ] ensure: [
-		app butterflyMapBrowserClass: previous ]
+	self withFrontEnd: MiFrontEnd new do: [ self assert: MiButterflyMapBrowser frontEndClass identicalTo: MiButterflyMapBrowser ]
 ]
 
 { #category : 'tests' }
-MiButterflyMapBrowserBlTest >> testFrontEndClassDefault [
+MiButterflyMapBrowserBlTest >> testFrontEndClassInBlocFrontEnd [
+	"The Bloc front-end opens me instead of the Roassal map, and opens me as myself"
 
-	| app previous |
-	app := MiButterflyMapBrowser currentApplication.
-	previous := app butterflyMapBrowserClass.
-	[
-		app butterflyMapBrowserClass: nil.
-		self assert: MiButterflyMapBrowser frontEndClass identicalTo: MiButterflyMapBrowser ] ensure: [
-		app butterflyMapBrowserClass: previous ]
+	self withFrontEnd: MiBlocFrontEnd new do: [
+			self assert: MiButterflyMapBrowser frontEndClass identicalTo: self browserClass.
+			self assert: self browserClass frontEndClass identicalTo: self browserClass ]
 ]
 
 { #category : 'tests' }
@@ -103,4 +95,16 @@ MiButterflyMapBrowserBlTest >> testMiSelectedItemWithoutSelection [
 	browser followEntity: entity.
 	browser space deferAndSettle: [  ].
 	self assert: browser miSelectedItem asArray equals: { entity }
+]
+
+{ #category : 'running' }
+MiButterflyMapBrowserBlTest >> withFrontEnd: aFrontEnd do: aBlock [
+	"Run aBlock with aFrontEnd as the front-end of the application, then put back the previous one"
+
+	| app previous |
+	app := MiButterflyMapBrowser currentApplication.
+	previous := app frontEnd.
+	[
+		app frontEnd: aFrontEnd.
+		aBlock value ] ensure: [ app frontEnd: previous ]
 ]

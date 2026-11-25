@@ -5,14 +5,14 @@ I am a browser that displays an architectural map with Bloc and Toplo, as `MiArc
 - `MiBlMapBrowser`: my superclass, for the Bloc space, its theme, and drawing the map in the UI process of the space.
 - `MiArchitecturalMapModel` (`specModel`): holds the entities and the settings. It calls me back (`#runVisualization` after a change of the settings) and asks me the layouts it can offer (`#availableMapLayouts`, `#defaultMapLayout`: `MiBlLayout` subclasses).
 - `MiArchiBlTreeBuilder` turns the model into a tree of nodes (`#buildTree`), and `MiArchiBlVisualization` (`view`) draws it (`#newVisualizationOn:`).
-- The architectural map entry opens me instead of `MiArchitecturalMapBrowser` when the application says so (`MiArchitecturalMapBrowser class>>#frontEndClass`):
-	`MiApplication current architecturalMapBrowserClass: MiArchitecturalMapBrowserBl`
+- I replace `MiArchitecturalMapBrowser` (`#replacedBrowserClass`): the architectural map entry opens me instead when the front-end of the application is the Bloc one (`MiBlocFrontEnd`):
+	`MiApplication current frontEnd: MiBlocFrontEnd new`
 
 ## Assumptions & Invariants
 - The selection is made in the map (`MiArchiBlVisualization`), which tells me (`#selectEntities:`); I keep it in the model (`MiArchitecturalMapModel>>#selectedEntities:`). `#miSelectedItem` answers the selected entities, all the entities if none. Each new drawing of the map starts with nothing selected. `#selectRelatedTo:` does nothing.
 
 ## Main API
-- `MiArchitecturalMapBrowserBl open`, or through the architectural map entry once chosen in the application.
+- `MiArchitecturalMapBrowserBl open`, or through the architectural map entry with the Bloc front-end.
 - `#followEntity:`: show the map of anEntity.
 - `#availableMapLayouts`, `#defaultMapLayout`: the layouts, for the model.
 - `#selectEntities:`: for the selection in the map. The rest of the API comes from `MiBlMapBrowser`.
@@ -49,6 +49,12 @@ MiArchitecturalMapBrowserBl class >> open [
 
 	<script>
 	^ super open
+]
+
+{ #category : 'front-end' }
+MiArchitecturalMapBrowserBl class >> replacedBrowserClass [
+
+	^ MiArchitecturalMapBrowser
 ]
 
 { #category : 'specs' }

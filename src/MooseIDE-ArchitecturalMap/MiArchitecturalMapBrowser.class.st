@@ -33,13 +33,6 @@ MiArchitecturalMapBrowser class >> defaultPreferredExtent [
 	^ 850 @ 520
 ]
 
-{ #category : 'instance creation' }
-MiArchitecturalMapBrowser class >> frontEndClass [
-	"The browser class opened for an architectural map, chosen in the application (Roassal: me, by default)"
-
-	^ self currentApplication architecturalMapBrowserClass ifNil: [ self ]
-]
-
 { #category : 'accessing' }
 MiArchitecturalMapBrowser class >> mapClass [
 
@@ -76,15 +69,7 @@ MiArchitecturalMapBrowser class >> newModel [
 MiArchitecturalMapBrowser class >> open [
 
 	<script>
-	self frontEndClass == self ifFalse: [ ^ self frontEndClass open ].
 	^ super open
-]
-
-{ #category : 'instance creation' }
-MiArchitecturalMapBrowser class >> openOnEntities: anEntity [
-
-	self frontEndClass == self ifFalse: [ ^ self frontEndClass openOnEntities: anEntity ].
-	^ super openOnEntities: anEntity
 ]
 
 { #category : 'specs' }

@@ -5,15 +5,15 @@ I am a browser that displays a butterfly map with Bloc and Toplo, as `MiButterfl
 - `MiBlMapBrowser`: my superclass, for the Bloc space, its theme, and drawing the map in the UI process of the space.
 - `MiButterflyMapModel` (`specModel`): holds the central entity and the queries of the settings (children, clients, providers). Changing the central entity, or the settings, makes it call me back (`#runVisualization`).
 - `MiButterflyBlTree` turns the model into the butterfly (`#buildTree`), and `MiButterflyBlVisualization` (`view`) draws it (`#newVisualizationOn:`).
-- The butterfly map entry opens me instead of `MiButterflyMapBrowser` when the application says so (`MiButterflyMapBrowser class>>#frontEndClass`):
-	`MiApplication current butterflyMapBrowserClass: MiButterflyMapBrowserBl`
+- I replace `MiButterflyMapBrowser` (`#replacedBrowserClass`): the butterfly map entry opens me instead when the front-end of the application is the Bloc one (`MiBlocFrontEnd`):
+	`MiApplication current frontEnd: MiBlocFrontEnd new`
 
 ## Assumptions & Invariants
 - The selection is made in the map, which tells me (`#selectEntities:`); I keep it in the model (`MiButterflyMapModel>>#selectedEntities:`). `#miSelectedItem` answers the selected entities, the central entity if none. Each new drawing starts with nothing selected.
 - Be central node, in the menu of a box, makes its entity the central one (`#centralEntity:`): the whole map is built and drawn again.
 
 ## Main API
-- `MiButterflyMapBrowserBl open`, or through the butterfly map entry once chosen in the application.
+- `MiButterflyMapBrowserBl open`, or through the butterfly map entry with the Bloc front-end.
 - `#followEntity:`: show the butterfly map of anEntity. `#centralEntity:`: the same, from the map.
 - `#selectEntities:`: for the selection in the map. The rest of the API comes from `MiBlMapBrowser`.
 
@@ -49,6 +49,12 @@ MiButterflyMapBrowserBl class >> open [
 
 	<script>
 	^ super open
+]
+
+{ #category : 'front-end' }
+MiButterflyMapBrowserBl class >> replacedBrowserClass [
+
+	^ MiButterflyMapBrowser
 ]
 
 { #category : 'specs' }
