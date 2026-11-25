@@ -102,13 +102,6 @@ MiBlNode >> isExpanded: aBoolean [
 	isExpanded := aBoolean
 ]
 
-{ #category : 'testing' }
-MiBlNode >> isTag [
-	"Whether I stand for a tag rather than for an entity"
-
-	^ false
-]
-
 { #category : 'accessing' }
 MiBlNode >> name [
 
