@@ -37,6 +37,13 @@ MiButterflyMapBrowser class >> defaultPreferredExtent [
 	^ 850 @ 520
 ]
 
+{ #category : 'instance creation' }
+MiButterflyMapBrowser class >> frontEndClass [
+	"The browser class opened for a butterfly map, chosen in the application (Roassal: me, by default)"
+
+	^ self currentApplication butterflyMapBrowserClass ifNil: [ self ]
+]
+
 { #category : 'accessing' }
 MiButterflyMapBrowser class >> mapClass [
 
@@ -77,8 +84,17 @@ MiButterflyMapBrowser class >> newModel [
 
 { #category : 'instance creation' }
 MiButterflyMapBrowser class >> open [
+
 	<script>
-	super open
+	self frontEndClass == self ifFalse: [ ^ self frontEndClass open ].
+	^ super open
+]
+
+{ #category : 'instance creation' }
+MiButterflyMapBrowser class >> openOnEntities: anEntity [
+
+	self frontEndClass == self ifFalse: [ ^ self frontEndClass openOnEntities: anEntity ].
+	^ super openOnEntities: anEntity
 ]
 
 { #category : 'specs' }

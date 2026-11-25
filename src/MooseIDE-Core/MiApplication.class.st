@@ -14,7 +14,8 @@ Class {
 		'mooseModelsTag',
 		'currentModelsBrowser',
 		'visualizationTimeout',
-		'architecturalMapBrowserClass'
+		'architecturalMapBrowserClass',
+		'butterflyMapBrowserClass'
 	],
 	#classVars : [
 		'Current'
@@ -144,6 +145,19 @@ MiApplication >> busNamed: aName [
 { #category : 'accessing' }
 MiApplication >> buses [
 	^ buses
+]
+
+{ #category : 'settings' }
+MiApplication >> butterflyMapBrowserClass [
+	"The browser class (front-end) opened for a butterfly map. nil: the default one (see MiButterflyMapBrowser class>>frontEndClass)"
+
+	^ butterflyMapBrowserClass
+]
+
+{ #category : 'settings' }
+MiApplication >> butterflyMapBrowserClass: aBrowserClass [
+
+	butterflyMapBrowserClass := aBrowserClass
 ]
 
 { #category : 'brokerage' }

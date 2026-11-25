@@ -1,3 +1,21 @@
+"
+I am the model of the butterfly map browsers, the Roassal one (`MiButterflyMapBrowser`) and the Bloc one (`MiButterflyMapBrowserBl`): the central entity, and the settings that say what is around it, as queries: its children (inside its box), its clients (on the left) and its providers (on the right).
+
+## Collaborators & Context
+- `browser`: told to draw the map again (`#runVisualization`) when the central entity or the settings change.
+- `MiButterflyMapSettingsConfiguration`: the settings (`#currentConfiguration`, `#updateFromConfiguration:`). The default queries come from the application (`#defaultClientsQuery`, `#defaultProvidersQuery`).
+- `MiButterflyMapBuilder` (Roassal) and `MiButterflyBlTree` (Bloc) ask me the children, clients and providers of an entity.
+
+## Assumptions & Invariants
+- `browser` must be set before the central entity: setting it draws the map.
+- `selectedEntities` is only set by the Bloc map (the selection in the map); `#miSelectedItem` answers it, the central entity if it is empty.
+
+## Main API
+- `#currentEntity:`, `#currentEntity`, `#entities` (the central entity, in a collection).
+- `#childrenFor:`, `#leftEntitiesFor:`, `#rightEntitiesFor:`: what is around an entity.
+- `#selectedEntities:`, `#miSelectedItem`.
+
+"
 Class {
 	#name : 'MiButterflyMapModel',
 	#superclass : 'MiAbstractModel',
@@ -5,7 +23,8 @@ Class {
 		'currentEntity',
 		'childrenQuery',
 		'clientsQuery',
-		'providersQuery'
+		'providersQuery',
+		'selectedEntities'
 	],
 	#category : 'MooseIDE-ButterflyMap-Model',
 	#package : 'MooseIDE-ButterflyMap',
@@ -81,14 +100,29 @@ MiButterflyMapModel >> leftEntitiesFor: anEntity [
 
 { #category : 'accessing' }
 MiButterflyMapModel >> miSelectedItem [
+	"The entities selected in the map, the central entity if none is selected"
 
-	^ self entities
+	^ self selectedEntities ifEmpty: [ self entities ]
 ]
 
 { #category : 'computing' }
 MiButterflyMapModel >> rightEntitiesFor: anEntity [
 
 	^ providersQuery runOn: anEntity asMooseGroup
+]
+
+{ #category : 'accessing' }
+MiButterflyMapModel >> selectedEntities [
+	"The entities selected in the map, empty if none"
+
+	^ selectedEntities ifNil: [ #(  ) ]
+]
+
+{ #category : 'accessing' }
+MiButterflyMapModel >> selectedEntities: aCollection [
+	"Told by the map when its selection changes"
+
+	selectedEntities := aCollection
 ]
 
 { #category : 'settings management' }

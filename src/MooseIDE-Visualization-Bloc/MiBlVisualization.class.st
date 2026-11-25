@@ -915,3 +915,16 @@ MiBlVisualization >> zoomBy: aWheelEvent [
 	self applyTransform.
 	aWheelEvent consumed: true
 ]
+
+{ #category : 'interactions' }
+MiBlVisualization >> zoomToFit [
+	"Zoom and pan so that the whole canvas shows in the viewport, centered, within #minZoom and #maxZoom. Uses the sizes of the last layout: nothing before the first one. The scale is absolute (#applyTransform), so the extent of the canvas is its unzoomed one"
+
+	| canvasExtent viewportExtent |
+	canvasExtent := canvas extent.
+	viewportExtent := viewport extent.
+	(canvasExtent x = 0 or: [ canvasExtent y = 0 ]) ifTrue: [ ^ self ].
+	zoom := ((viewportExtent x / canvasExtent x min: viewportExtent y / canvasExtent y) min: self maxZoom) max: self minZoom.
+	origin := viewportExtent - (canvasExtent * zoom) / 2.
+	self applyTransform
+]
