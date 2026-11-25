@@ -22,6 +22,18 @@ BaselineOfMooseIDE >> baseline: spec [
 ]
 
 { #category : 'dependencies' }
+BaselineOfMooseIDE >> blocAndToplo: spec [
+
+	spec
+		baseline: 'Bloc'
+		with: [ spec repository: 'github://pharo-graphics/Bloc:v3.0.0/src' ].
+	"Toplo v0.11.0 is the version built on Bloc v3.0.0"
+	spec
+		baseline: 'Toplo'
+		with: [ spec repository: 'github://pharo-graphics/Toplo:v0.11.0/src' ]
+]
+
+{ #category : 'dependencies' }
 BaselineOfMooseIDE >> classBlueprint: spec [
 
 	spec
@@ -47,6 +59,7 @@ BaselineOfMooseIDE >> defineDependencies: spec [
 	self pharoAIHierachicalClustering: spec.
 	self interactiveNotebook: spec.
 	self classBlueprint: spec.
+	self blocAndToplo: spec.
 
 	spec for: #WithFamix do: [ self famixQueries: spec ]
 ]
@@ -97,6 +110,12 @@ BaselineOfMooseIDE >> definePackages: spec [
 		package: 'MooseIDE-Meta' with: [ spec requires: #( 'MooseIDE-Core' 'MooseIDE-Famix' ) ];
 		package: 'MooseIDE-ArchitecturalMap' with: [ spec requires: #( 'MooseIDE-Visualization' ) ];
 		package: 'MooseIDE-ArchitecturalMap-Tests' with: [ spec requires: #( 'MooseIDE-ArchitecturalMap' 'MooseIDE-Tests' ) ];
+		package: 'MooseIDE-Visualization-Bloc'
+		with: [ spec requires: #( 'MooseIDE-Core' 'MooseIDE-NewTools' 'Bloc' 'Toplo' ) ];
+		package: 'MooseIDE-ArchitecturalMap-Bloc'
+		with: [ spec requires: #( 'MooseIDE-ArchitecturalMap' 'MooseIDE-Visualization-Bloc' ) ];
+		package: 'MooseIDE-ArchitecturalMap-Bloc-Tests'
+		with: [ spec requires: #( 'MooseIDE-ArchitecturalMap-Bloc' 'MooseIDE-ArchitecturalMap-Tests' ) ];
 		package: 'MooseIDE-DeadCode' with: [ spec requires: #( 'MooseIDE-Core' ) ];
 		package: 'MooseIDE-DeadCode-Tests' with: [ spec requires: #( 'MooseIDE-DeadCode' 'MooseIDE-Tests' ) ];
 		package: 'MooseIDE-DSM' with: [ spec requires: #( 'MooseIDE-Visualization' 'AIHierarchicalClustering' ) ];
