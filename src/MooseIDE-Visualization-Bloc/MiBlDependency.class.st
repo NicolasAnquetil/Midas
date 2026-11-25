@@ -54,7 +54,7 @@ MiBlDependency >> associations: aCollection [
 	associations := aCollection
 ]
 
-{ #category : 'accessing' }
+{ #category : 'printing' }
 MiBlDependency >> printOn: aStream [
 
 	aStream

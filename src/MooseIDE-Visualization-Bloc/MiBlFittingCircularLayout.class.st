@@ -53,7 +53,7 @@ MiBlFittingCircularLayout >> layout: anElement in: aBounds context: aContext [
 	self layoutIgnored: anElement context: aContext
 ]
 
-{ #category : 'layout' }
+{ #category : 'measure' }
 MiBlFittingCircularLayout >> measure: anElement with: anExtentSpec [
 	"Measure the children, then take the size of the circle plus the biggest side of a child, as far as anExtentSpec allows"
 
