@@ -8,9 +8,9 @@ Class {
 		'centralShape',
 		'butterfly'
 	],
-	#category : 'MooseIDE-ButterflyMap-Browser',
-	#package : 'MooseIDE-ButterflyMap',
-	#tag : 'Browser'
+	#category : 'MooseIDE-ButterflyMap-Roassal-Visualization',
+	#package : 'MooseIDE-ButterflyMap-Roassal',
+	#tag : 'Visualization'
 }
 
 { #category : 'adding' }

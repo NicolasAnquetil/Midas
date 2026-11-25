@@ -71,6 +71,13 @@ MiArchitecturalMapBrowserBl class >> title [
 ]
 
 { #category : 'layouts' }
+MiArchitecturalMapBrowserBl >> availableDoubleClickActions [
+	"The Bloc map does nothing on a double click yet"
+
+	^ #(  )
+]
+
+{ #category : 'layouts' }
 MiArchitecturalMapBrowserBl >> availableMapLayouts [
 
 	^ MiBlLayout availableLayouts

@@ -133,13 +133,9 @@ MiArchitecturalMapModel >> availableAssociationTypes [
 
 { #category : 'available' }
 MiArchitecturalMapModel >> availableDoubleClickActions [
+	"What a double click on the map can do, according to the front-end (my browser)"
 
-	^ {
-		  MiExpandCollapseShapeCommand new.
-		  MiInspectShapeCommand new.
-		  (MiPropagateShapeCommand new
-			   browser: browser;
-			   yourself) }
+	^ browser availableDoubleClickActions
 ]
 
 { #category : 'accessing' }
@@ -256,7 +252,7 @@ MiArchitecturalMapModel >> defaultConfiguration [
 { #category : 'settings management' }
 MiArchitecturalMapModel >> defaultDoubleClickAction [
 
-	^ self availableDoubleClickActions first
+	^ self availableDoubleClickActions ifEmpty: [ nil ] ifNotEmpty: [ :actions | actions first ]
 ]
 
 { #category : 'accessing' }

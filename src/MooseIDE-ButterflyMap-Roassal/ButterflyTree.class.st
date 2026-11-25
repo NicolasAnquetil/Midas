@@ -8,9 +8,9 @@ Class {
 		'leftTree',
 		'rightTree'
 	],
-	#category : 'MooseIDE-ButterflyMap-Model',
-	#package : 'MooseIDE-ButterflyMap',
-	#tag : 'Model'
+	#category : 'MooseIDE-ButterflyMap-Roassal-Tree',
+	#package : 'MooseIDE-ButterflyMap-Roassal',
+	#tag : 'Tree'
 }
 
 { #category : 'adding' }

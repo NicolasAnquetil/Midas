@@ -1,7 +1,7 @@
 Class {
 	#name : 'MiButterflyCanvasMenuItem',
 	#superclass : 'MiButterflyMenuItem',
-	#category : 'MooseIDE-ButterflyMap-Menu',
-	#package : 'MooseIDE-ButterflyMap',
+	#category : 'MooseIDE-ButterflyMap-Roassal-Menu',
+	#package : 'MooseIDE-ButterflyMap-Roassal',
 	#tag : 'Menu'
 }

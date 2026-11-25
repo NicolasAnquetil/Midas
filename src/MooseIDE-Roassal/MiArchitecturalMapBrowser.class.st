@@ -72,6 +72,18 @@ MiArchitecturalMapBrowser class >> title [
 ]
 
 { #category : 'layouts' }
+MiArchitecturalMapBrowser >> availableDoubleClickActions [
+	"What a double click on a shape of the map can do (MiArchitecturalMapModel>>#availableDoubleClickActions)"
+
+	^ {
+		  MiExpandCollapseShapeCommand new.
+		  MiInspectShapeCommand new.
+		  (MiPropagateShapeCommand new
+			   browser: self;
+			   yourself) }
+]
+
+{ #category : 'layouts' }
 MiArchitecturalMapBrowser >> availableMapLayouts [
 	"RSLayout withAllSubclasses reject: [ :c | c isAbstract ]
 	But some of them require specific configuration that we cannot easily specify here so we choose a subset of the simplest ones"

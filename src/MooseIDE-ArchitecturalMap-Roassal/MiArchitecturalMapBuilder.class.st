@@ -18,8 +18,9 @@ Class {
 		'nodesToAdd',
 		'highlightShapes'
 	],
-	#category : 'MooseIDE-ArchitecturalMap',
-	#package : 'MooseIDE-ArchitecturalMap'
+	#category : 'MooseIDE-ArchitecturalMap-Roassal-Visualization',
+	#package : 'MooseIDE-ArchitecturalMap-Roassal',
+	#tag : 'Visualization'
 }
 
 { #category : 'adding' }

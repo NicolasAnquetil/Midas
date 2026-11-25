@@ -4,9 +4,9 @@ Butterfly visualization.
 Class {
 	#name : 'MiButterflyMapVisualization',
 	#superclass : 'MiAbstractHierarchicalVisualization',
-	#category : 'MooseIDE-ButterflyMap-Browser',
-	#package : 'MooseIDE-ButterflyMap',
-	#tag : 'Browser'
+	#category : 'MooseIDE-ButterflyMap-Roassal-Visualization',
+	#package : 'MooseIDE-ButterflyMap-Roassal',
+	#tag : 'Visualization'
 }
 
 { #category : 'running' }
