@@ -1,8 +1,8 @@
 "
-I lay out the root nodes of the Bloc architectural map in one column (`BlLinearLayout vertical`).
+I lay out the root nodes of a Bloc map (a MiBlVisualization) in one column (`BlLinearLayout vertical`).
 
 ## Collaborators & Context
-- `MiArchiBlLayout`: my superclass, see it for how layouts are chosen and applied.
+- `MiBlLayout`: my superclass, see it for how layouts are chosen and applied.
 - `BlLinearLayout`: does the work.
 
 ## Assumptions & Invariants
@@ -13,27 +13,27 @@ I lay out the root nodes of the Bloc architectural map in one column (`BlLinearL
 
 "
 Class {
-	#name : 'MiArchiBlLinearLayout',
-	#superclass : 'MiArchiBlLayout',
-	#category : 'MooseIDE-ArchitecturalMap-Bloc-data',
-	#package : 'MooseIDE-ArchitecturalMap-Bloc',
-	#tag : 'data'
+	#name : 'MiBlLinearLayout',
+	#superclass : 'MiBlLayout',
+	#category : 'MooseIDE-Visualization-Bloc-layouts',
+	#package : 'MooseIDE-Visualization-Bloc',
+	#tag : 'layouts'
 }
 
 { #category : 'accessing' }
-MiArchiBlLinearLayout class >> layoutDescription [
+MiBlLinearLayout class >> layoutDescription [
 
 	^ 'One column'
 ]
 
 { #category : 'accessing' }
-MiArchiBlLinearLayout class >> layoutName [
+MiBlLinearLayout class >> layoutName [
 
 	^ 'Linear'
 ]
 
 { #category : 'layout' }
-MiArchiBlLinearLayout >> applyOn: anElement topElementsCount: anInteger [
+MiBlLinearLayout >> applyOn: anElement topElementsCount: anInteger [
 
 	anElement layout: BlLinearLayout vertical.
 	anElement constraintsDo: [ :c |

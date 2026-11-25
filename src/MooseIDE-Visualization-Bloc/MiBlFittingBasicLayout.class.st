@@ -3,7 +3,7 @@ I am a Bloc basic layout (children placed at their `position:`) that also suppor
 
 ## Collaborators & Context
 - `BlBasicLayout`: places each child at the position it requested. Its measure (from `BlLayout`) does not support fitContent: an element with a basic layout and fitContent stays 0@0.
-- `MiArchiBlVisualization>>#freezeLayoutOf:` gives me to a container of boxes at the first move of one of its children: the boxes stay where they are, and the container grows to contain them when one is moved or drawn again bigger (expanded).
+- `MiBlVisualization>>#freezeLayoutOf:` gives me to a container of boxes at the first move of one of its children: the boxes stay where they are, and the container grows to contain them when one is moved or drawn again bigger (expanded).
 
 ## Assumptions & Invariants
 - The size is computed during the measure, from the position requested by each child (`constraints position`, applied in the same layout pass) and its measured extent. So it is right in the same pass, even for a child just added or resized.
@@ -11,19 +11,19 @@ I am a Bloc basic layout (children placed at their `position:`) that also suppor
 - Children ignored by the layout are measured as by `BlBasicLayout`, and do not count in the size.
 
 ## Main API
-- `aContainer layout: MiArchiBlFittingBasicLayout new`, with fitContent constraints (for an exact constraint, the exact size is kept).
+- `aContainer layout: MiBlFittingBasicLayout new`, with fitContent constraints (for an exact constraint, the exact size is kept).
 
 "
 Class {
-	#name : 'MiArchiBlFittingBasicLayout',
+	#name : 'MiBlFittingBasicLayout',
 	#superclass : 'BlBasicLayout',
-	#category : 'MooseIDE-ArchitecturalMap-Bloc-visualization',
-	#package : 'MooseIDE-ArchitecturalMap-Bloc',
-	#tag : 'visualization'
+	#category : 'MooseIDE-Visualization-Bloc-layouts',
+	#package : 'MooseIDE-Visualization-Bloc',
+	#tag : 'layouts'
 }
 
 { #category : 'measure' }
-MiArchiBlFittingBasicLayout >> measure: anElement with: anExtentSpec [
+MiBlFittingBasicLayout >> measure: anElement with: anExtentSpec [
 	"Measure the children (as a basic layout), then take the size that contains them all, with their right and bottom margins, as far as anExtentSpec allows (fitContent: all of it; exact: the exact size)"
 
 	| corner |

@@ -3,7 +3,7 @@ I am a Bloc layout that places the children on a circle sized from the children 
 
 ## Collaborators & Context
 - `BlBasicLayout`: my superclass, for the measure of the children and the children ignored by the layout.
-- `MiArchiBlCircularLayout`: gives me to the layer of the root boxes of the map. Replaces `ToBasicCircularLayout` (Toplo), which puts the centers of the children at equal angles on a circle as large as the element: boxes sticking out of the element by half their size, and big boxes (an expanded package) overlapping their neighbours.
+- `MiBlCircularLayout`: gives me to the layer of the root boxes of the map. Replaces `ToBasicCircularLayout` (Toplo), which puts the centers of the children at equal angles on a circle as large as the element: boxes sticking out of the element by half their size, and big boxes (an expanded package) overlapping their neighbours.
 
 ## Assumptions & Invariants
 - Each child gets a part of the circle in proportion to its span: its diagonal plus `#gap`. So a big child gets more room, and neighbours do not overlap.
@@ -13,27 +13,27 @@ I am a Bloc layout that places the children on a circle sized from the children 
 - The first child is at the right of the center (angle 0), the others follow clockwise (y goes down).
 
 ## Main API
-- `anElement layout: MiArchiBlFittingCircularLayout new`, with fitContent constraints.
+- `anElement layout: MiBlFittingCircularLayout new`, with fitContent constraints.
 - `#gap`, `#minimumRadius`.
 
 "
 Class {
-	#name : 'MiArchiBlFittingCircularLayout',
+	#name : 'MiBlFittingCircularLayout',
 	#superclass : 'BlBasicLayout',
-	#category : 'MooseIDE-ArchitecturalMap-Bloc-visualization',
-	#package : 'MooseIDE-ArchitecturalMap-Bloc',
-	#tag : 'visualization'
+	#category : 'MooseIDE-Visualization-Bloc-layouts',
+	#package : 'MooseIDE-Visualization-Bloc',
+	#tag : 'layouts'
 }
 
 { #category : 'layout' }
-MiArchiBlFittingCircularLayout >> gap [
+MiBlFittingCircularLayout >> gap [
 	"Room left between two neighbours on the circle"
 
 	^ 20
 ]
 
 { #category : 'layout' }
-MiArchiBlFittingCircularLayout >> layout: anElement in: aBounds context: aContext [
+MiBlFittingCircularLayout >> layout: anElement in: aBounds context: aContext [
 	"Place the center of each child in the middle of its part of the circle"
 
 	| children center radius total angle |
@@ -54,7 +54,7 @@ MiArchiBlFittingCircularLayout >> layout: anElement in: aBounds context: aContex
 ]
 
 { #category : 'layout' }
-MiArchiBlFittingCircularLayout >> measure: anElement with: anExtentSpec [
+MiBlFittingCircularLayout >> measure: anElement with: anExtentSpec [
 	"Measure the children, then take the size of the circle plus the biggest side of a child, as far as anExtentSpec allows"
 
 	| children side |
@@ -66,13 +66,13 @@ MiArchiBlFittingCircularLayout >> measure: anElement with: anExtentSpec [
 ]
 
 { #category : 'layout' }
-MiArchiBlFittingCircularLayout >> minimumRadius [
+MiBlFittingCircularLayout >> minimumRadius [
 
 	^ 150
 ]
 
 { #category : 'layout' }
-MiArchiBlFittingCircularLayout >> radiusFor: someChildren [
+MiBlFittingCircularLayout >> radiusFor: someChildren [
 	"The radius such that the chord between two neighbours is about their span"
 
 	| n total |
@@ -83,7 +83,7 @@ MiArchiBlFittingCircularLayout >> radiusFor: someChildren [
 ]
 
 { #category : 'layout' }
-MiArchiBlFittingCircularLayout >> spanOf: aChild [
+MiBlFittingCircularLayout >> spanOf: aChild [
 	"The room aChild needs on the circle: its diagonal (so whatever its angle on the circle) and a gap"
 
 	^ aChild measuredExtent r + self gap
