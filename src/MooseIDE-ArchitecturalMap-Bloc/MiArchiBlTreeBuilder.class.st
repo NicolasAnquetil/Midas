@@ -1,10 +1,10 @@
 "
-I build, from a `MiArchitecturalMapModel`, the tree of `MiArchiBlNode` and the `MiArchiBlDependency` between them that `MiArchitecturalMapBrowserBl` shows.
+I build, from a `MiArchitecturalMapModel`, the tree of `MiBlNode` and the `MiBlDependency` between them that `MiArchitecturalMapBrowserBl` shows.
 
 ## Collaborators & Context
 - `MiArchitecturalMapModel` (`mapModel`): gives the root entities (`#rootNodes`), the tags (`#tags`), the children of an entity (`#childrenFor:`), its dependencies (`#getDependenciesFor:`) and whether received entities are hidden (`#hideReceivedEntities`).
-- `MiArchiBlEntityNode` (for a Moose entity) and `MiArchiBlTagNode` (for a `FamixTag`): the nodes of the tree, subclasses of `MiArchiBlNode`.
-- `MiArchiBlDependency`: a dependency from a source node to a target node, with its associations.
+- `MiArchiBlEntityNode` (for a Moose entity) and `MiArchiBlTagNode` (for a `FamixTag`): the nodes of the tree, subclasses of `MiBlNode`.
+- `MiBlDependency`: a dependency from a source node to a target node, with its associations.
 - `MiArchitecturalMapBrowserBl>>#runVisualization` creates and builds me; the browser then draws my `roots` and `#visibleDependencies` with Bloc.
 
 ## Assumptions & Invariants
@@ -58,7 +58,7 @@ MiArchiBlTreeBuilder >> computeDependencies [
 			(mapModel getDependenciesFor: targetNode entity) do: [ :association |
 					association source ifNotNil: [ :source |
 							nodesByMooseID at: source mooseID ifPresent: [ :sourceNode |
-									dependencies add: (MiArchiBlDependency new
+									dependencies add: (MiBlDependency new
 											 source: sourceNode;
 											 target: targetNode;
 											 association: association;
@@ -159,7 +159,7 @@ MiArchiBlTreeBuilder >> visibleDependencies [
 			to := each target visibleNode.
 			from == to ifFalse: [ (byPair at: from -> to ifAbsentPut: [ OrderedCollection new ]) add: each association ] ].
 	^ byPair associations collect: [ :pair |
-			  MiArchiBlDependency new
+			  MiBlDependency new
 				  source: pair key key;
 				  target: pair key value;
 				  associations: pair value;

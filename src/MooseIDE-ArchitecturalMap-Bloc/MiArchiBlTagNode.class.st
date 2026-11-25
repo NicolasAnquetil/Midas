@@ -2,7 +2,7 @@
 I am a node of the Bloc architectural map that stands for a tag (`FamixTag`): I group the entities tagged with it, and have the tag's color.
 
 ## Collaborators & Context
-- `MiArchiBlNode`: my superclass, holds the tree structure and the expanded state.
+- `MiBlNode`: my superclass, holds the tree structure and the expanded state.
 - `MiArchiBlTreeBuilder>>#nodeForTag:` creates me, with the tag's name and color, and as children the nodes of the tagged entities.
 - `MiArchiBlVisualization>>#backgroundFor:`: my box is filled with my color.
 
@@ -13,12 +13,12 @@ I am a node of the Bloc architectural map that stands for a tag (`FamixTag`): I 
 
 ## Main API
 - `MiArchiBlTagNode new entity: aTag; name: aString; color: aColor; children: someNodes; yourself`
-- `#color`, `#color:`, `#isTag` (true), and those of `MiArchiBlNode`.
+- `#color`, `#color:`, `#isTag` (true), and those of `MiBlNode`.
 
 "
 Class {
 	#name : 'MiArchiBlTagNode',
-	#superclass : 'MiArchiBlNode',
+	#superclass : 'MiBlNode',
 	#instVars : [
 		'color'
 	],

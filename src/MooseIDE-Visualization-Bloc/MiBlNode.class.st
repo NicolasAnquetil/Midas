@@ -1,30 +1,30 @@
 "
-I am the abstract superclass of the nodes of the architectural map drawn with Bloc. A node stands for a model object, and I hold what all nodes share: their place in the tree, their label, and whether their children are shown.
+I am the abstract superclass of the nodes of a map drawn with Bloc (`MiBlVisualization`). A node stands for a model object, and I hold what all nodes share: their place in the tree, their label, and whether their children are shown.
 
 ## Collaborators & Context
-- Subclasses: `MiArchiBlEntityNode` (a Moose entity) and `MiArchiBlTagNode` (a `FamixTag`, with its color).
-- `MiArchiBlTreeBuilder`: creates the nodes (`#nodeForEntity:`, `#nodeForTag:`) and sets their name and children.
-- `MiArchiBlDependency`: links two nodes. `MiArchiBlTreeBuilder>>#visibleDependencies` moves dependencies up to the nodes shown, using `#visibleNode`.
-- `MiArchiBlVisualization`: draws a box for each node (`#boxForNode:`). It shows the label, uses `#color` as background (the theme's when nil), gives a dashed border to a node with children, and draws the children's boxes inside only when the node is expanded.
+- Subclasses, one per kind of map: `MiArchiBlEntityNode` (a Moose entity) and `MiArchiBlTagNode` (a `FamixTag`, with its color) for the architectural map; `MiButterflyBlNode` for the butterfly map.
+- The tree builder of each map creates the nodes and sets their name and children (e.g. `MiArchiBlTreeBuilder`).
+- `MiBlDependency`: links two nodes. A tree builder lifts the dependencies to the nodes shown with `#visibleNode`.
+- `MiBlVisualization`: draws a box for each node (`#boxForNode:`). It shows the label, uses `#color` as background (the theme's when nil), gives a dashed border to a node with children, and draws the children's boxes inside only when the node is expanded.
 
 ## Assumptions & Invariants
-- I am abstract (`#isAbstract`): subclasses define `#color` and `#isTag`.
+- I am abstract (`#isAbstract`): use a subclass. `#color` is nil (the theme's) and `#isTag` false unless a subclass says otherwise.
 - `entity` is the model object of the node: a Moose entity or a tag.
-- `parent` and `children` agree: `#children:` sets me as the parent of each child. The root has no parent. I do not sort the children: the tree builder gives them sorted by name.
+- `parent` and `children` agree: `#children:` sets me as the parent of each child. The root has no parent. I do not sort the children.
 - A node is collapsed at first (`isExpanded` is false). A collapsed node hides its descendants, and their dependencies are drawn on it.
-- No thread safety: the nodes are built by the tree builder, then read by the visualization in the Bloc UI process.
+- No thread safety: the nodes are built by a tree builder, then read by the visualization in the Bloc UI process.
 
 ## Main API
 - Creation is through a subclass: `MiArchiBlEntityNode new entity: anEntity; name: aString; children: someNodes; yourself`
 - `#entity`, `#name`, `#parent`, `#children`, `#hasChildren`
-- `#color`, `#isTag`: subclass responsibilities.
+- `#color`, `#isTag`: for the drawing.
 - `#isExpanded`, `#isExpanded:`: whether the children are shown.
 - `#visibleNode`: the node drawn for me. That is myself if all my ancestors are expanded, otherwise my highest collapsed ancestor.
 - `#withAllParents`: me and my ancestors, the root last.
 
 "
 Class {
-	#name : 'MiArchiBlNode',
+	#name : 'MiBlNode',
 	#superclass : 'Object',
 	#instVars : [
 		'entity',
@@ -33,57 +33,57 @@ Class {
 		'children',
 		'isExpanded'
 	],
-	#category : 'MooseIDE-ArchitecturalMap-Bloc-data',
-	#package : 'MooseIDE-ArchitecturalMap-Bloc',
+	#category : 'MooseIDE-Visualization-Bloc-data',
+	#package : 'MooseIDE-Visualization-Bloc',
 	#tag : 'data'
 }
 
 { #category : 'testing' }
-MiArchiBlNode class >> isAbstract [
+MiBlNode class >> isAbstract [
 
-	^ self == MiArchiBlNode
+	^ self == MiBlNode
 ]
 
 { #category : 'accessing' }
-MiArchiBlNode >> children [
+MiBlNode >> children [
 
 	^ children
 ]
 
 { #category : 'accessing' }
-MiArchiBlNode >> children: aCollection [
+MiBlNode >> children: aCollection [
 
 	children := aCollection asOrderedCollection.
 	children do: [ :each | each parent: self ]
 ]
 
 { #category : 'accessing' }
-MiArchiBlNode >> color [
-	"The background color of my box, nil for the default one"
+MiBlNode >> color [
+	"The background color of my box, nil for the default one of the theme"
 
-	^ self subclassResponsibility
+	^ nil
 ]
 
 { #category : 'accessing' }
-MiArchiBlNode >> entity [
+MiBlNode >> entity [
 
 	^ entity
 ]
 
 { #category : 'accessing' }
-MiArchiBlNode >> entity: anEntity [
+MiBlNode >> entity: anEntity [
 
 	entity := anEntity
 ]
 
 { #category : 'testing' }
-MiArchiBlNode >> hasChildren [
+MiBlNode >> hasChildren [
 
 	^ children isNotEmpty
 ]
 
 { #category : 'initialization' }
-MiArchiBlNode >> initialize [
+MiBlNode >> initialize [
 
 	super initialize.
 	children := OrderedCollection new.
@@ -91,49 +91,50 @@ MiArchiBlNode >> initialize [
 ]
 
 { #category : 'accessing' }
-MiArchiBlNode >> isExpanded [
+MiBlNode >> isExpanded [
 
 	^ isExpanded
 ]
 
 { #category : 'accessing' }
-MiArchiBlNode >> isExpanded: aBoolean [
+MiBlNode >> isExpanded: aBoolean [
 
 	isExpanded := aBoolean
 ]
 
-{ #category : 'accessing' }
-MiArchiBlNode >> isTag [
+{ #category : 'testing' }
+MiBlNode >> isTag [
+	"Whether I stand for a tag rather than for an entity"
 
-	^ self subclassResponsibility
+	^ false
 ]
 
 { #category : 'accessing' }
-MiArchiBlNode >> name [
+MiBlNode >> name [
 
 	^ name
 ]
 
 { #category : 'accessing' }
-MiArchiBlNode >> name: aString [
+MiBlNode >> name: aString [
 
 	name := aString
 ]
 
 { #category : 'accessing' }
-MiArchiBlNode >> parent [
+MiBlNode >> parent [
 
 	^ parent
 ]
 
 { #category : 'accessing' }
-MiArchiBlNode >> parent: aNode [
+MiBlNode >> parent: aNode [
 
 	parent := aNode
 ]
 
 { #category : 'printing' }
-MiArchiBlNode >> printOn: aStream [
+MiBlNode >> printOn: aStream [
 
 	super printOn: aStream.
 	aStream
@@ -143,14 +144,14 @@ MiArchiBlNode >> printOn: aStream [
 ]
 
 { #category : 'querying' }
-MiArchiBlNode >> visibleNode [
+MiBlNode >> visibleNode [
 	"The node shown for me: myself if all my ancestors are expanded, my highest collapsed ancestor otherwise"
 
 	^ self withAllParents reversed detect: [ :each | each == self or: [ each isExpanded not ] ]
 ]
 
 { #category : 'querying' }
-MiArchiBlNode >> withAllParents [
+MiBlNode >> withAllParents [
 	"Me and my ancestors, the root last"
 
 	| result node |
