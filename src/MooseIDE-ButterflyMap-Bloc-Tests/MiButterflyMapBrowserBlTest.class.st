@@ -79,7 +79,7 @@ MiButterflyMapBrowserBlTest >> testFrontEndClassDefault [
 
 { #category : 'tests' }
 MiButterflyMapBrowserBlTest >> testMiSelectedItemWithSelection [
-	"The entities selected in the map: one box of Client (with the default queries of the application, Client is also on the right)"
+	"The entities selected in the map"
 
 	| model central client |
 	model := FamixStModel new.

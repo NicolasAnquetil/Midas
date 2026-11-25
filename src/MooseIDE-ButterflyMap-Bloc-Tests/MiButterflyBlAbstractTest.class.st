@@ -9,11 +9,11 @@ I am the common fixture of the tests of the Bloc butterfly map: a Famix model wh
 ## Assumptions & Invariants
 - I am abstract (`#isAbstract`): I hold no tests.
 - Each test gets a fresh model from `#setUp`. `#tree` builds a new butterfly on each send: Center, with Client1 and Client2 on the left and Provider on the right.
-- The providers are given by `allProviders` (`#mapModel`): the default providers query of the application answers the clients.
+- The model uses the default queries of the application (clients, providers, children), so the tests check them too.
 - ClientOfClients is a client of both clients: after a level is added, it has two nodes.
 
 ## Main API
-- `#mapModel`: a butterfly model centered on Center. `#tree`: its butterfly.
+- `#mapModel`: a butterfly model centered on Center, with the default queries. `#tree`: its butterfly.
 - `#entitiesOf:` nodes: their entities. `#nodeOf:in:` an entity and a tree: its first node.
 
 "
@@ -65,7 +65,7 @@ MiButterflyBlAbstractTest >> inherit: aSubclass from: aSuperclass [
 
 { #category : 'running' }
 MiButterflyBlAbstractTest >> mapModel [
-	"A butterfly model centered on Center, with a stub browser (setting the central entity asks the browser to draw the map). Providers are given by #allProviders: the default query of the application answers the clients"
+	"A butterfly model centered on Center, with the queries of the application, and a stub browser (setting the central entity asks the browser to draw the map)"
 
 	| browser mapModel |
 	browser := Mock new.
@@ -73,11 +73,6 @@ MiButterflyBlAbstractTest >> mapModel [
 	mapModel := MiButterflyMapModel new
 		            browser: browser;
 		            yourself.
-	mapModel updateFromConfiguration: (mapModel currentConfiguration
-			 providersQuery: ((FQCollectScriptQuery script: [ :entity | entity allProviders ])
-					  name: 'All providers';
-					  yourself);
-			 yourself).
 	mapModel currentEntity: center.
 	^ mapModel
 ]
