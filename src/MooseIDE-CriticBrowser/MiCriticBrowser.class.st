@@ -37,6 +37,12 @@ MiCriticBrowser class >> buildActionCommandsGroupWith: presenterInstance [
 		  (MiCBRunAllRulesCommand forSpecContext: presenterInstance) }
 ]
 
+{ #category : 'world menu' }
+MiCriticBrowser class >> buildMenuItemIn: aBuilder [
+
+	^ (super buildMenuItemIn: aBuilder) withSeparatorAfter
+]
+
 { #category : 'commands' }
 MiCriticBrowser class >> buildRuleCommandsGroupWith: presenterInstance [
 
@@ -68,11 +74,9 @@ MiCriticBrowser class >> iconForRuleComponent: aRuleComponent [
 ]
 
 { #category : 'world menu' }
-MiCriticBrowser class >> menuCommandOn: aBuilder [
+MiCriticBrowser class >> isInMooseMenu [
 
-	<worldMenu>
-	<miBrowsersMenu>
-	^ (self buildMenuItemIn: aBuilder) withSeparatorAfter
+	^ true
 ]
 
 { #category : 'world menu' }

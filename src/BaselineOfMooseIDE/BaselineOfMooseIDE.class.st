@@ -110,18 +110,17 @@ BaselineOfMooseIDE >> definePackages: spec [
 		package: 'MooseIDE-Meta' with: [ spec requires: #( 'MooseIDE-Core' 'MooseIDE-Famix' ) ];
 		package: 'MooseIDE-ArchitecturalMap' with: [ spec requires: #( 'MooseIDE-Visualization' ) ];
 		package: 'MooseIDE-ArchitecturalMap-Tests' with: [ spec requires: #( 'MooseIDE-ArchitecturalMap' 'MooseIDE-Tests' ) ];
-		package: 'MooseIDE-Visualization-Bloc'
-		with: [ spec requires: #( 'MooseIDE-Core' 'MooseIDE-NewTools' 'Bloc' 'Toplo' ) ];
+		package: 'MooseIDE-Visualization-Bloc' with: [ spec requires: #( 'Bloc' 'Toplo' ) ];
 		package: 'MooseIDE-ArchitecturalMap-Bloc'
 		with: [ spec requires: #( 'MooseIDE-ArchitecturalMap' 'MooseIDE-Visualization-Bloc' ) ];
 		package: 'MooseIDE-ArchitecturalMap-Bloc-Tests'
-		with: [ spec requires: #( 'MooseIDE-ArchitecturalMap-Bloc' 'MooseIDE-ArchitecturalMap-Tests' ) ];
+		with: [ spec requires: #( 'MooseIDE-Bloc' 'MooseIDE-ArchitecturalMap-Tests' ) ];
 		package: 'MooseIDE-DeadCode' with: [ spec requires: #( 'MooseIDE-Core' ) ];
 		package: 'MooseIDE-DeadCode-Tests' with: [ spec requires: #( 'MooseIDE-DeadCode' 'MooseIDE-Tests' ) ];
 		package: 'MooseIDE-DSM' with: [ spec requires: #( 'MooseIDE-Visualization' 'AIHierarchicalClustering' ) ];
 		package: 'MooseIDE-DistributionMap' with: [ spec requires: #( 'MooseIDE-Visualization' 'AIHierarchicalClustering' ) ];
 		package: 'MooseIDE-HeatMap' with: [ spec requires: #( 'MooseIDE-Visualization' ) ];
-		package: 'MooseIDE-Tests' with: [ spec requires: #( 'MooseIDE-Visualization' ) ];
+		package: 'MooseIDE-Tests' with: [ spec requires: #( 'MooseIDE-Visualization' 'MooseIDE-Roassal' ) ];
 		package: 'MooseIDE-AttributedText';
 		package: 'MooseIDE-Famix' with: [ spec requires: #( 'MooseIDE-Visualization' 'MooseIDE-AttributedText' ) ];
 		package: 'MooseIDE-QueriesBrowser' with: [ spec requires: #( 'MooseIDE-Core' 'FamixQueries' ) ];
@@ -129,7 +128,7 @@ BaselineOfMooseIDE >> definePackages: spec [
 		package: 'MooseIDE-Tagging' with: [ spec requires: #( 'MooseIDE-Core' 'MooseIDE-Visualization' ) ];
 		package: 'MooseIDE-Tagging-Tests' with: [ spec requires: #( 'MooseIDE-Tagging' 'MooseIDE-Tests' ) ];
 		package: 'MooseIDE-CoUsageMap' with: [ spec requires: #( 'MooseIDE-Core' 'MooseIDE-Visualization' ) ];
-		package: 'MooseIDE-CoUsageMap-Tests' with: [ spec requires: #( 'MooseIDE-CoUsageMap' 'MooseIDE-Tests' ) ];
+		package: 'MooseIDE-CoUsageMap-Tests' with: [ spec requires: #( 'MooseIDE-CoUsageMap' 'MooseIDE-Tests' 'MooseIDE-Roassal' ) ];
 		package: 'MooseIDE-NewTools' with: [ spec requires: #( 'MooseIDE-Meta' 'MooseIDE-Core' 'FamixQueries' ) ];
 		package: 'MooseIDE-NewTools-Tests' with: [ spec requires: #( 'MooseIDE-NewTools' 'MooseIDE-Tests' ) ];
 		package: 'MooseIDE-Export' with: [ spec requires: #( 'MooseIDE-Core' 'InteractiveNotebook' ) ];
@@ -139,11 +138,20 @@ BaselineOfMooseIDE >> definePackages: spec [
 		package: 'MooseIDE-ButterflyMap-Bloc'
 		with: [ spec requires: #( 'MooseIDE-ButterflyMap' 'MooseIDE-Visualization-Bloc' ) ];
 		package: 'MooseIDE-ButterflyMap-Bloc-Tests'
-		with: [ spec requires: #( 'MooseIDE-ButterflyMap-Bloc' 'MooseIDE-Tests' ) ];
+		with: [ spec requires: #( 'MooseIDE-Bloc' 'MooseIDE-Tests' ) ];
+		package: 'MooseIDE-Roassal'
+		with: [
+			spec requires:
+					#( 'MooseIDE-ArchitecturalMap' 'MooseIDE-ButterflyMap' 'MooseIDE-ClassBlueprint' 'MooseIDE-CoUsageMap'
+					   'MooseIDE-DistributionMap' 'MooseIDE-HeatMap' 'MooseIDE-Visualization' 'MooseIDE-Famix' ) ];
+		package: 'MooseIDE-Roassal-Tests' with: [ spec requires: #( 'MooseIDE-Roassal' ) ];
+		package: 'MooseIDE-Bloc'
+		with: [ spec requires: #( 'MooseIDE-ArchitecturalMap-Bloc' 'MooseIDE-ButterflyMap-Bloc' 'MooseIDE-NewTools' ) ];
+		package: 'MooseIDE-Bloc-Tests' with: [ spec requires: #( 'MooseIDE-Bloc' ) ];
 		package: 'MooseIDE-QueriesDashboard' with: [ spec requires: #( 'MooseIDE-Core' ) ];
 		package: 'MooseIDE-LayerVisualization' with: [ spec requires: #( 'MooseIDE-Core' 'MooseIDE-Visualization' 'MooseIDE-QueriesDashboard' ) ];
 		package: 'MooseIDE-ClassBlueprint' with: [ spec requires: #( 'MooseIDE-Visualization' 'ClassBlueprint' ) ];
-		package: 'MooseIDE-ClassBlueprint-Tests' with: [ spec requires: #( 'MooseIDE-ClassBlueprint' ) ];
+		package: 'MooseIDE-ClassBlueprint-Tests' with: [ spec requires: #( 'MooseIDE-ClassBlueprint' 'MooseIDE-Roassal' ) ];
 		package: 'MooseIDE-Spotter';
 		package: 'MooseIDE-Core-Reporter' with: [ spec requires: #( 'MooseIDE-Core' ) ];
 		package: 'MooseIDE-Spotter-Tests' with: [ spec requires: #( 'MooseIDE-Spotter' ) ];

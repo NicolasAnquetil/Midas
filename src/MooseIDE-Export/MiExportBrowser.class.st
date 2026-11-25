@@ -30,11 +30,9 @@ MiExportBrowser class >> commentColumnTitle [
 ]
 
 { #category : 'world menu' }
-MiExportBrowser class >> menuCommandOn: aBuilder [
+MiExportBrowser class >> isInMooseMenu [
 
-	<worldMenu>
-	<miBrowsersMenu>
-	^ self buildMenuItemIn: aBuilder
+	^ true
 ]
 
 { #category : 'world menu' }

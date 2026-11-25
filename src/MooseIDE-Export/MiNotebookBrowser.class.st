@@ -30,18 +30,9 @@ Class {
 	#tag : 'Notebook'
 }
 
-{ #category : 'accessing' }
-MiNotebookBrowser class >> defaultPreferredExtent [
-
-	^ 1083 @ 697
-]
-
 { #category : 'world menu' }
-MiNotebookBrowser class >> menuCommandOn: aBuilder [
+MiNotebookBrowser class >> buildMenuItemIn: aBuilder [
 
-	<worldMenu>
-	<miBrowsers>
-	<miBrowsersMenu>
 	(aBuilder item: #Reporter)
 		parent: #Moose;
 		label: self title;
@@ -49,6 +40,18 @@ MiNotebookBrowser class >> menuCommandOn: aBuilder [
 		order: 6;
 		help: self helpMessage;
 		action: [ self open ]
+]
+
+{ #category : 'accessing' }
+MiNotebookBrowser class >> defaultPreferredExtent [
+
+	^ 1083 @ 697
+]
+
+{ #category : 'world menu' }
+MiNotebookBrowser class >> isInMooseMenu [
+
+	^ true
 ]
 
 { #category : 'world menu' }

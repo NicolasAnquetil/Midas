@@ -22,12 +22,10 @@ MiQueriesDashboardBrowser class >> defaultPreferredExtent [
 	^ 800 @ 500
 ]
 
-{ #category : 'accessing' }
-MiQueriesDashboardBrowser class >> menuCommandOn: aBuilder [
+{ #category : 'world menu' }
+MiQueriesDashboardBrowser class >> isInMooseMenu [
 
-	<worldMenu>
-	<miBrowsersMenu>
-	^ self buildMenuItemIn: aBuilder
+	^ true
 ]
 
 { #category : 'accessing' }

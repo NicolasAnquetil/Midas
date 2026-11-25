@@ -15,11 +15,9 @@ Class {
 }
 
 { #category : 'world menu' }
-MiLogsBrowser class >> menuCommandOn: aBuilder [
+MiLogsBrowser class >> isInMooseMenu [
 
-	<worldMenu>
-	<miBrowsersMenu>
-	^ self buildMenuItemIn: aBuilder
+	^ true
 ]
 
 { #category : 'world menu' }

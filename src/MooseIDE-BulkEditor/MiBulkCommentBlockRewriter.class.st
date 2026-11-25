@@ -43,21 +43,18 @@ MiBulkCommentBlockRewriter >> intervalEnd: c [
 
 	self insideInterval: c.
 	self nextLineDo: [
-		stream
-			<< ' --- dead code removal --- */' ;
-			<< Smalltalk os lineEnding.
-		self getNextInterval
-	]
-
-
+			stream
+				<< ' --- dead code removal --- */';
+				<< OSPlatform current lineEnding.
+			self getNextInterval ]
 ]
 
 { #category : 'actions' }
 MiBulkCommentBlockRewriter >> intervalStart: c [
 
 	stream
-		<< '/* --- dead code removal ---' ;
-		<< Smalltalk os lineEnding.
+		<< '/* --- dead code removal ---';
+		<< OSPlatform current lineEnding.
 
 	super intervalStart: c
 ]

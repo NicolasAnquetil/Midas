@@ -19,6 +19,21 @@ Class {
 	#tag : 'Playground'
 }
 
+{ #category : 'world menu' }
+MiPlaygroundBrowser class >> buildMenuItemIn: aBuilder [
+
+	^ aBuilder
+		  item: self menuLabel;
+		  parent: #Moose;
+		  label: self menuLabel;
+		  icon: MooseIcons mooseIcon;
+		  help: 'Playground enhanced for usage in Moose';
+		  order: MiAbstractBrowser menuPharoToolsPriority + 2;
+		  action: [ self open ];
+		  withSeparatorAfter;
+		  yourself
+]
+
 { #category : 'accessing' }
 MiPlaygroundBrowser class >> defaultPreferredExtent [
 
@@ -40,20 +55,9 @@ MiPlaygroundBrowser class >> initialize [
 ]
 
 { #category : 'world menu' }
-MiPlaygroundBrowser class >> menuCommandOn: aBuilder [
+MiPlaygroundBrowser class >> isInMooseMenu [
 
-	<worldMenu>
-	<miBrowsersMenu>
-	^ aBuilder
-		  item: self menuLabel;
-		  parent: #Moose;
-		  label: self menuLabel;
-		  icon: MooseIcons mooseIcon;
-		  help: 'Playground enhanced for usage in Moose';
-		  order: MiAbstractBrowser menuPharoToolsPriority + 2;
-		  action: [ self open ];
-		  withSeparatorAfter;
-		  yourself
+	^ true
 ]
 
 { #category : 'world menu' }

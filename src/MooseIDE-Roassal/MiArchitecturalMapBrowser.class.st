@@ -23,8 +23,9 @@ Controls:
 Class {
 	#name : 'MiArchitecturalMapBrowser',
 	#superclass : 'MiAbstractVisualizationBrowser',
-	#category : 'MooseIDE-ArchitecturalMap',
-	#package : 'MooseIDE-ArchitecturalMap'
+	#category : 'MooseIDE-Roassal-browsers',
+	#package : 'MooseIDE-Roassal',
+	#tag : 'browsers'
 }
 
 { #category : 'accessing' }
@@ -37,14 +38,6 @@ MiArchitecturalMapBrowser class >> defaultPreferredExtent [
 MiArchitecturalMapBrowser class >> mapClass [
 
 	^ MiArchitecturalMapVisualization
-]
-
-{ #category : 'world menu' }
-MiArchitecturalMapBrowser class >> menuCommandOn: aBuilder [
-
-	<worldMenu>
-	<miBrowsersMenu>
-	^ self buildMenuItemIn: aBuilder
 ]
 
 { #category : 'world menu' }

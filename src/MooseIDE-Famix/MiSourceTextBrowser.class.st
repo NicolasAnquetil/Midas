@@ -27,11 +27,9 @@ MiSourceTextBrowser class >> defaultPreferredExtent [
 ]
 
 { #category : 'world menu' }
-MiSourceTextBrowser class >> menuCommandOn: aBuilder [
+MiSourceTextBrowser class >> isInMooseMenu [
 
-	<worldMenu>
-	<miBrowsersMenu>
-	^ self buildMenuItemIn: aBuilder
+	^ true
 ]
 
 { #category : 'world menu' }

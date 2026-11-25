@@ -21,23 +21,15 @@ Controls:
 Class {
 	#name : 'MiHeatMapBrowser',
 	#superclass : 'MiAbstractVisualizationBrowser',
-	#category : 'MooseIDE-HeatMap-Browser',
-	#package : 'MooseIDE-HeatMap',
-	#tag : 'Browser'
+	#category : 'MooseIDE-Roassal-browsers',
+	#package : 'MooseIDE-Roassal',
+	#tag : 'browsers'
 }
 
 { #category : 'accessing' }
 MiHeatMapBrowser class >> mapClass [
 
 	^ MiHeatMapVisualization
-]
-
-{ #category : 'world menu' }
-MiHeatMapBrowser class >> menuCommandOn: aBuilder [
-
-	<worldMenu>
-	<miBrowsersMenu>
-	^ self buildMenuItemIn: aBuilder
 ]
 
 { #category : 'world menu' }

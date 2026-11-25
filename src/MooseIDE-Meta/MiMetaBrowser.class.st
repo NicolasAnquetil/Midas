@@ -32,11 +32,9 @@ MiMetaBrowser class >> helpMessage [
 ]
 
 { #category : 'world menu' }
-MiMetaBrowser class >> menuCommandOn: aBuilder [
+MiMetaBrowser class >> isInMooseMenu [
 
-	<worldMenu>
-	<miBrowsersMenu>
-	^ self buildMenuItemIn: aBuilder
+	^ true
 ]
 
 { #category : 'world menu' }

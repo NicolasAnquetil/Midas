@@ -50,17 +50,15 @@ MiModelsBrowser class >> instantiateAndOpen [
 	^ super open
 ]
 
+{ #category : 'world menu' }
+MiModelsBrowser class >> isInMooseMenu [
+
+	^ true
+]
+
 { #category : 'testing' }
 MiModelsBrowser class >> isModelImporter [
 	^true
-]
-
-{ #category : 'world menu' }
-MiModelsBrowser class >> menuCommandOn: aBuilder [
-
-	<worldMenu>
-	<miBrowsersMenu>
-	^ self buildMenuItemIn: aBuilder
 ]
 
 { #category : 'world menu' }

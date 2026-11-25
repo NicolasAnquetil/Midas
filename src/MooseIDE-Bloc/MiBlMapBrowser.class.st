@@ -2,13 +2,13 @@
 I am the abstract superclass of the Midas browsers that draw a map with Bloc and Toplo (`MiBlVisualization`). I hold what they share: the Bloc space embedded in Spec, its Toplo theme, and drawing a new map each time the model changes, in the UI process of the space.
 
 ## Collaborators & Context
-- Subclasses: `MiArchitecturalMapBrowserBl`, `MiButterflyMapBrowserBl`. Each replaces a Roassal browser (`#replacedBrowserClass`, class side), on the same model: it is opened instead of it when the front-end of the application is `MiBlocFrontEnd`.
+- Subclasses: `MiArchitecturalMapBrowserBl`, `MiButterflyMapBrowserBl`. Each is the Bloc version of a Roassal browser, on the same model and under the same name (`#browserName`, class side): the Bloc front-end (`MiBlocFrontEnd`) offers it instead.
 - `SpBlSpaceInMorphPresenter` (`mapPresenter`): embeds the Bloc space of the map in Spec. I give the space a Toplo theme, light or dark like the Pharo theme (`#toploTheme`).
 - The visualization (`view`, a `MiBlVisualization` subclass made by `#newVisualizationOn:`): I am its browser. It tells me the selected entities (`#selectEntities:`), and the menu of a box asks me to inspect (`MiInspectorBrowser`) or propagate (on my buses) the entity of its node.
-- `MiAbstractBrowser`: I am a Midas browser (bus, follow / receive entities). I am not in the world menu (`#buildItemInMenu:action:`).
+- `MiAbstractBrowser`: I am a Midas browser (bus, follow / receive entities). My subclasses are in the Moose menu (`#isInMooseMenu`) when the Bloc front-end is in use.
 
 ## Assumptions & Invariants
-- I am abstract (`#isAbstract`): subclasses define `#buildTree`, `#newVisualizationOn:` and `#selectEntities:`, and on the class side `#replacedBrowserClass`.
+- I am abstract (`#isAbstract`): subclasses define `#buildTree`, `#newVisualizationOn:` and `#selectEntities:`, and on the class side `#menuLabel` (the name of the Roassal version).
 - The tree is built in the calling process (`#runVisualization`), but drawn in the Bloc UI process of the space (`#showTree:`, through `BlSpace>>#defer:`): Bloc elements must only be touched there.
 - The theme is installed in the UI process too, before the first drawing (deferred blocks run in order, see `#initializePresenters`).
 - Each run replaces the whole drawing: a new visualization replaces the children of the space root, and starts with nothing selected (`#selectEntities:` with none).
@@ -28,17 +28,10 @@ Class {
 		'mapPresenter',
 		'view'
 	],
-	#category : 'MooseIDE-Visualization-Bloc-browser',
-	#package : 'MooseIDE-Visualization-Bloc',
-	#tag : 'browser'
+	#category : 'MooseIDE-Bloc-browsers',
+	#package : 'MooseIDE-Bloc',
+	#tag : 'browsers'
 }
-
-{ #category : 'menu' }
-MiBlMapBrowser class >> buildItemInMenu: aMenu action: aBlock [
-	"Not in the world menu: a map opens a Bloc front-end when the application says so"
-
-	^ nil
-]
 
 { #category : 'testing' }
 MiBlMapBrowser class >> isAbstract [
@@ -46,11 +39,10 @@ MiBlMapBrowser class >> isAbstract [
 	^ self == MiBlMapBrowser
 ]
 
-{ #category : 'front-end' }
-MiBlMapBrowser class >> replacedBrowserClass [
-	"The browser (drawn with Roassal) I am opened instead of in a Bloc front-end (MiBlocFrontEnd)"
+{ #category : 'world menu' }
+MiBlMapBrowser class >> isInMooseMenu [
 
-	^ self subclassResponsibility
+	^ true
 ]
 
 { #category : 'building' }

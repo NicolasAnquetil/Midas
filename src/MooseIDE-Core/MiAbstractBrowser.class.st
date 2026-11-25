@@ -73,8 +73,9 @@ MiAbstractBrowser class >> allBrowsers [
 
 { #category : 'menu' }
 MiAbstractBrowser class >> allBrowsersMenuRoot: aRootMenu action: aBlock [
+	"An item for each browser of the front-end of the application, run with aBlock"
 
-	(self allBrowsers sortAscending: #menuPriority) do: [ :browserClass |
+	(self currentApplication frontEnd browserClasses sortAscending: #menuPriority) do: [ :browserClass |
 		browserClass buildItemInMenu: aRootMenu action: aBlock ].
 
 	^ aRootMenu
@@ -86,6 +87,21 @@ MiAbstractBrowser class >> browserKey [
 	"Override with a character to be used after m (for Moose) to open your browser"
 
 	^ nil
+]
+
+{ #category : 'front-end' }
+MiAbstractBrowser class >> browserName [
+	"The name under which a front-end offers me (MiFrontEnd>>#browserNamed:), shown in the Moose menu. The versions of a tool for different front-ends have the same name"
+
+	^ self menuLabel
+]
+
+{ #category : 'world menu' }
+MiAbstractBrowser class >> browsersMenuOn: aBuilder [
+	"The Moose menu: an item for each browser of the front-end of the application that goes in it (#isInMooseMenu), each built by its class (#buildMenuItemIn:)"
+
+	<worldMenu>
+	self currentApplication frontEnd menuBrowserClasses do: [ :each | each buildMenuItemIn: aBuilder ]
 ]
 
 { #category : 'commands' }
@@ -194,6 +210,13 @@ MiAbstractBrowser class >> helpMessage [
 { #category : 'testing' }
 MiAbstractBrowser class >> isAbstract [ 
 	^ self == MiAbstractBrowser
+]
+
+{ #category : 'world menu' }
+MiAbstractBrowser class >> isInMooseMenu [
+	"Whether the front-end of the application puts me in the Moose menu (#browsersMenuOn:)"
+
+	^ false
 ]
 
 { #category : 'keymaps' }
@@ -367,13 +390,6 @@ MiAbstractBrowser class >> openRunning: aBlock [
 	instance open.
 	instance application scheduleBrowser: instance construction: aBlock.
 	^ instance
-]
-
-{ #category : 'front-end' }
-MiAbstractBrowser class >> replacedBrowserClass [
-	"The browser I am opened instead of, when I am one of the browser classes of the front-end of the application (MiFrontEnd). nil: I replace none"
-
-	^ nil
 ]
 
 { #category : 'keymaps' }

@@ -24,6 +24,12 @@ Class {
 	#tag : 'Browser'
 }
 
+{ #category : 'world menu' }
+MiDuplicationBrowser class >> buildMenuItemIn: aBuilder [
+
+	^ (super buildMenuItemIn: aBuilder) withSeparatorAfter
+]
+
 { #category : 'accessing' }
 MiDuplicationBrowser class >> defaultPreferredExtent [
 
@@ -31,11 +37,9 @@ MiDuplicationBrowser class >> defaultPreferredExtent [
 ]
 
 { #category : 'world menu' }
-MiDuplicationBrowser class >> menuCommandOn: aBuilder [
+MiDuplicationBrowser class >> isInMooseMenu [
 
-	<worldMenu>
-	<miBrowsersMenu>
-	^ (self buildMenuItemIn: aBuilder) withSeparatorAfter
+	^ true
 ]
 
 { #category : 'world menu' }

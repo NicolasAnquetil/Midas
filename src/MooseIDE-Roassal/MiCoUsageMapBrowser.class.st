@@ -26,9 +26,9 @@ Controls:
 Class {
 	#name : 'MiCoUsageMapBrowser',
 	#superclass : 'MiAbstractVisualizationBrowser',
-	#category : 'MooseIDE-CoUsageMap-Browser',
-	#package : 'MooseIDE-CoUsageMap',
-	#tag : 'Browser'
+	#category : 'MooseIDE-Roassal-browsers',
+	#package : 'MooseIDE-Roassal',
+	#tag : 'browsers'
 }
 
 { #category : 'accessing' }
@@ -41,14 +41,6 @@ MiCoUsageMapBrowser class >> defaultPreferredExtent [
 MiCoUsageMapBrowser class >> mapClass [ 
 
 	^MiCoUsageMapVisualization
-]
-
-{ #category : 'world menu' }
-MiCoUsageMapBrowser class >> menuCommandOn: aBuilder [
-
-	<worldMenu>
-	<miBrowsersMenu>
-	^ self buildMenuItemIn: aBuilder
 ]
 
 { #category : 'world menu' }

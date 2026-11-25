@@ -7,8 +7,9 @@ This visualization is used to understand a class structure and presents dead art
 Class {
 	#name : 'MiClassBlueprintBrowser',
 	#superclass : 'MiAbstractVisualizationBrowser',
-	#category : 'MooseIDE-ClassBlueprint',
-	#package : 'MooseIDE-ClassBlueprint'
+	#category : 'MooseIDE-Roassal-browsers',
+	#package : 'MooseIDE-Roassal',
+	#tag : 'browsers'
 }
 
 { #category : 'accessing' }
@@ -21,14 +22,6 @@ MiClassBlueprintBrowser class >> defaultPreferredExtent [
 MiClassBlueprintBrowser class >> mapClass [
 
 	^ MiClassBlueprintVisualization
-]
-
-{ #category : 'world menu' }
-MiClassBlueprintBrowser class >> menuCommandOn: aBuilder [
-
-	<worldMenu>
-	<miBrowsersMenu>
-	^ self buildMenuItemIn: aBuilder
 ]
 
 { #category : 'world menu' }

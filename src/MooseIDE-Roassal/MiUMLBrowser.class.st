@@ -26,23 +26,15 @@ Controls:
 Class {
 	#name : 'MiUMLBrowser',
 	#superclass : 'MiAbstractVisualizationBrowser',
-	#category : 'MooseIDE-Famix-UML',
-	#package : 'MooseIDE-Famix',
-	#tag : 'UML'
+	#category : 'MooseIDE-Roassal-browsers',
+	#package : 'MooseIDE-Roassal',
+	#tag : 'browsers'
 }
 
 { #category : 'accessing' }
 MiUMLBrowser class >> mapClass [ 
 
 	^MiUMLVisualization
-]
-
-{ #category : 'world menu' }
-MiUMLBrowser class >> menuCommandOn: aBuilder [
-
-	<worldMenu>
-	<miBrowsersMenu>
-	^ self buildMenuItemIn: aBuilder
 ]
 
 { #category : 'world menu' }

@@ -54,19 +54,19 @@ MiButterflyMapBrowserBlTest >> testFollowEntityDrawsTheMap [
 ]
 
 { #category : 'tests' }
-MiButterflyMapBrowserBlTest >> testFrontEndClassDefault [
-	"The default front-end opens the Roassal map"
-
-	self withFrontEnd: MiFrontEnd new do: [ self assert: MiButterflyMapBrowser frontEndClass identicalTo: MiButterflyMapBrowser ]
-]
-
-{ #category : 'tests' }
 MiButterflyMapBrowserBlTest >> testFrontEndClassInBlocFrontEnd [
 	"The Bloc front-end opens me instead of the Roassal map, and opens me as myself"
 
 	self withFrontEnd: MiBlocFrontEnd new do: [
 			self assert: MiButterflyMapBrowser frontEndClass identicalTo: self browserClass.
 			self assert: self browserClass frontEndClass identicalTo: self browserClass ]
+]
+
+{ #category : 'tests' }
+MiButterflyMapBrowserBlTest >> testFrontEndClassInRoassalFrontEnd [
+	"The Roassal front-end opens the Roassal map"
+
+	self withFrontEnd: MiRoassalFrontEnd new do: [ self assert: MiButterflyMapBrowser frontEndClass identicalTo: MiButterflyMapBrowser ]
 ]
 
 { #category : 'tests' }

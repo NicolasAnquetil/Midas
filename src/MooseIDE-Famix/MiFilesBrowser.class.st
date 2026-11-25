@@ -21,11 +21,9 @@ Class {
 }
 
 { #category : 'world menu' }
-MiFilesBrowser class >> menuCommandOn: aBuilder [
+MiFilesBrowser class >> isInMooseMenu [
 
-	<worldMenu>
-	<miBrowsersMenu>
-	^ self buildMenuItemIn: aBuilder
+	^ true
 ]
 
 { #category : 'world menu' }

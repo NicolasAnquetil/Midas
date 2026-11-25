@@ -4,15 +4,21 @@ Class {
 	#instVars : [
 		'mainPresenter'
 	],
-	#category : 'MooseIDE-Core-Browser',
-	#package : 'MooseIDE-Core',
-	#tag : 'Browser'
+	#category : 'MooseIDE-Roassal-browsers',
+	#package : 'MooseIDE-Roassal',
+	#tag : 'browsers'
 }
 
 { #category : 'testing' }
 MiAbstractVisualizationBrowser class >> isAbstract [
 
 	^ self == MiAbstractVisualizationBrowser
+]
+
+{ #category : 'world menu' }
+MiAbstractVisualizationBrowser class >> isInMooseMenu [
+
+	^ true
 ]
 
 { #category : 'testing' }

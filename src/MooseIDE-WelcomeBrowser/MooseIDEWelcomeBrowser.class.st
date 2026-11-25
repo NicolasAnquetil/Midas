@@ -76,6 +76,13 @@ MooseIDEWelcomeBrowser class >> registerToolsOn: registry [
 ]
 
 { #category : 'accessing - labels' }
+MooseIDEWelcomeBrowser >> expressionOfBrowserNamed: aString [
+	"Code answering the browser of the front-end of the application named aString: the maps depend on the front-end (Roassal or Bloc)"
+
+	^ '(MiApplication current frontEnd browserNamed: {1})' format: { aString printString }
+]
+
+{ #category : 'accessing - labels' }
 MooseIDEWelcomeBrowser >> mainToolsContent [
 
 	^ '# Main Moose tools
@@ -119,14 +126,14 @@ Architectural browser:
 CoUsage map browser: 
 ```pharoeval
 {7} open
-```' format: ({
+```' format: (({
 			   MiModelsBrowser.
 			   MiInspectorBrowser.
 			   MiOverviewBrowser.
 			   MiQueriesBrowser.
-			   MiTagBrowser.
-			   MiArchitecturalMapBrowser.
-			   MiCoUsageMapBrowser } collect: #name)
+			   MiTagBrowser } collect: #name) , {
+			   self expressionOfBrowserNamed: 'Architectural map'.
+			   self expressionOfBrowserNamed: 'Co Usage Map' })
 ]
 
 { #category : 'accessing - labels' }

@@ -31,11 +31,9 @@ MiQueriesBrowser class >> defaultPreferredExtent [
 ]
 
 { #category : 'world menu' }
-MiQueriesBrowser class >> menuCommandOn: aBuilder [
+MiQueriesBrowser class >> isInMooseMenu [
 
-	<worldMenu>
-	<miBrowsersMenu>
-	^ self buildMenuItemIn: aBuilder
+	^ true
 ]
 
 { #category : 'world menu' }

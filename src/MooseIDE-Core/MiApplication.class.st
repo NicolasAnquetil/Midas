@@ -231,15 +231,17 @@ MiApplication >> deleteBusNamed: aName [
 
 { #category : 'settings' }
 MiApplication >> frontEnd [
-	"The front-end in use: it says which browser class to open for a browser (MiAbstractBrowser class>>#frontEndClass). The default one opens every browser as itself"
+	"The front-end in use: the browsers it offers, under their names, in the Moose menu and when a browser is opened (MiAbstractBrowser class>>#frontEndClass). By default the default front-end loaded (MiFrontEnd class>>#default)"
 
-	^ frontEnd ifNil: [ frontEnd := MiFrontEnd new ]
+	^ frontEnd ifNil: [ frontEnd := MiFrontEnd default ]
 ]
 
 { #category : 'settings' }
 MiApplication >> frontEnd: aFrontEnd [
+	"Use aFrontEnd from now on. The Moose menu of the menu bar is built again, with its browsers"
 
-	frontEnd := aFrontEnd
+	frontEnd := aFrontEnd.
+	MenubarMorph showMenubar ifTrue: [ MenubarMorph reset ]
 ]
 
 { #category : 'accessing' }

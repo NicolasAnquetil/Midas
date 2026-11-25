@@ -41,11 +41,9 @@ MiInspectorBrowser class >> inspect: anObject forBuses: buses [
 ]
 
 { #category : 'world menu' }
-MiInspectorBrowser class >> menuCommandOn: aBuilder [
+MiInspectorBrowser class >> isInMooseMenu [
 
-	<worldMenu>
-	<miBrowsersMenu>
-	^ self buildMenuItemIn: aBuilder
+	^ true
 ]
 
 { #category : 'world menu' }

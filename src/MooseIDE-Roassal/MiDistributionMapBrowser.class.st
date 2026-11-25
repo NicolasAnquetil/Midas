@@ -23,8 +23,9 @@ Controls:
 Class {
 	#name : 'MiDistributionMapBrowser',
 	#superclass : 'MiAbstractVisualizationBrowser',
-	#category : 'MooseIDE-DistributionMap',
-	#package : 'MooseIDE-DistributionMap'
+	#category : 'MooseIDE-Roassal-browsers',
+	#package : 'MooseIDE-Roassal',
+	#tag : 'browsers'
 }
 
 { #category : 'accessing' }
@@ -37,14 +38,6 @@ MiDistributionMapBrowser class >> defaultPreferredExtent [
 MiDistributionMapBrowser class >> mapClass [
 
 	^ MiDistributionMapVisualization
-]
-
-{ #category : 'world menu' }
-MiDistributionMapBrowser class >> menuCommandOn: aBuilder [
-
-	<worldMenu>
-	<miBrowsersMenu>
-	^ self buildMenuItemIn: aBuilder
 ]
 
 { #category : 'world menu' }

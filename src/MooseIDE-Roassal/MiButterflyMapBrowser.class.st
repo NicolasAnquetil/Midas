@@ -26,9 +26,9 @@ Controls:
 Class {
 	#name : 'MiButterflyMapBrowser',
 	#superclass : 'MiAbstractVisualizationBrowser',
-	#category : 'MooseIDE-ButterflyMap-Browser',
-	#package : 'MooseIDE-ButterflyMap',
-	#tag : 'Browser'
+	#category : 'MooseIDE-Roassal-browsers',
+	#package : 'MooseIDE-Roassal',
+	#tag : 'browsers'
 }
 
 { #category : 'accessing' }
@@ -41,14 +41,6 @@ MiButterflyMapBrowser class >> defaultPreferredExtent [
 MiButterflyMapBrowser class >> mapClass [
 
 	^ MiButterflyMapVisualization
-]
-
-{ #category : 'world menu' }
-MiButterflyMapBrowser class >> menuCommandOn: aBuilder [
-
-	<worldMenu>
-	<miBrowsersMenu>
-	^ self buildMenuItemIn: aBuilder
 ]
 
 { #category : 'world menu' }

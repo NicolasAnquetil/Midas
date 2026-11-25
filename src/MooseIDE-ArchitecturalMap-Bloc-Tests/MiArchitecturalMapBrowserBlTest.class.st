@@ -22,19 +22,19 @@ MiArchitecturalMapBrowserBlTest >> testAvailableLayoutsAreTheBlocOnes [
 ]
 
 { #category : 'tests' }
-MiArchitecturalMapBrowserBlTest >> testFrontEndClassDefault [
-	"The default front-end opens the Roassal map"
-
-	self withFrontEnd: MiFrontEnd new do: [ self assert: MiArchitecturalMapBrowser frontEndClass identicalTo: MiArchitecturalMapBrowser ]
-]
-
-{ #category : 'tests' }
 MiArchitecturalMapBrowserBlTest >> testFrontEndClassInBlocFrontEnd [
 	"The Bloc front-end opens me instead of the Roassal map, and opens me as myself"
 
 	self withFrontEnd: MiBlocFrontEnd new do: [
 			self assert: MiArchitecturalMapBrowser frontEndClass identicalTo: self browserClass.
 			self assert: self browserClass frontEndClass identicalTo: self browserClass ]
+]
+
+{ #category : 'tests' }
+MiArchitecturalMapBrowserBlTest >> testFrontEndClassInRoassalFrontEnd [
+	"The Roassal front-end opens the Roassal map"
+
+	self withFrontEnd: MiRoassalFrontEnd new do: [ self assert: MiArchitecturalMapBrowser frontEndClass identicalTo: MiArchitecturalMapBrowser ]
 ]
 
 { #category : 'tests' }

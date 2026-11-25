@@ -23,23 +23,21 @@ Controls:
 Class {
 	#name : 'MiSystemComplexityBrowser',
 	#superclass : 'MiAbstractVisualizationBrowser',
-	#category : 'MooseIDE-Visualization-System Complexity',
-	#package : 'MooseIDE-Visualization',
-	#tag : 'System Complexity'
+	#category : 'MooseIDE-Roassal-browsers',
+	#package : 'MooseIDE-Roassal',
+	#tag : 'browsers'
 }
+
+{ #category : 'world menu' }
+MiSystemComplexityBrowser class >> buildMenuItemIn: aBuilder [
+
+	^ (super buildMenuItemIn: aBuilder) withSeparatorAfter
+]
 
 { #category : 'accessing' }
 MiSystemComplexityBrowser class >> mapClass [
 
 	^MiSystemComplexityVisualization
-]
-
-{ #category : 'world menu' }
-MiSystemComplexityBrowser class >> menuCommandOn: aBuilder [
-
-	<worldMenu>
-	<miBrowsersMenu>
-	^ (self buildMenuItemIn: aBuilder) withSeparatorAfter
 ]
 
 { #category : 'world menu' }

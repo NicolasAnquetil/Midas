@@ -30,11 +30,9 @@ Class {
 }
 
 { #category : 'world menu' }
-MiDSMBrowser class >> menuCommandOn: aBuilder [
+MiDSMBrowser class >> isInMooseMenu [
 
-	<worldMenu>
-	<miBrowsersMenu>
-	^ self buildMenuItemIn: aBuilder
+	^ true
 ]
 
 { #category : 'world menu' }

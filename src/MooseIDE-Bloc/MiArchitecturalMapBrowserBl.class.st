@@ -5,7 +5,7 @@ I am a browser that displays an architectural map with Bloc and Toplo, as `MiArc
 - `MiBlMapBrowser`: my superclass, for the Bloc space, its theme, and drawing the map in the UI process of the space.
 - `MiArchitecturalMapModel` (`specModel`): holds the entities and the settings. It calls me back (`#runVisualization` after a change of the settings) and asks me the layouts it can offer (`#availableMapLayouts`, `#defaultMapLayout`: `MiBlLayout` subclasses).
 - `MiArchiBlTreeBuilder` turns the model into a tree of nodes (`#buildTree`), and `MiArchiBlVisualization` (`view`) draws it (`#newVisualizationOn:`).
-- I replace `MiArchitecturalMapBrowser` (`#replacedBrowserClass`): the architectural map entry opens me instead when the front-end of the application is the Bloc one (`MiBlocFrontEnd`):
+- I am a browser of the Bloc front-end (`MiBlocFrontEnd`), under the name of the Roassal map (`#menuLabel`, hence `#browserName`): with that front-end, the Moose menu offers me, and opening `MiArchitecturalMapBrowser` opens me:
 	`MiApplication current frontEnd: MiBlocFrontEnd new`
 
 ## Assumptions & Invariants
@@ -21,9 +21,9 @@ I am a browser that displays an architectural map with Bloc and Toplo, as `MiArc
 Class {
 	#name : 'MiArchitecturalMapBrowserBl',
 	#superclass : 'MiBlMapBrowser',
-	#category : 'MooseIDE-ArchitecturalMap-Bloc-browser',
-	#package : 'MooseIDE-ArchitecturalMap-Bloc',
-	#tag : 'browser'
+	#category : 'MooseIDE-Bloc-browsers',
+	#package : 'MooseIDE-Bloc',
+	#tag : 'browsers'
 }
 
 { #category : 'accessing' }
@@ -38,6 +38,19 @@ MiArchitecturalMapBrowserBl class >> menuItem [
 	^ #MiArchitecturalMapBrowserBl
 ]
 
+{ #category : 'world menu' }
+MiArchitecturalMapBrowserBl class >> menuLabel [
+	"The name of the Roassal version (#browserName): the Bloc front-end offers me in its place"
+
+	^ 'Architectural map'
+]
+
+{ #category : 'world menu' }
+MiArchitecturalMapBrowserBl class >> menuPriority [
+
+	^ self menuVisualizationToolsPriority + 1
+]
+
 { #category : 'instance creation' }
 MiArchitecturalMapBrowserBl class >> newModel [
 
@@ -49,12 +62,6 @@ MiArchitecturalMapBrowserBl class >> open [
 
 	<script>
 	^ super open
-]
-
-{ #category : 'front-end' }
-MiArchitecturalMapBrowserBl class >> replacedBrowserClass [
-
-	^ MiArchitecturalMapBrowser
 ]
 
 { #category : 'specs' }
