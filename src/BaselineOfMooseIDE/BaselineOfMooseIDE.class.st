@@ -69,7 +69,7 @@ BaselineOfMooseIDE >> defineGroups: spec [
 	"RoassalFrontEnd and BlocFrontEnd (not Roassal and Bloc: Bloc is the name of a dependency) each load one front-end (MiRoassalFrontEnd, MiBlocFrontEnd) and the packages that do not need the other one.
 	The drawing code of each front-end, browsers included, is in its own packages (MooseIDE-Roassal-<tool>, MooseIDE-Bloc-<tool>, which require MooseIDE-Roassal or MooseIDE-Bloc), the models are shared (MooseIDE-<tool>).
 	For now, only the architectural and butterfly maps are split this way: the other tools still mix their models and their Roassal drawing code, so BlocFrontEnd still loads Roassal (through MooseIDE-Visualization).
-	Most test packages need MooseIDE-Tests, hence the Roassal browsers: they are in RoassalFrontEnd only. The tests of the front-end packages are in a tests tag of these packages (MooseIDE-Bloc-<tool> tests need MooseIDE-Tests, so for now loading them loads the Roassal browsers too)."
+	Most test packages need MooseIDE-Tests, hence the Roassal browsers: they are in RoassalFrontEnd only. The tests of the front-end packages are in a Tests tag of these packages (the MooseIDE-Bloc-<tool> tests are subclasses of the tests of the Roassal maps, which need MooseIDE-Tests, so for now loading a Bloc map loads its Roassal version too)."
 
 	spec
 		group: 'CriticBrowser-Metamodel'
@@ -117,7 +117,6 @@ BaselineOfMooseIDE >> defineGroups: spec [
 			'MooseIDE-Tests'
 			'MooseIDE-CriticBrowser-Tests'
 			'MooseIDE-DeadCode-Tests'
-			'MooseIDE-ArchitecturalMap-Tests'
 			'MooseIDE-Tagging-Tests'
 			'MooseIDE-CoUsageMap-Tests'
 			'MooseIDE-ButterflyMap-Tests'
@@ -198,12 +197,11 @@ BaselineOfMooseIDE >> definePackages: spec [
 		package: 'MooseIDE-Visualization' with: [ spec requires: #( 'MooseIDE-Core' 'HierarchicalVisualizations' ) ];
 		package: 'MooseIDE-Meta' with: [ spec requires: #( 'MooseIDE-Core' 'MooseIDE-Famix' ) ];
 		package: 'MooseIDE-ArchitecturalMap' with: [ spec requires: #( 'MooseIDE-Core' 'MooseIDE-Tagging' ) ];
-		package: 'MooseIDE-Roassal-ArchitecturalMap' with: [ spec requires: #( 'MooseIDE-ArchitecturalMap' 'MooseIDE-Roassal' ) ];
-		package: 'MooseIDE-ArchitecturalMap-Tests' with: [ spec requires: #( 'MooseIDE-Roassal-ArchitecturalMap'
-				   'MooseIDE-Tests' ) ];
+		package: 'MooseIDE-Roassal-ArchitecturalMap'
+		with: [ spec requires: #( 'MooseIDE-ArchitecturalMap' 'MooseIDE-Roassal' 'MooseIDE-Tests' ) ];
 		package: 'MooseIDE-Visualization-Bloc' with: [ spec requires: #( 'Bloc' 'Toplo' ) ];
 		package: 'MooseIDE-Bloc-ArchitecturalMap'
-		with: [ spec requires: #( 'MooseIDE-ArchitecturalMap' 'MooseIDE-Visualization-Bloc' 'MooseIDE-Bloc' 'MooseIDE-ArchitecturalMap-Tests' ) ];
+		with: [ spec requires: #( 'MooseIDE-ArchitecturalMap' 'MooseIDE-Visualization-Bloc' 'MooseIDE-Bloc' 'MooseIDE-Roassal-ArchitecturalMap' ) ];
 		package: 'MooseIDE-DeadCode' with: [ spec requires: #( 'MooseIDE-Core' ) ];
 		package: 'MooseIDE-DeadCode-Tests' with: [ spec requires: #( 'MooseIDE-DeadCode' 'MooseIDE-Tests' ) ];
 		package: 'MooseIDE-DSM' with: [ spec requires: #( 'MooseIDE-Visualization' 'AIHierarchicalClustering' ) ];
@@ -211,7 +209,7 @@ BaselineOfMooseIDE >> definePackages: spec [
 		package: 'MooseIDE-HeatMap' with: [ spec requires: #( 'MooseIDE-Visualization' ) ];
 		package: 'MooseIDE-Tests' with: [
 				spec requires:
-						#( 'MooseIDE-Visualization' 'MooseIDE-Roassal' 'MooseIDE-Roassal-ArchitecturalMap' 'MooseIDE-Roassal-ButterflyMap' ) ];
+						#( 'MooseIDE-Visualization' 'MooseIDE-Roassal' ) ];
 		package: 'MooseIDE-AttributedText';
 		package: 'MooseIDE-Famix' with: [ spec requires: #( 'MooseIDE-Visualization' 'MooseIDE-AttributedText' ) ];
 		package: 'MooseIDE-QueriesBrowser' with: [ spec requires: #( 'MooseIDE-Core' 'FamixQueries' ) ];
@@ -226,10 +224,10 @@ BaselineOfMooseIDE >> definePackages: spec [
 		package: 'MooseIDE-Duplication' with: [ spec requires: #( 'MooseIDE-Core' ) ];
 		package: 'MooseIDE-ButterflyMap' with: [ spec requires: #( 'MooseIDE-Core' ) ];
 		package: 'MooseIDE-Roassal-ButterflyMap'
-		with: [ spec requires: #( 'MooseIDE-ButterflyMap' 'MooseIDE-Roassal' 'MooseIDE-NewTools' ) ];
-		package: 'MooseIDE-ButterflyMap-Tests' with: [ spec requires: #( 'MooseIDE-Roassal-ButterflyMap' ) ];
+		with: [ spec requires: #( 'MooseIDE-ButterflyMap' 'MooseIDE-Roassal' 'MooseIDE-NewTools' 'MooseIDE-Tests' ) ];
+		package: 'MooseIDE-ButterflyMap-Tests' with: [ spec requires: #( 'MooseIDE-ButterflyMap' ) ];
 		package: 'MooseIDE-Bloc-ButterflyMap'
-		with: [ spec requires: #( 'MooseIDE-ButterflyMap' 'MooseIDE-Visualization-Bloc' 'MooseIDE-Bloc' 'MooseIDE-Tests' ) ];
+		with: [ spec requires: #( 'MooseIDE-ButterflyMap' 'MooseIDE-Visualization-Bloc' 'MooseIDE-Bloc' 'MooseIDE-Roassal-ButterflyMap' ) ];
 		package: 'MooseIDE-Roassal' with: [
 				spec requires:
 						#( 'MooseIDE-ClassBlueprint' 'MooseIDE-CoUsageMap' 'MooseIDE-DistributionMap' 'MooseIDE-HeatMap' 'MooseIDE-Visualization'

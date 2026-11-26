@@ -9,9 +9,9 @@ Class {
 		'tagShape',
 		'lineShape'
 	],
-	#category : 'MooseIDE-Tests-Browsers',
-	#package : 'MooseIDE-Tests',
-	#tag : 'Browsers'
+	#category : 'MooseIDE-Roassal-ArchitecturalMap-Tests',
+	#package : 'MooseIDE-Roassal-ArchitecturalMap',
+	#tag : 'Tests'
 }
 
 { #category : 'running' }

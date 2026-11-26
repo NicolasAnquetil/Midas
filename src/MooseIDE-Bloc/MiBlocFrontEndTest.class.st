@@ -14,9 +14,9 @@ I test `MiBlocFrontEnd`: it lists all the browsers of its package, offers them w
 Class {
 	#name : 'MiBlocFrontEndTest',
 	#superclass : 'TestCase',
-	#category : 'MooseIDE-Bloc-tests',
+	#category : 'MooseIDE-Bloc-Tests',
 	#package : 'MooseIDE-Bloc',
-	#tag : 'tests'
+	#tag : 'Tests'
 }
 
 { #category : 'tests' }

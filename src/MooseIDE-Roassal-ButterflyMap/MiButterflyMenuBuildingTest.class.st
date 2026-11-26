@@ -10,9 +10,9 @@ Class {
 		'richShape',
 		'lineShape'
 	],
-	#category : 'MooseIDE-Tests-Browsers',
-	#package : 'MooseIDE-Tests',
-	#tag : 'Browsers'
+	#category : 'MooseIDE-Roassal-ButterflyMap-Tests',
+	#package : 'MooseIDE-Roassal-ButterflyMap',
+	#tag : 'Tests'
 }
 
 { #category : 'running' }

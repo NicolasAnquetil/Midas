@@ -4,9 +4,9 @@ The tests of the architectural map browser, on its Bloc front-end (MiArchitectur
 Class {
 	#name : 'MiArchitecturalMapBrowserBlTest',
 	#superclass : 'MiArchitecturalMapBrowserTest',
-	#category : 'MooseIDE-Bloc-ArchitecturalMap-tests',
+	#category : 'MooseIDE-Bloc-ArchitecturalMap-Tests',
 	#package : 'MooseIDE-Bloc-ArchitecturalMap',
-	#tag : 'tests'
+	#tag : 'Tests'
 }
 
 { #category : 'running' }

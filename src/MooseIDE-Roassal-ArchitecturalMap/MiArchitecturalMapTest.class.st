@@ -1,8 +1,9 @@
 Class {
 	#name : 'MiArchitecturalMapTest',
 	#superclass : 'TestCase',
-	#category : 'MooseIDE-ArchitecturalMap-Tests',
-	#package : 'MooseIDE-ArchitecturalMap-Tests'
+	#category : 'MooseIDE-Roassal-ArchitecturalMap-Tests',
+	#package : 'MooseIDE-Roassal-ArchitecturalMap',
+	#tag : 'Tests'
 }
 
 { #category : 'running' }

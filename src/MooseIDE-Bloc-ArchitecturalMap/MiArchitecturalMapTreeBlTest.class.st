@@ -16,9 +16,9 @@ I test the tree of the Bloc architectural map (`MiArchiBlTreeBuilder`): its root
 Class {
 	#name : 'MiArchitecturalMapTreeBlTest',
 	#superclass : 'MiArchitecturalMapBlAbstractTest',
-	#category : 'MooseIDE-Bloc-ArchitecturalMap-tests',
+	#category : 'MooseIDE-Bloc-ArchitecturalMap-Tests',
 	#package : 'MooseIDE-Bloc-ArchitecturalMap',
-	#tag : 'tests'
+	#tag : 'Tests'
 }
 
 { #category : 'running' }

@@ -28,9 +28,9 @@ Class {
 		'clientOfClients',
 		'provider'
 	],
-	#category : 'MooseIDE-Bloc-ButterflyMap-tests',
+	#category : 'MooseIDE-Bloc-ButterflyMap-Tests',
 	#package : 'MooseIDE-Bloc-ButterflyMap',
-	#tag : 'tests'
+	#tag : 'Tests'
 }
 
 { #category : 'testing' }

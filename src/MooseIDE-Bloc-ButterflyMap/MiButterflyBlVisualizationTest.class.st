@@ -21,9 +21,9 @@ Class {
 	#instVars : [
 		'space'
 	],
-	#category : 'MooseIDE-Bloc-ButterflyMap-tests',
+	#category : 'MooseIDE-Bloc-ButterflyMap-Tests',
 	#package : 'MooseIDE-Bloc-ButterflyMap',
-	#tag : 'tests'
+	#tag : 'Tests'
 }
 
 { #category : 'running' }

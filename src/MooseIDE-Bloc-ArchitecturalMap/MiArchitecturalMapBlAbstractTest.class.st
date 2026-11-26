@@ -28,9 +28,9 @@ Class {
 		'class2',
 		'class3'
 	],
-	#category : 'MooseIDE-Bloc-ArchitecturalMap-tests',
+	#category : 'MooseIDE-Bloc-ArchitecturalMap-Tests',
 	#package : 'MooseIDE-Bloc-ArchitecturalMap',
-	#tag : 'tests'
+	#tag : 'Tests'
 }
 
 { #category : 'testing' }

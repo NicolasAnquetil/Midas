@@ -6,9 +6,9 @@ Class {
 		'entity2',
 		'entity3'
 	],
-	#category : 'MooseIDE-Tests-Browsers',
-	#package : 'MooseIDE-Tests',
-	#tag : 'Browsers'
+	#category : 'MooseIDE-Roassal-ArchitecturalMap-Tests',
+	#package : 'MooseIDE-Roassal-ArchitecturalMap',
+	#tag : 'Tests'
 }
 
 { #category : 'running' }

@@ -14,9 +14,9 @@ I test `MiButterflyBlTree`, the butterfly of the Bloc butterfly map: the central
 Class {
 	#name : 'MiButterflyBlTreeTest',
 	#superclass : 'MiButterflyBlAbstractTest',
-	#category : 'MooseIDE-Bloc-ButterflyMap-tests',
+	#category : 'MooseIDE-Bloc-ButterflyMap-Tests',
 	#package : 'MooseIDE-Bloc-ButterflyMap',
-	#tag : 'tests'
+	#tag : 'Tests'
 }
 
 { #category : 'tests' }

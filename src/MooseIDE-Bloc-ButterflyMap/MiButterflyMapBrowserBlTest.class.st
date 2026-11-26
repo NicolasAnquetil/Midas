@@ -15,9 +15,9 @@ The tests of the butterfly map browser (`MiButterflyMapBrowserTest`), on its Blo
 Class {
 	#name : 'MiButterflyMapBrowserBlTest',
 	#superclass : 'MiButterflyMapBrowserTest',
-	#category : 'MooseIDE-Bloc-ButterflyMap-tests',
+	#category : 'MooseIDE-Bloc-ButterflyMap-Tests',
 	#package : 'MooseIDE-Bloc-ButterflyMap',
-	#tag : 'tests'
+	#tag : 'Tests'
 }
 
 { #category : 'running' }

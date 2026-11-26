@@ -5,9 +5,9 @@ Class {
 		'randomGenerator',
 		'butterflyNode'
 	],
-	#category : 'MooseIDE-ButterflyMap-Tests-Model',
-	#package : 'MooseIDE-ButterflyMap-Tests',
-	#tag : 'Model'
+	#category : 'MooseIDE-Roassal-ButterflyMap-Tests',
+	#package : 'MooseIDE-Roassal-ButterflyMap',
+	#tag : 'Tests'
 }
 
 { #category : 'running' }

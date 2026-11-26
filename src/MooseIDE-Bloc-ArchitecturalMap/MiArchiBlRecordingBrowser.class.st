@@ -20,9 +20,9 @@ Class {
 	#instVars : [
 		'requests'
 	],
-	#category : 'MooseIDE-Bloc-ArchitecturalMap-tests',
+	#category : 'MooseIDE-Bloc-ArchitecturalMap-Tests',
 	#package : 'MooseIDE-Bloc-ArchitecturalMap',
-	#tag : 'tests'
+	#tag : 'Tests'
 }
 
 { #category : 'initialization' }

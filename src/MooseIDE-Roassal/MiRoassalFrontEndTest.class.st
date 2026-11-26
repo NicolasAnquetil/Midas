@@ -14,9 +14,9 @@ I test `MiRoassalFrontEnd`: it is the default front-end, lists all the browsers 
 Class {
 	#name : 'MiRoassalFrontEndTest',
 	#superclass : 'TestCase',
-	#category : 'MooseIDE-Roassal-tests',
+	#category : 'MooseIDE-Roassal-Tests',
 	#package : 'MooseIDE-Roassal',
-	#tag : 'tests'
+	#tag : 'Tests'
 }
 
 { #category : 'tests' }

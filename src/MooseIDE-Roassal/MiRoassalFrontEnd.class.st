@@ -18,9 +18,9 @@ I am the Roassal front-end of Midas: the browsers drawn with Roassal, plus the c
 Class {
 	#name : 'MiRoassalFrontEnd',
 	#superclass : 'MiFrontEnd',
-	#category : 'MooseIDE-Roassal-front-end',
+	#category : 'MooseIDE-Roassal-browsers',
 	#package : 'MooseIDE-Roassal',
-	#tag : 'front-end'
+	#tag : 'browsers'
 }
 
 { #category : 'testing' }
