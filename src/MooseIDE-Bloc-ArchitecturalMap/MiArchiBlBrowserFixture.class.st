@@ -15,7 +15,7 @@ I stand for the browser of a `MiArchiBlVisualization` in its tests: I record wha
 
 "
 Class {
-	#name : 'MiArchiBlRecordingBrowser',
+	#name : 'MiArchiBlBrowserFixture',
 	#superclass : 'Object',
 	#instVars : [
 		'requests'
@@ -26,32 +26,32 @@ Class {
 }
 
 { #category : 'initialization' }
-MiArchiBlRecordingBrowser >> initialize [
+MiArchiBlBrowserFixture >> initialize [
 
 	super initialize.
 	requests := OrderedCollection new
 ]
 
 { #category : 'actions' }
-MiArchiBlRecordingBrowser >> inspectEntity: anEntity [
+MiArchiBlBrowserFixture >> inspectEntity: anEntity [
 
 	requests add: #inspect -> anEntity
 ]
 
 { #category : 'actions' }
-MiArchiBlRecordingBrowser >> propagateEntity: anEntity [
+MiArchiBlBrowserFixture >> propagateEntity: anEntity [
 
 	requests add: #propagate -> anEntity
 ]
 
 { #category : 'actions' }
-MiArchiBlRecordingBrowser >> requests [
+MiArchiBlBrowserFixture >> requests [
 
 	^ requests
 ]
 
 { #category : 'actions' }
-MiArchiBlRecordingBrowser >> selectEntities: someEntities [
+MiArchiBlBrowserFixture >> selectEntities: someEntities [
 
 	requests add: #select -> someEntities asArray
 ]

@@ -218,10 +218,10 @@ MiArchiBlVisualizationTest >> pairsOfLinesIn: aVisualization [
 
 { #category : 'running' }
 MiArchiBlVisualizationTest >> recordingVisualizationOf: aTree [
-	"A visualization of aTree laid out in the space, with a MiArchiBlRecordingBrowser as browser (#browser)"
+	"A visualization of aTree laid out in the space, with a MiArchiBlBrowserFixture as browser (#browser)"
 
 	^ self layOut: ((self visualizationOf: aTree)
-			   browser: MiArchiBlRecordingBrowser new;
+			   browser: MiArchiBlBrowserFixture new;
 			   yourself)
 ]
 
@@ -389,7 +389,7 @@ MiArchiBlVisualizationTest >> testChooseInspectAsksBrowser [
 	"Inspect in the menu of Class1 (a box without children) asks the browser to inspect Class1"
 
 	| visualization browser |
-	browser := MiArchiBlRecordingBrowser new.
+	browser := MiArchiBlBrowserFixture new.
 	visualization := (self visualizationOf: self expandedTree)
 		                 browser: browser;
 		                 yourself.
@@ -403,7 +403,7 @@ MiArchiBlVisualizationTest >> testChoosePropagateAsksBrowser [
 	"Propagate in the menu of package2 asks the browser to propagate package2"
 
 	| visualization browser |
-	browser := MiArchiBlRecordingBrowser new.
+	browser := MiArchiBlBrowserFixture new.
 	visualization := (self visualizationOf: self tree)
 		                 browser: browser;
 		                 yourself.
