@@ -13,12 +13,12 @@ I am the architecture rules of MooseIDE about its front-ends (Roassal, Bloc): DC
   - the drawing code of a front-end is in MooseIDE-Roassal-<tool> / MooseIDE-Bloc-<tool>, which require the base of the front-end (MooseIDE-Roassal and MooseIDE-Visualization, MooseIDE-Bloc and MooseIDE-Visualization-Bloc), never the other way round;
   - the front-ends do not know each other, the tool packages of a front-end do not know each other;
   - production code does not depend on tests.
-- A rule is a selector of my 'rules' protocol answering a collection of DCL constraints. Its known exceptions (`#knownExceptionsOf:`) are the packages allowed to violate it for now, each with the reason: the debt to pay. Test classes are in the modules of their packages, except for the rules about tests.
+- A rule is a selector of my 'rules' protocol answering a collection of DCL constraints. A rule holds when no package violates it: there are no tolerated exceptions, only `#allowedToolDependencies`, which is a design choice. Test classes are in the modules of their packages, except for the rules about tests.
 - I am rebuilt on each test run: no cache outside the resource.
 
 ## Main API
 - `MiArchitectureRules new buildModel; yourself`
-- `#ruleSelectors`, `#violationsOf: aRuleSelector` (the FamixCBViolations), `#violatingPackagesOf:`, `#unexpectedViolationsOf:` (outside the known exceptions), `#knownExceptionsOf:`.
+- `#ruleSelectors`, `#violationsOf: aRuleSelector` (the FamixCBViolations), `#violatingPackagesOf:`.
 - Modules: `#roassalLibrary`, `#blocLibrary`, `#roassalFrontEnd`, `#blocFrontEnd`, `#models`, `#tests`, `#productionCode`...
 
 "
@@ -164,33 +164,6 @@ MiArchitectureRules >> isTestClass: aFamixClass [
 					  | name |
 					  name := aFamixClass parentPackage name.
 					  (name endsWith: '-Tests') or: [ name = 'MooseIDE-Tests' ] ] ]
-]
-
-{ #category : 'exceptions' }
-MiArchitectureRules >> knownExceptions [
-	"rule selector -> (package name -> reason)"
-
-	^ Dictionary new
-		  at: #ruleOnlyTheRoassalFrontEndUsesRoassal put: (Dictionary new
-				   at: 'MooseIDE-Core' put: 'extension methods drawing tags on HDefaultStyleWithTags and HSimpleVisualizationBuilder';
-				   at: 'MooseIDE-AttributedText' put: 'RSAttributedText and its emphasis attributes are Roassal shapes';
-				   at: 'MooseIDE-Famix' put: 'MiSourceTextRoassalRenderer draws the source text with Roassal';
-				   at: 'MooseIDE-CoUsageMap' put: 'not split yet: its model opens a settings dialog made of Roassal sliders';
-				   at: 'MooseIDE-CoUsageMap-Tests' put: 'tests of the co-usage map, not split yet';
-				   at: 'MooseIDE-Tests' put: 'HMiPropagateMenuItemTest tests a menu item of MooseIDE-Visualization with Hierarchical nodes';
-				   yourself);
-		  at: #ruleModelsIgnoreTheFrontEnds put: (Dictionary new
-			   at: 'MooseIDE-Famix' put: 'MiSourceTextRoassalRenderer is a MiAbstractVisualization';
-			   at: 'MooseIDE-CoUsageMap' put: 'not split yet: MiCoUsageMapVisualization is a MiAbstractVisualization';
-			   yourself);
-		  yourself
-]
-
-{ #category : 'exceptions' }
-MiArchitectureRules >> knownExceptionsOf: aRuleSelector [
-	"The packages allowed to violate a rule for now, with the reason: the debt to pay"
-
-	^ self knownExceptions at: aRuleSelector ifAbsent: [ Dictionary new ]
 ]
 
 { #category : 'model' }
@@ -440,15 +413,6 @@ MiArchitectureRules >> toolPackageNamesOf: aFrontEndName [
 	^ (model allPackages
 		   collect: [ :each | each name ]
 		   thenSelect: [ :each | (each beginsWith: prefix) and: [ (each endsWith: '-Tests') not ] ]) asArray sort
-]
-
-{ #category : 'checking' }
-MiArchitectureRules >> unexpectedViolationsOf: aRuleSelector [
-	"Package name -> violations, for the violating packages that are not known exceptions"
-
-	| known |
-	known := self knownExceptionsOf: aRuleSelector.
-	^ (self violatingPackagesOf: aRuleSelector) associations reject: [ :each | known includesKey: each key ]
 ]
 
 { #category : 'checking' }

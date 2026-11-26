@@ -2,11 +2,11 @@
 I check the organisation of MooseIDE in front-ends (Roassal, Bloc): the DCL rules of `MiArchitectureRules` on a Famix model of the code, and the placement rules that DCL cannot express, on the image itself.
 
 ## Collaborators & Context
-- `MiArchitectureRules` (through `MiArchitectureRulesResource`): one test per rule, failing on a violating package that is not a known exception, with the violations (source -> target) in the message.
+- `MiArchitectureRules` (through `MiArchitectureRulesResource`): one test per rule, failing on any violating package, with the violations (source -> target) in the message.
 - `MiFrontEnd`, `MiAbstractBrowser class>>#specificFrontEndClass`: the placement tests.
 
 ## Assumptions & Invariants
-- A known exception that no longer violates its rule fails `#testKnownExceptionsStillViolate`: remove it from `MiArchitectureRules>>#knownExceptions` when the debt is paid.
+- No tolerated exception: a rule test fails as long as a package violates the rule.
 - Placement rules: a browser of a front-end lives in the package of that front-end or in one of its MooseIDE-<front-end>-<tool> packages; the test classes of these packages are in their Tests tag; each MooseIDE-<front-end>-<tool> package has a model package MooseIDE-<tool>, but for the tools whose model is elsewhere (`#toolsWithModelElsewhere`).
 
 ## Main API
@@ -29,21 +29,21 @@ MiArchitectureRulesTest class >> resources [
 
 { #category : 'helpers' }
 MiArchitectureRulesTest >> assertRuleHolds: aRuleSelector [
-	"No violating package but the known exceptions"
+	"No package violates the rule"
 
-	| unexpected |
-	unexpected := self rules unexpectedViolationsOf: aRuleSelector.
-	self assert: unexpected isEmpty description: [
+	| violating |
+	violating := self rules violatingPackagesOf: aRuleSelector.
+	self assert: violating isEmpty description: [
 			String streamContents: [ :stream |
 					stream
 						nextPutAll: aRuleSelector;
 						nextPutAll: ' violated by:'.
-					unexpected do: [ :each |
+					violating keysAndValuesDo: [ :package :violations |
 							stream
 								cr;
-								nextPutAll: each key;
+								nextPutAll: package;
 								nextPutAll: ': '.
-							(each value asArray first: (each value size min: 5))
+							(violations asArray first: (violations size min: 5))
 								do: [ :violation | stream nextPutAll: violation ]
 								separatedBy: [ stream nextPutAll: '; ' ] ] ] ]
 ]
@@ -111,21 +111,6 @@ MiArchitectureRulesTest >> testFrontEndTestsAreInTheTestsTag [
 MiArchitectureRulesTest >> testFrontEndsIgnoreEachOther [
 
 	self assertRuleHolds: #ruleFrontEndsIgnoreEachOther
-]
-
-{ #category : 'tests - dependencies' }
-MiArchitectureRulesTest >> testKnownExceptionsStillViolate [
-	"A paid debt must leave the list of known exceptions"
-
-	self rules ruleSelectors do: [ :rule |
-			| violating |
-			violating := self rules violatingPackagesOf: rule.
-			(self rules knownExceptionsOf: rule) keysDo: [ :package |
-					self
-						assert: (violating includesKey: package)
-						description: ('{1} no longer violates {2}: remove it from MiArchitectureRules>>#knownExceptions' format: {
-									 package.
-									 rule }) ] ]
 ]
 
 { #category : 'tests - dependencies' }
