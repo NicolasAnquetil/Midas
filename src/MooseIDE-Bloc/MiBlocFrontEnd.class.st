@@ -19,7 +19,7 @@ I am the Bloc front-end of Midas: the browsers drawn with Bloc and Toplo, plus t
 Class {
 	#name : 'MiBlocFrontEnd',
 	#superclass : 'MiFrontEnd',
-	#category : 'MooseIDE-Bloc-front-end',
+	#category : 'MooseIDE-Bloc-browsers',
 	#package : 'MooseIDE-Bloc',
-	#tag : 'front-end'
+	#tag : 'browsers'
 }
