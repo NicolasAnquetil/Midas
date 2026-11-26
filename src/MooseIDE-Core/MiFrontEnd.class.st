@@ -1,13 +1,14 @@
 "
-I am a front-end of Midas: the set of browsers it offers, each under its name. The browsers that depend on a graphics library (Roassal, Bloc) belong to the front-end of that library, defined in the same package as them; I offer the others, common to all the front-ends.
+I am a front-end of Midas: the set of browsers it offers, each under its name. The browsers that depend on a graphics library (Roassal, Bloc) belong to the front-end of that library; I offer the others, common to all the front-ends.
 
 ## Collaborators & Context
-- Subclasses, each in the package of its browsers: `MiRoassalFrontEnd` (MooseIDE-Roassal), `MiBlocFrontEnd` (MooseIDE-Bloc). If a package is not loaded, its front-end and its browsers are not there.
+- Subclasses, one per graphics library: `MiRoassalFrontEnd` (MooseIDE-Roassal), `MiBlocFrontEnd` (MooseIDE-Bloc). The browsers of a front-end live in the packages of their tools (MooseIDE-Roassal-ArchitecturalMap, MooseIDE-Bloc-ButterflyMap...), which require the package of the front-end; MooseIDE-Roassal also still holds the Roassal browsers of the tools that are not split yet. If a package is not loaded, its front-end or its browsers are not there.
 - `MiApplication` (`#frontEnd`, `#frontEnd:`): holds the front-end in use, by default the one that says so (`#default`, `#isDefault`).
-- `MiAbstractBrowser` (class side): `#browserName`, the name a browser is offered under (its menu label by default); `#isInMooseMenu`; `#frontEndClass`, what opens when the browser is opened (`#browserClassFor:`); `#browsersMenuOn:`, the Moose menu, made of my `#menuBrowserClasses`.
+- `MiAbstractBrowser` (class side): `#specificFrontEndClass`, the front-end a browser belongs to (nil when common); `#browserName`, the name a browser is offered under (its menu label by default); `#isInMooseMenu`; `#frontEndClass`, what opens when the browser is opened (`#browserClassFor:`); `#browsersMenuOn:`, the Moose menu, made of my `#menuBrowserClasses`.
 
 ## Assumptions & Invariants
-- Each subclass lists its own browsers (`#specificBrowserClasses`). The common browsers are all the concrete browsers that no loaded front-end lists (`#commonBrowserClasses`): a new browser that depends on no graphics library is in every front-end without being declared.
+- Each browser declares its own front-end (`#specificFrontEndClass`, usually inherited from an abstract browser of the front-end: `MiAbstractVisualizationBrowser`, `MiBlMapBrowser`); a front-end does not list its browsers, so that a tool package can depend on the front-end package and not the other way round.
+- The common browsers are all the concrete browsers that declare no front-end (`#commonBrowserClasses`): a new browser that depends on no graphics library is in every front-end without being declared.
 - The versions of a tool for two front-ends have the same name (e.g. 'Architectural map'), so opening one opens the version of the front-end in use; a front-end offers at most one browser per name.
 - A browser that the front-end in use does not offer opens as itself (`#browserClassFor:`).
 - I am abstract (`#isAbstract`): used alone (no front-end loaded, `#default`), I offer the common browsers only.
@@ -15,8 +16,8 @@ I am a front-end of Midas: the set of browsers it offers, each under its name. T
 
 ## Main API
 - `MiApplication current frontEnd: MiBlocFrontEnd new` (or `MiRoassalFrontEnd new`).
-- `#browserClasses`, `#browserNames`, `#browserNamed:` (and `#browserNamed:ifNone:`), `#menuBrowserClasses`, `#browserClassFor:`.
-- A subclass: `#specificBrowserClasses`, and `#isDefault` on the class side.
+- `#browserClasses`, `#browserNames`, `#browserNamed:` (and `#browserNamed:ifNone:`), `#specificBrowserClasses`, `#menuBrowserClasses`, `#browserClassFor:`.
+- A subclass: `#isDefault` on the class side; its browsers answer it from `#specificFrontEndClass`.
 
 "
 Class {
@@ -105,7 +106,7 @@ MiFrontEnd >> menuBrowserClasses [
 
 { #category : 'accessing' }
 MiFrontEnd >> specificBrowserClasses [
-	"The browsers that only I offer, because they depend on my graphics library. None here: a subclass lists its own"
+	"The browsers that only I offer, because they depend on my graphics library: those that declare me as their front-end (MiAbstractBrowser class>>#specificFrontEndClass)"
 
-	^ #(  )
+	^ MiAbstractBrowser allBrowsers select: [ :each | each specificFrontEndClass == self class ]
 ]

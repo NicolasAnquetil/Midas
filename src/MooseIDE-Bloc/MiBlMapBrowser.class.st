@@ -45,6 +45,12 @@ MiBlMapBrowser class >> isInMooseMenu [
 	^ true
 ]
 
+{ #category : 'accessing' }
+MiBlMapBrowser class >> specificFrontEndClass [
+
+	^ MiBlocFrontEnd
+]
+
 { #category : 'building' }
 MiBlMapBrowser >> buildTree [
 	"Answer the tree of the map, built from the model. Sent in the calling process, not in the UI process of the space (#runVisualization)"

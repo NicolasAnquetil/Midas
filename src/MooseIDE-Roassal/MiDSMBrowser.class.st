@@ -82,6 +82,12 @@ MiDSMBrowser class >> openWithX: entitiesX withY: entitiesY [
 
 ]
 
+{ #category : 'accessing' }
+MiDSMBrowser class >> specificFrontEndClass [
+
+	^ MiRoassalFrontEnd
+]
+
 { #category : 'specs' }
 MiDSMBrowser class >> title [
 

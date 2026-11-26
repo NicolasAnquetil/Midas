@@ -16,6 +16,7 @@ Instance side:
 Class side:	
 	- #title | The browser window title
 	- #menuCommandOn: | To be integrated into Midas Browsers menu
+	- #specificFrontEndClass | The front-end that alone offers the browser because it depends on that front-end's graphics library (MiRoassalFrontEnd, MiBlocFrontEnd); nil, the default, for a browser common to all the front-ends
 Spec2 methods: 
 	#initializePresenters, #defaultLayout, ...
 
@@ -403,6 +404,13 @@ MiAbstractBrowser class >> shortcut [
 MiAbstractBrowser class >> shouldBuildToolbar [
 
 	^ true
+]
+
+{ #category : 'accessing' }
+MiAbstractBrowser class >> specificFrontEndClass [
+	"The front-end that offers me alone because I depend on its graphics library (a subclass of MiFrontEnd), nil if I am common to all the front-ends"
+
+	^ nil
 ]
 
 { #category : 'commands' }

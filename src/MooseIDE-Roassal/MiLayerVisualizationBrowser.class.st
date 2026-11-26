@@ -40,6 +40,12 @@ MiLayerVisualizationBrowser class >> menuPriority [
 	^ self menuVisualizationToolsPriority + 1
 ]
 
+{ #category : 'accessing' }
+MiLayerVisualizationBrowser class >> specificFrontEndClass [
+
+	^ MiRoassalFrontEnd
+]
+
 { #category : 'world menu' }
 MiLayerVisualizationBrowser class >> title [
 

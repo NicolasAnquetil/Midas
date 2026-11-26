@@ -21,6 +21,12 @@ MiAbstractVisualizationBrowser class >> isInMooseMenu [
 	^ true
 ]
 
+{ #category : 'accessing' }
+MiAbstractVisualizationBrowser class >> specificFrontEndClass [
+
+	^ MiRoassalFrontEnd
+]
+
 { #category : 'testing' }
 MiAbstractVisualizationBrowser >> canHighlight [
 

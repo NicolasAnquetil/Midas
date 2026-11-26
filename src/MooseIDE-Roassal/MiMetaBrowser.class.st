@@ -73,6 +73,12 @@ MiMetaBrowser class >> open [
 	^ super open
 ]
 
+{ #category : 'accessing' }
+MiMetaBrowser class >> specificFrontEndClass [
+
+	^ MiRoassalFrontEnd
+]
+
 { #category : 'specs' }
 MiMetaBrowser class >> title [
 

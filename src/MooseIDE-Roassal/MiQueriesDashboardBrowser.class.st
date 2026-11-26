@@ -53,6 +53,12 @@ MiQueriesDashboardBrowser class >> open [
 ]
 
 { #category : 'accessing' }
+MiQueriesDashboardBrowser class >> specificFrontEndClass [
+
+	^ MiRoassalFrontEnd
+]
+
+{ #category : 'accessing' }
 MiQueriesDashboardBrowser class >> title [
 
 	^ 'Queries dashboard'
