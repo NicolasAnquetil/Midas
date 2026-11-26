@@ -68,7 +68,7 @@ BaselineOfMooseIDE >> defineDependencies: spec [
 BaselineOfMooseIDE >> defineGroups: spec [
 	"RoassalFrontEnd and BlocFrontEnd (not Roassal and Bloc: Bloc is the name of a dependency) each load one front-end (MiRoassalFrontEnd, MiBlocFrontEnd) and the packages that do not need the other one.
 	The drawing code of each front-end, browsers included, is in its own packages (MooseIDE-Roassal-<tool>, MooseIDE-Bloc-<tool>, which require MooseIDE-Roassal or MooseIDE-Bloc), the models are shared (MooseIDE-<tool>).
-	For now, only the architectural and butterfly maps are split this way: the other tools still mix their models and their Roassal drawing code, so BlocFrontEnd still loads Roassal (through MooseIDE-Visualization).
+	All the tools are split this way except the co-usage map, whose model opens a settings dialog made of Roassal sliders: its browser is still in MooseIDE-Roassal. BlocFrontEnd still loads Roassal (through MooseIDE-Visualization, required by MooseIDE-Tagging, MooseIDE-Famix and MooseIDE-CoUsageMap).
 	Most test packages need MooseIDE-Tests, hence the Roassal browsers: they are in RoassalFrontEnd only. The tests of the front-end packages are in a Tests tag of these packages (the MooseIDE-Bloc-<tool> tests are subclasses of the tests of the Roassal maps, which need MooseIDE-Tests, so for now loading a Bloc map loads its Roassal version too)."
 
 	spec
@@ -113,7 +113,15 @@ BaselineOfMooseIDE >> defineGroups: spec [
 			'MooseIDE-NewTools'
 			'MooseIDE-Roassal-ButterflyMap'
 			'MooseIDE-Roassal'
-			'MooseIDE-ClassBlueprint-Tests'
+			'MooseIDE-Roassal-ClassBlueprint'
+			'MooseIDE-Roassal-DistributionMap'
+			'MooseIDE-Roassal-DSM'
+			'MooseIDE-Roassal-HeatMap'
+			'MooseIDE-Roassal-LayerVisualization'
+			'MooseIDE-Roassal-QueriesDashboard'
+			'MooseIDE-Roassal-UML'
+			'MooseIDE-Roassal-MetaBrowser'
+			'MooseIDE-Roassal-SystemComplexity'
 			'MooseIDE-Tests'
 			'MooseIDE-CriticBrowser-Tests'
 			'MooseIDE-DeadCode-Tests'
@@ -204,9 +212,9 @@ BaselineOfMooseIDE >> definePackages: spec [
 		with: [ spec requires: #( 'MooseIDE-ArchitecturalMap' 'MooseIDE-Visualization-Bloc' 'MooseIDE-Bloc' 'MooseIDE-Roassal-ArchitecturalMap' ) ];
 		package: 'MooseIDE-DeadCode' with: [ spec requires: #( 'MooseIDE-Core' ) ];
 		package: 'MooseIDE-DeadCode-Tests' with: [ spec requires: #( 'MooseIDE-DeadCode' 'MooseIDE-Tests' ) ];
-		package: 'MooseIDE-DSM' with: [ spec requires: #( 'MooseIDE-Visualization' 'AIHierarchicalClustering' ) ];
-		package: 'MooseIDE-DistributionMap' with: [ spec requires: #( 'MooseIDE-Visualization' 'AIHierarchicalClustering' ) ];
-		package: 'MooseIDE-HeatMap' with: [ spec requires: #( 'MooseIDE-Visualization' ) ];
+		package: 'MooseIDE-DSM' with: [ spec requires: #( 'MooseIDE-Core' 'AIHierarchicalClustering' ) ];
+		package: 'MooseIDE-DistributionMap' with: [ spec requires: #( 'MooseIDE-Core' 'MooseIDE-Tagging' 'AIHierarchicalClustering' ) ];
+		package: 'MooseIDE-HeatMap' with: [ spec requires: #( 'MooseIDE-Core' ) ];
 		package: 'MooseIDE-Tests' with: [
 				spec requires:
 						#( 'MooseIDE-Visualization' 'MooseIDE-Roassal' ) ];
@@ -228,16 +236,20 @@ BaselineOfMooseIDE >> definePackages: spec [
 		package: 'MooseIDE-ButterflyMap-Tests' with: [ spec requires: #( 'MooseIDE-ButterflyMap' ) ];
 		package: 'MooseIDE-Bloc-ButterflyMap'
 		with: [ spec requires: #( 'MooseIDE-ButterflyMap' 'MooseIDE-Visualization-Bloc' 'MooseIDE-Bloc' 'MooseIDE-Roassal-ButterflyMap' ) ];
-		package: 'MooseIDE-Roassal' with: [
-				spec requires:
-						#( 'MooseIDE-ClassBlueprint' 'MooseIDE-CoUsageMap' 'MooseIDE-DistributionMap' 'MooseIDE-HeatMap' 'MooseIDE-Visualization'
-						   'MooseIDE-Famix' 'MooseIDE-DSM' 'MooseIDE-LayerVisualization' 'MooseIDE-Meta' 'MooseIDE-QueriesDashboard' ) ];
+		package: 'MooseIDE-Roassal' with: [ spec requires: #( 'MooseIDE-Visualization' 'MooseIDE-CoUsageMap' ) ];
+		package: 'MooseIDE-Roassal-ClassBlueprint' with: [ spec requires: #( 'MooseIDE-ClassBlueprint' 'MooseIDE-Roassal' 'MooseIDE-Tests' ) ];
+		package: 'MooseIDE-Roassal-DistributionMap' with: [ spec requires: #( 'MooseIDE-DistributionMap' 'MooseIDE-Roassal' 'MooseIDE-NewTools' 'MooseIDE-Tests' ) ];
+		package: 'MooseIDE-Roassal-DSM' with: [ spec requires: #( 'MooseIDE-DSM' 'MooseIDE-Roassal' 'MooseIDE-Tests' ) ];
+		package: 'MooseIDE-Roassal-HeatMap' with: [ spec requires: #( 'MooseIDE-HeatMap' 'MooseIDE-Roassal' 'MooseIDE-Tests' ) ];
+		package: 'MooseIDE-Roassal-LayerVisualization' with: [ spec requires: #( 'MooseIDE-LayerVisualization' 'MooseIDE-Roassal' ) ];
+		package: 'MooseIDE-Roassal-QueriesDashboard' with: [ spec requires: #( 'MooseIDE-QueriesDashboard' 'MooseIDE-Roassal' ) ];
+		package: 'MooseIDE-Roassal-UML' with: [ spec requires: #( 'MooseIDE-Famix' 'MooseIDE-Roassal' 'MooseIDE-Tests' ) ];
+		package: 'MooseIDE-Roassal-MetaBrowser' with: [ spec requires: #( 'MooseIDE-Meta' 'MooseIDE-Roassal-UML' ) ];
+		package: 'MooseIDE-Roassal-SystemComplexity' with: [ spec requires: #( 'MooseIDE-Roassal' 'MooseIDE-Tests' ) ];
 		package: 'MooseIDE-Bloc' with: [ spec requires: #( 'MooseIDE-Core' 'MooseIDE-NewTools' ) ];
 		package: 'MooseIDE-QueriesDashboard' with: [ spec requires: #( 'MooseIDE-Core' ) ];
-		package: 'MooseIDE-LayerVisualization'
-		with: [ spec requires: #( 'MooseIDE-Core' 'MooseIDE-Visualization' 'MooseIDE-QueriesDashboard' ) ];
-		package: 'MooseIDE-ClassBlueprint' with: [ spec requires: #( 'MooseIDE-Visualization' 'ClassBlueprint' ) ];
-		package: 'MooseIDE-ClassBlueprint-Tests' with: [ spec requires: #( 'MooseIDE-ClassBlueprint' 'MooseIDE-Roassal' ) ];
+		package: 'MooseIDE-LayerVisualization' with: [ spec requires: #( 'MooseIDE-Core' 'MooseIDE-QueriesDashboard' ) ];
+		package: 'MooseIDE-ClassBlueprint' with: [ spec requires: #( 'MooseIDE-Core' 'ClassBlueprint' ) ];
 		package: 'MooseIDE-Spotter';
 		package: 'MooseIDE-Core-Reporter' with: [ spec requires: #( 'MooseIDE-Core' ) ];
 		package: 'MooseIDE-Spotter-Tests' with: [ spec requires: #( 'MooseIDE-Spotter' ) ];

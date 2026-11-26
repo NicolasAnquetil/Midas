@@ -4,7 +4,7 @@ I am the Roassal front-end of Midas: the browsers drawn with Roassal, plus the c
 ## Collaborators & Context
 - `MiFrontEnd`: my superclass, which offers my browsers with the common ones, under their names.
 - My browsers are those that answer me from `#specificFrontEndClass`: `MiAbstractVisualizationBrowser` (in my package, MooseIDE-Roassal) and its subclasses, and the browsers that draw with Roassal without being one: DSM (`MiDSMBrowser`), meta browser (`MiMetaBrowser`, a UML map), layer visualization (`MiLayerVisualizationBrowser`), queries dashboard (`MiQueriesDashboardBrowser`, its results are Roassal shapes).
-- The browsers of the split tools are in their MooseIDE-Roassal-<tool> packages with the rest of their Roassal code (`MiArchitecturalMapBrowser` in MooseIDE-Roassal-ArchitecturalMap, `MiButterflyMapBrowser` in MooseIDE-Roassal-ButterflyMap); the others are still in MooseIDE-Roassal, their models and builders in the packages of the tools.
+- The browsers are in the MooseIDE-Roassal-<tool> packages with the rest of the Roassal code of their tools (`MiArchitecturalMapBrowser` in MooseIDE-Roassal-ArchitecturalMap, `MiUMLBrowser` in MooseIDE-Roassal-UML, `MiMetaBrowser` in MooseIDE-Roassal-MetaBrowser...); their models stay in the packages of the tools (MooseIDE-<tool>, MooseIDE-Famix for UML, MooseIDE-Meta for the meta browser). The exception is the co-usage map: its browser is still in my package, because its model opens a settings dialog made of Roassal sliders.
 
 ## Assumptions & Invariants
 - MooseIDE-Roassal does not refer to the MooseIDE-Roassal-<tool> packages: they require it.

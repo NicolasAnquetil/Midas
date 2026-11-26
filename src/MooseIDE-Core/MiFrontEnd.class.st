@@ -2,7 +2,7 @@
 I am a front-end of Midas: the set of browsers it offers, each under its name. The browsers that depend on a graphics library (Roassal, Bloc) belong to the front-end of that library; I offer the others, common to all the front-ends.
 
 ## Collaborators & Context
-- Subclasses, one per graphics library: `MiRoassalFrontEnd` (MooseIDE-Roassal), `MiBlocFrontEnd` (MooseIDE-Bloc). The browsers of a front-end live in the packages of their tools (MooseIDE-Roassal-ArchitecturalMap, MooseIDE-Bloc-ButterflyMap...), which require the package of the front-end; MooseIDE-Roassal also still holds the Roassal browsers of the tools that are not split yet. If a package is not loaded, its front-end or its browsers are not there.
+- Subclasses, one per graphics library: `MiRoassalFrontEnd` (MooseIDE-Roassal), `MiBlocFrontEnd` (MooseIDE-Bloc). The browsers of a front-end live in the packages of their tools (MooseIDE-Roassal-ArchitecturalMap, MooseIDE-Bloc-ButterflyMap...), which require the package of the front-end; MooseIDE-Roassal also still holds the browser of the co-usage map, the one tool not split yet. If a package is not loaded, its front-end or its browsers are not there.
 - `MiApplication` (`#frontEnd`, `#frontEnd:`): holds the front-end in use, by default the one that says so (`#default`, `#isDefault`).
 - `MiAbstractBrowser` (class side): `#specificFrontEndClass`, the front-end a browser belongs to (nil when common); `#browserName`, the name a browser is offered under (its menu label by default); `#isInMooseMenu`; `#frontEndClass`, what opens when the browser is opened (`#browserClassFor:`); `#browsersMenuOn:`, the Moose menu, made of my `#menuBrowserClasses`.
 

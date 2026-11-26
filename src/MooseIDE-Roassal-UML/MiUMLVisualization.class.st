@@ -1,0 +1,91 @@
+Class {
+	#name : 'MiUMLVisualization',
+	#superclass : 'MiAbstractVisualization',
+	#instVars : [
+		'builder',
+		'rootEntities',
+		'classDescriptor'
+	],
+	#category : 'MooseIDE-Roassal-UML-Visualization',
+	#package : 'MooseIDE-Roassal-UML',
+	#tag : 'Visualization'
+}
+
+{ #category : 'running' }
+MiUMLVisualization >> buildClassDescriptorForModel: aModel [
+
+	| desc |
+	classDescriptor ifNotNil: [ ^ classDescriptor ].
+
+	desc := RSUMLClassDescriptor new forFamix.
+
+	aModel showAttributes
+		ifFalse: [ desc instVars: [ :type | #() ] ].
+	aModel showMethods
+		ifFalse: [ desc methods: [ :type | #() ] ].
+
+	^ desc
+]
+
+{ #category : 'running' }
+MiUMLVisualization >> buildInCanvas: aCanvas [
+
+	rootEntities ifNil: [ ^ self ].
+
+	builder := RSUMLClassBuilder new
+		           modelDescriptor:
+			           (self buildClassDescriptorForModel: self owner specModel);
+		           classes: rootEntities;
+		           build;
+		           renderIn: aCanvas canvas;
+		           yourself.
+
+	aCanvas nodes do: [ :node |
+			node addInteraction:
+				((MiSelection on: [ :entity | self owner selected: entity ])
+					 marginPercentage: 0.2) ].
+
+	^ aCanvas @ RSCanvasController new
+]
+
+{ #category : 'running' }
+MiUMLVisualization >> classDescriptor [
+
+	^ classDescriptor ifNil: [
+		  classDescriptor := RSUMLClassDescriptor new forFamix ]
+]
+
+{ #category : 'running' }
+MiUMLVisualization >> classDescriptor: aRSUMLClassDescriptor [
+
+	classDescriptor := aRSUMLClassDescriptor
+]
+
+{ #category : 'highlighting' }
+MiUMLVisualization >> highlightShapes [
+
+	self canvas nodes do: [ :composite | 
+		composite shapes first color: (self colorFor: composite model) ]
+]
+
+{ #category : 'helpers' }
+MiUMLVisualization >> noHighlightColorFor: anEntity [
+
+	^ builder renderer boxColor
+]
+
+{ #category : 'accessing' }
+MiUMLVisualization >> rootEntities: anObject [
+
+	rootEntities := anObject
+]
+
+{ #category : 'searching' }
+MiUMLVisualization >> shapeFromEntity: anEntity [
+	"search for the RSShape in the canvas that represent anEntity returns nil otherwise
+	 each RSShape contains a HNode which contains an entity"
+
+	^ self canvas deepNodes
+		  detect: [ :shape | shape model = anEntity ]
+		  ifNone: [ nil ]
+]
